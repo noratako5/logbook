@@ -4,6 +4,8 @@
 /2014*
 /2015*
 /doc
+/config
+/logs
 
 *.csv
 *.dat

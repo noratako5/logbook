@@ -2,9 +2,9 @@ package logbook.gui.listener;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
+import logbook.config.bean.TableConfigBean;
+import logbook.gui.AbstractTableDialog;
 import logbook.gui.logic.CreateReportLogic;
 
 import org.eclipse.swt.SWT;
@@ -14,7 +14,6 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableItem;
 
 /**
  * テーブルをCSVファイルに保存するアダプターです
@@ -34,6 +33,9 @@ public final class TableToCsvSaveAdapter extends SelectionAdapter {
     /** テーブル */
     private final Table table;
 
+    /** 設定 */
+    private final TableConfigBean config;
+
     /**
      * コンストラクター
      * 
@@ -41,11 +43,12 @@ public final class TableToCsvSaveAdapter extends SelectionAdapter {
      * @param name ファイル名
      * @param table テーブル
      */
-    public TableToCsvSaveAdapter(Shell shell, String name, String[] header, Table table) {
+    public TableToCsvSaveAdapter(Shell shell, String name, String[] header, Table table, TableConfigBean config) {
         this.shell = shell;
         this.name = name;
         this.header = header;
         this.table = table;
+        this.config = config;
     }
 
     @Override
@@ -65,17 +68,10 @@ public final class TableToCsvSaveAdapter extends SelectionAdapter {
                 }
             }
             try {
-                List<Comparable[]> body = new ArrayList<Comparable[]>();
-                TableItem[] items = this.table.getItems();
-                for (TableItem item : items) {
-                    String[] colums = new String[this.header.length];
-                    for (int i = 0; i < colums.length; i++) {
-                        colums[i] = item.getText(i);
-                    }
-                    body.add(colums);
-                }
+                AbstractTableDialog.TextTable textTable = AbstractTableDialog.getTextTable(this.header, this.table,
+                        this.table.getItems(), this.config);
 
-                CreateReportLogic.writeCsv(file, this.header, body, false);
+                CreateReportLogic.writeCsv(file, textTable.getHeader(), textTable.getBody(), false);
             } catch (IOException e) {
                 MessageBox messageBox = new MessageBox(this.shell, SWT.ICON_ERROR);
                 messageBox.setText("書き込めませんでした");

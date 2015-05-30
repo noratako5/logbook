@@ -8,12 +8,16 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -29,8 +33,6 @@ import logbook.gui.logic.TableItemCreator;
 import logbook.internal.LoggerHolder;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.AbstractFileFilter;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -160,6 +162,14 @@ public class ScriptLoader {
             return this.scripts.values();
         }
 
+        public Set<String> getAllNames() {
+            return this.scripts.keySet();
+        }
+
+        public Script get(String name) {
+            return this.scripts.get(name);
+        }
+
         private void loadScripts() {
             Map<String, Script> oldScripts = this.scripts;
             this.scripts = new TreeMap<>();
@@ -171,22 +181,33 @@ public class ScriptLoader {
                 else if (script.isUpdated()) {
                     script.reload();
                 }
-                this.scripts.put(file.getPath(), script);
+                this.scripts.put(file.getName(), script);
             }
         }
 
         private File[] getScriptFiles() {
-            final String starts = this.prefix + "_";
-            if (AppConstants.SCRIPT_DIR.exists() == false) {
+            Path prefixPath = FileSystems.getDefault().getPath(this.prefix);
+            Path dirPath = prefixPath.getParent();
+            File dir;
+            String starts;
+            if (dirPath != null) {
+                dir = AppConstants.SCRIPT_DIR.toPath().resolve(dirPath).toFile();
+                starts = prefixPath.getFileName().toString() + "_";
+            }
+            else {
+                dir = AppConstants.SCRIPT_DIR;
+                starts = this.prefix + "_";
+            }
+            if (dir.exists() == false) {
                 return new File[0];
             }
-            File[] array = FileUtils.listFiles(AppConstants.SCRIPT_DIR, new AbstractFileFilter() {
+            File[] array = dir.listFiles(new FileFilter() {
                 @Override
                 public boolean accept(File file) {
                     String name = file.getName();
                     return name.endsWith(".js") && name.startsWith(starts);
                 }
-            }, FileFilterUtils.trueFileFilter()).toArray(new File[0]);
+            });
             Arrays.sort(array, new Comparator<File>() {
                 @Override
                 public int compare(File arg0, File arg1) {
@@ -230,6 +251,10 @@ public class ScriptLoader {
             for (Script script : this.get()) {
                 script.invoke(invokable);
             }
+        }
+
+        public String getPrefix() {
+            return this.prefix;
         }
     }
 
@@ -279,6 +304,44 @@ public class ScriptLoader {
             }
             // 長さを合わせる
             return this.resize(raw);
+        }
+
+        public Comparable[][] anyBodies(MethodInvoke invokable) {
+            if (this.header == null) {
+                return null;
+            }
+            Object obj = this.invoke(invokable);
+            if (this.exception) {
+                return new Comparable[][] { this.exceptionBody };
+            }
+            else if (obj instanceof Comparable[][]) {
+                Comparable[][] anyRaw = (Comparable[][]) obj;
+                for (int j = 0; j < anyRaw.length; ++j) {
+                    Comparable[] raw = anyRaw[j];
+                    if ((raw == null) || (raw.length != this.header.length)) {
+                        anyRaw[j] = this.resize(raw);
+                    }
+                }
+                return anyRaw;
+            }
+            else if (obj instanceof Comparable[]) {
+                Comparable[] raw = (Comparable[]) obj;
+                if (raw.length == 0) {
+                    return new Comparable[][] {};
+                }
+                else if (raw.length != this.header.length) {
+                    return new Comparable[][] { this.resize(raw) };
+                }
+                else {
+                    return new Comparable[][] { raw };
+                }
+            }
+            else if (obj == null) {
+                return new Comparable[][] {};
+            }
+            else {
+                return new Comparable[][] { this.exceptionBody };
+            }
         }
 
         private Comparable[] resize(Comparable[] raw) {
@@ -340,6 +403,11 @@ public class ScriptLoader {
             return false;
         }
 
+        @Override
+        public TableScript get(String name) {
+            return (TableScript) super.get(name);
+        }
+
         public String[] header() {
             String[] result = null;
             for (Script script : this.get()) {
@@ -354,6 +422,42 @@ public class ScriptLoader {
                 result = ArrayUtils.addAll(result, ((TableScript) script).body(invokable));
             }
             return result;
+        }
+
+        public Comparable[][] anyBodies(MethodInvoke invokable) {
+            class Item {
+                public Comparable[][] anyBodies;
+                public int headerLength;
+            }
+            List<Item> itemList = new ArrayList<Item>();
+            int maxLength = 0;
+            for (Script script : this.get()) {
+                TableScript tableScript = ((TableScript) script);
+                Item item = new Item();
+                item.anyBodies = tableScript.anyBodies(invokable);
+                item.headerLength = tableScript.header().length;
+                itemList.add(item);
+                maxLength = Math.max(maxLength, item.anyBodies.length);
+            }
+            Comparable[][] allResults = new Comparable[maxLength][];
+            for (int i = 0; i < maxLength; ++i) {
+                Comparable[] result = null;
+                for (Item item : itemList) {
+                    Comparable[] body;
+                    if (item.anyBodies.length < maxLength) {
+                        body = new Comparable[item.headerLength];
+                        for (int k = 0; k < body.length; ++k) {
+                            body[k] = "行数が足りません";
+                        }
+                    }
+                    else {
+                        body = item.anyBodies[i];
+                    }
+                    result = ArrayUtils.addAll(result, body);
+                }
+                allResults[i] = result;
+            }
+            return allResults;
         }
     }
 

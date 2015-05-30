@@ -448,6 +448,8 @@ public class AppConstants {
 
     public static final String DROPTABLE_PREFIX = "drop";
 
+    public static final String COMBATTABLE_PREFIX = "combat";
+
     public static final String ITEMTABLE_PREFIX = "item";
 
     public static final String ITEMIDTABLE_PREFIX = "itemid";

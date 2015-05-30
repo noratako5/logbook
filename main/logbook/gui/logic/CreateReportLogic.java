@@ -49,6 +49,7 @@ import logbook.internal.LoggerHolder;
 import logbook.internal.MasterData;
 import logbook.internal.MasterData.MissionDto;
 import logbook.scripting.BattleLogProxy;
+import logbook.scripting.CombatLogProxy;
 import logbook.scripting.ItemInfoListener;
 import logbook.scripting.ItemInfoProxy;
 import logbook.scripting.MissionProxy;
@@ -192,6 +193,39 @@ public final class CreateReportLogic {
                     friend[0], friendHp[0], friend[1], friendHp[1], friend[2], friendHp[2], friend[3], friendHp[3],
                     friend[4], friendHp[4], friend[5], friendHp[5], enemy[0], enemyHp[0], enemy[1], enemyHp[1],
                     enemy[2], enemyHp[2], enemy[3], enemyHp[3], enemy[4], enemyHp[4], enemy[5], enemyHp[5] });
+        }
+        return body;
+    }
+
+    /**
+     * 戦闘報告書のヘッダー
+     * 
+     * @return ヘッダー
+     */
+    public static String[] getCombatResultHeader(String prefix) {
+        return ArrayUtils.addAll(new String[] {
+                "No." },
+                CombatLogProxy.get(prefix).header());
+    }
+
+    /**
+     * 戦闘報告書の内容
+     * @param filter フィルタ
+     * @return 内容
+     */
+    public static List<Comparable[]> getCombatResultBody(String prefix, BattleResultFilter filter) {
+        List<BattleResultDto> results = BattleResultServer.get().getFilteredList(filter);
+        List<Comparable[]> body = new ArrayList<Comparable[]>();
+
+        int i = 0;
+        for (int k = 0; k < results.size(); k++) {
+            BattleResultDto item = results.get(k);
+            Comparable[][] combatExtData = item.getCombatExtData(prefix);
+            for (int j = 0; j < combatExtData.length; j++, i++) {
+                body.add(ArrayUtils.addAll(new Comparable[] {
+                        new TableRowHeader(i + 1, item) },
+                        combatExtData[j]));
+            }
         }
         return body;
     }

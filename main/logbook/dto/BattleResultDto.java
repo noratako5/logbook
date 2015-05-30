@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.json.JsonObject;
 
@@ -50,6 +51,9 @@ public class BattleResultDto extends AbstractDto {
     /** スクリプトサポート */
     private final Comparable[] extData;
 
+    /** 戦闘スクリプトサポート */
+    private final Map<String, Comparable[][]> allCombatExtData;
+
     /**
      * コンストラクター
      * もう使われていない
@@ -85,9 +89,10 @@ public class BattleResultDto extends AbstractDto {
 
         this.noSpaceForShip = false;
         this.extData = null;
+        this.allCombatExtData = null;
     }
 
-    public BattleResultDto(BattleExDto dto, Comparable[] extData) {
+    public BattleResultDto(BattleExDto dto, Comparable[] extData, Map<String, Comparable[][]> allCombatExtData) {
         this.battleDate = dto.getBattleDate();
         this.questName = dto.getQuestName();
         this.rank = dto.getRank();
@@ -99,6 +104,7 @@ public class BattleResultDto extends AbstractDto {
         this.dropName = dto.getDropName();
         this.noSpaceForShip = (dto.getExVersion() >= 1) && (dto.getShipSpace() == 0);
         this.extData = extData;
+        this.allCombatExtData = allCombatExtData;
     }
 
     private boolean hasTaihaInFleet(int[] nowhp, int[] maxhp) {
@@ -247,5 +253,12 @@ public class BattleResultDto extends AbstractDto {
      */
     public Comparable[] getExtData() {
         return this.extData;
+    }
+
+    /**
+     * @return combatExtData
+     */
+    public Comparable[][] getCombatExtData(String name) {
+        return this.allCombatExtData.get(name);
     }
 }

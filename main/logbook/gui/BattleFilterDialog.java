@@ -40,7 +40,7 @@ import org.eclipse.swt.widgets.Shell;
  */
 public class BattleFilterDialog extends WindowBase {
 
-    private final DropReportTable parent;
+    private final DropOrCombatReportTable parent;
 
     private List<IntegerPair> mapList;
     private CheckAndCombo mapCombo;
@@ -63,7 +63,7 @@ public class BattleFilterDialog extends WindowBase {
     private LabelAndCalender fromDate;
     private LabelAndCalender toDate;
 
-    public BattleFilterDialog(DropReportTable parent) {
+    public BattleFilterDialog(DropOrCombatReportTable parent) {
         super.createContents(parent, SWT.CLOSE | SWT.TITLE | SWT.RESIZE, false);
         this.parent = parent;
     }

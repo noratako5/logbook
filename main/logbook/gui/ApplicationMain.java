@@ -3,6 +3,7 @@ package logbook.gui;
 import java.awt.Desktop;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -10,8 +11,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -225,6 +228,8 @@ public final class ApplicationMain extends WindowBase {
     private CaptureDialog captureWindow;
     /** ドロップ報告書 */
     private DropReportTable dropReportWindow;
+    /** 戦闘報告書 */
+    private final List<CombatReportTable> allCombatReportWindows = new ArrayList<CombatReportTable>();
     /** 建造報告書 */
     private CreateShipReportTable createShipReportWindow;
     /** 開発報告書 */
@@ -511,6 +516,29 @@ public final class ApplicationMain extends WindowBase {
         cmddrop.setText("ドロップ報告書(&D)\tCtrl+D");
         cmddrop.setAccelerator(SWT.CTRL + 'D');
         this.dropReportWindow = new DropReportTable(this.dummyHolder, cmddrop);
+        // コマンド-戦闘報告書
+        MenuItem cmdcombatroot = new MenuItem(cmdmenu, SWT.CASCADE);
+        cmdcombatroot.setText("戦闘報告書");
+        Menu cmdcombat = new Menu(cmdcombatroot);
+        Path scriptDirPath = AppConstants.SCRIPT_DIR.toPath();
+        File combatRootDir = scriptDirPath.resolve(AppConstants.COMBATTABLE_PREFIX).toFile();
+        if (combatRootDir.exists()) {
+            for (File combatDir : combatRootDir.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return file.isDirectory();
+                }
+            })) {
+                Path combatDirPath = combatDir.toPath();
+                String prefix = scriptDirPath.relativize(combatDirPath.resolve(AppConstants.COMBATTABLE_PREFIX))
+                        .toString();
+                String title = combatDirPath.getFileName().toString();
+                MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
+                cmdcombatItem.setText(title);
+                this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem, title, prefix));
+            }
+        }
+        cmdcombatroot.setMenu(cmdcombat);
         // コマンド-建造報告書
         MenuItem cmdcreateship = new MenuItem(cmdmenu, SWT.CHECK);
         cmdcreateship.setText("建造報告書(&Y)\tCtrl+Y");
@@ -1288,7 +1316,7 @@ public final class ApplicationMain extends WindowBase {
     }
 
     public WindowBase[] getWindowList() {
-        return new WindowBase[] {
+        return (WindowBase[]) ArrayUtils.addAll(new WindowBase[] {
                 this.captureWindow,
                 this.dropReportWindow,
                 this.createShipReportWindow,
@@ -1315,7 +1343,7 @@ public final class ApplicationMain extends WindowBase {
                 this.fleetWindows[2],
                 this.fleetWindows[3],
                 this.launcherWindow
-        };
+        }, this.allCombatReportWindows.toArray());
     }
 
     /**

@@ -44,6 +44,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 
 /**
  * テーブルで構成されるダイアログの基底クラス
@@ -145,7 +146,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         this.orderflgs = new boolean[this.header.length];
         // テーブル
         this.table = new Table(this.getTableParent(), SWT.FULL_SELECTION | SWT.MULTI);
-        this.table.addKeyListener(new TableKeyShortcutAdapter(this.header, this.table));
+        this.table.addKeyListener(new TableKeyShortcutAdapter(this.header, this.table, this.getConfig()));
         this.table.setLinesVisible(true);
         this.table.setHeaderVisible(true);
         this.table.addSelectionListener(new SelectionAdapter() {
@@ -170,7 +171,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         savecsv.setText("CSVファイルに保存(&S)\tCtrl+S");
         savecsv.setAccelerator(SWT.CTRL + 'S');
         savecsv.addSelectionListener(new TableToCsvSaveAdapter(this.shell, this.getTitle(), this.getTableHeader(),
-                this.table));
+                this.table, this.getConfig()));
 
         if (this.isNoMenubar()) {
             this.opemenu = this.menubar;
@@ -245,8 +246,13 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             new MenuItem(this.tablemenu, SWT.SEPARATOR);
         }
         MenuItem sendclipbord = new MenuItem(this.tablemenu, SWT.NONE);
-        sendclipbord.addSelectionListener(new TableToClipboardAdapter(this.header, this.table));
+        sendclipbord.addSelectionListener(new TableToClipboardAdapter(null, this.table, this.getConfig()));
         sendclipbord.setText("クリップボードにコピー(&C)");
+        MenuItem sendclipbordWithoutHeader = new MenuItem(this.tablemenu, SWT.NONE);
+        sendclipbordWithoutHeader.addSelectionListener(new TableToClipboardAdapter(this.header, this.table, this
+                .getConfig()));
+        sendclipbordWithoutHeader.setText("クリップボードにコピー(ヘッダーを含める)");
+        new MenuItem(this.tablemenu, SWT.SEPARATOR);
 
         if (!this.isNoMenubar()) {
             MenuItem reloadtable = new MenuItem(this.tablemenu, SWT.NONE);
@@ -893,6 +899,64 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
      */
     public void update() {
         this.needsUpdate = true;
+    }
+
+    /**
+     * 現在表示されているテキストのテーブルを返す
+     * 
+     * @param header
+     * @param tableItems
+     * @param config
+     * @return
+     */
+    public static TextTable getTextTable(String[] header, Table table, TableItem[] tableItems,
+            TableConfigBean config) {
+        String[] textTableHeader = null;
+        int[] orders = table.getColumnOrder();
+        boolean[] visibles = config.getVisibleColumn();
+        if (header != null) {
+            List<String> textTableHeaderList = new ArrayList<String>();
+            for (int order : orders) {
+                if (visibles[order]) {
+                    textTableHeaderList.add(header[order]);
+                }
+            }
+            textTableHeader = textTableHeaderList.toArray(new String[] {});
+        }
+        List<Comparable[]> textTableBody = null;
+        if (tableItems != null) {
+            textTableBody = new ArrayList<Comparable[]>();
+            for (TableItem tableItem : tableItems) {
+                List<Comparable> textTableRow = new ArrayList<Comparable>();
+                for (int order : orders) {
+                    if (visibles[order]) {
+                        textTableRow.add(tableItem.getText(order));
+                    }
+                }
+                textTableBody.add(textTableRow.toArray(new String[] {}));
+            }
+        }
+        return new TextTable(textTableHeader, textTableBody);
+    }
+
+    public static class TextTable {
+
+        private final String[] header;
+
+        private final List<Comparable[]> body;
+
+        private TextTable(String[] header, List<Comparable[]> body) {
+            this.header = header;
+            this.body = body;
+        }
+
+        public String[] getHeader() {
+            return this.header;
+        }
+
+        public List<Comparable[]> getBody() {
+            return this.body;
+        }
     }
 
     /**

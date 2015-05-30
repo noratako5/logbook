@@ -1124,7 +1124,8 @@ public final class GlobalContext {
             JsonObject apidata = data.getJsonObject().getJsonObject("api_data");
             if (battle == null) {
                 battle = new BattleExDto(data.getCreateDate());
-                battle.setBasicInfo(maxChara - shipMap.size(), maxSlotitem - itemMap.size());
+                battle.setBasicInfo(maxChara - shipMap.size(), maxSlotitem - itemMap.size(), basic.getNickname(),
+                        basic.getMemberId());
             }
             BattleExDto.Phase phase = battle.addPhase(apidata, phaseKind);
 

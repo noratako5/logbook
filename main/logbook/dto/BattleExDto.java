@@ -168,6 +168,18 @@ public class BattleExDto extends AbstractDto {
     @Tag(51)
     private String resultJson;
 
+    /** ユーザのニックネーム */
+    @Tag(52)
+    private String nickname;
+
+    /** ユーザのメンバID */
+    @Tag(53)
+    private long memberId;
+
+    /** 支援艦隊 */
+    @Tag(54)
+    private DockDto support;
+
     /////////////////////////////////////////////////
 
     /**
@@ -819,10 +831,14 @@ public class BattleExDto extends AbstractDto {
      * 母港情報を設定
      * @param shipSpace
      * @param itemSpace
+     * @param nickname
+     * @param memberId
      */
-    public void setBasicInfo(int shipSpace, int itemSpace) {
+    public void setBasicInfo(int shipSpace, int itemSpace, String nickname, long memberId) {
         this.shipSpace = shipSpace;
         this.itemSpace = itemSpace;
+        this.nickname = nickname;
+        this.memberId = memberId;
     }
 
     /**
@@ -880,6 +896,20 @@ public class BattleExDto extends AbstractDto {
                         numFshipsCombined = i - 1;
                         break;
                     }
+                }
+            }
+            JsonNumber support_flag = object.getJsonNumber("api_support_flag");
+            if ((support_flag != null) && (support_flag.intValue() != 0)) {
+                JsonObject support = object.getJsonObject("api_support_info");
+                JsonValue support_hourai = support.get("api_support_hourai");
+                JsonValue support_air = support.get("api_support_airatack");
+                if ((support_hourai != null) && (support_hourai != JsonValue.NULL)) {
+                    JsonValue support_deck_id = ((JsonObject) support_hourai).get("api_deck_id");
+                    this.support = GlobalContext.getDock(support_deck_id.toString());
+                }
+                else if ((support_air != null) && (support_air != JsonValue.NULL)) {
+                    JsonValue support_deck_id = ((JsonObject) support_air).get("api_deck_id");
+                    this.support = GlobalContext.getDock(support_deck_id.toString());
                 }
             }
 
@@ -1293,6 +1323,14 @@ public class BattleExDto extends AbstractDto {
     }
 
     /**
+     * 支援艦隊
+     * @return
+     */
+    public DockDto getDockSupport() {
+        return this.support;
+    }
+
+    /**
      * 戦闘のあった日時
      * @return battleDate
      */
@@ -1533,6 +1571,22 @@ public class BattleExDto extends AbstractDto {
      */
     public int getItemSpace() {
         return this.itemSpace;
+    }
+
+    /**
+     * ユーザのニックネーム
+     * @return nickname
+     */
+    public String getNickname() {
+        return this.nickname;
+    }
+
+    /**
+     * ユーザのメンバID
+     * @return nickname
+     */
+    public long getMemberId() {
+        return this.memberId;
     }
 
     /**

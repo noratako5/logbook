@@ -32,6 +32,7 @@ import logbook.dto.BattleResultDto;
 import logbook.gui.logic.IntegerPair;
 import logbook.scripting.BattleLogListener;
 import logbook.scripting.BattleLogProxy;
+import logbook.scripting.CombatLogProxy;
 import logbook.util.ReportUtils;
 
 import org.apache.commons.io.FileUtils;
@@ -60,8 +61,9 @@ public class BattleResultServer {
         public DataFile file;
         public int index;
 
-        BattleResult(BattleExDto dto, DataFile file, int index, Comparable[] extData) {
-            super(dto, extData);
+        BattleResult(BattleExDto dto, DataFile file, int index, Comparable[] extData,
+                Map<String, Comparable[][]> combatExtData) {
+            super(dto, extData, combatExtData);
             this.file = file;
             this.index = index;
         }
@@ -290,6 +292,7 @@ public class BattleResultServer {
         BattleLogListener battleLogScript = BattleLogProxy.get();
 
         battleLogScript.begin();
+        CombatLogProxy.beginAll();
         // 全部読み込む
         for (DataFile file : this.fileMap.values()) {
             try {
@@ -299,13 +302,14 @@ public class BattleResultServer {
                     if (dto.isCompleteResult() && !this.resultDateSet.contains(dto.getBattleDate())) {
                         this.resultDateSet.add(dto.getBattleDate());
                         this.resultList.add(new BattleResult(dto, file, i,
-                                battleLogScript.body(dto)));
+                                battleLogScript.body(dto), CombatLogProxy.bodyAll(dto)));
                     }
                 }
             } catch (IOException e) {
                 LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
             }
         }
+        CombatLogProxy.endAll();
         battleLogScript.end();
 
         // 時刻でソート
@@ -356,7 +360,7 @@ public class BattleResultServer {
 
                 BattleLogListener battleLogScript = BattleLogProxy.get();
                 BattleResult resultEntry = new BattleResult(dto, dataFile, dataFile.getNumRecords(),
-                        battleLogScript.body(dto));
+                        battleLogScript.body(dto), CombatLogProxy.bodyAll(dto));
                 this.update(resultEntry);
                 this.resultList.add(resultEntry);
 
