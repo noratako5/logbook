@@ -1,7 +1,4 @@
-
-ComparableArrayType = Java.type("java.lang.Comparable[]");
-ComparableArrayArrayType = Java.type("java.lang.Comparable[][]");
-JsonValue = Java.type("javax.json.JsonValue");
+load("script/util/underscore.js");
 
 
 function header() {
@@ -28,103 +25,238 @@ function header() {
 		, "ダメージ"
 		, "クリティカル"
 		, "味方損傷"
-		, "敵損傷"
 	];
 }
 
 function begin() { }
 
 function body(battle) {
+	var battleHps = getBattleHps(battle);
 	var raw = [];
-	var hqLv = battle.hqLv;
-	var ships = {};
-	var fShips = battle.getFriends().get(0).ships;
-	for (var i = 0; i < fShips.length; ++i) {
-		ships[i + 1] = fShips.get(i);
-	}
-	var eShips = battle.enemy;
-	for (var i = 0; i < eShips.length; ++i) {
-		ships[i + 7] = eShips.get(i);
-	}
-	onPhase(raw, battle, ships, battle.getPhase1());
+	var phaseList = battle.getPhaseList();
+	_.forEach(_.range(phaseList.length), function (i) {
+		var phase = phaseList[i];
+		var phaseHps = battleHps[i];
+		var phaseJson = JSON.parse(phase.json);
+		onHougeki(raw, battle, phase, phaseJson, phase.getHougeki1(), phaseHps.hougeki1, phaseJson.api_hougeki1, 1);
+		onHougeki(raw, battle, phase, phaseJson, phase.getHougeki2(), phaseHps.hougeki2, phaseJson.api_hougeki2, 2);
+		onHougeki(raw, battle, phase, phaseJson, phase.getHougeki3(), phaseHps.hougeki3, phaseJson.api_hougeki3, 3);
+	});
 	return toComparable(raw);
 }
 
-function onPhase(raw, battle, ships, phase) {
-	var json = JSON.parse(phase.json);
-	onHougeki(raw, battle, ships, phase, json.api_hougeki1);
-	onHougeki(raw, battle, ships, phase, json.api_hougeki2);
-	onHougeki(raw, battle, ships, phase, json.api_hougeki3);
-}
-
-function onHougeki(raw, battle, ships, phase, api_hougeki) {
-	if (api_hougeki != null) {
-		var phaseJson = JSON.parse(phase.json);
-		var api_at_list = api_hougeki.api_at_list;
-		var api_df_list = api_hougeki.api_df_list;
-		var api_damage = api_hougeki.api_damage;
+function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougeki, hougekiIndex) {
+	if (atacks != null && hougekiHps != null && api_hougeki != null) {
 		var api_cl_list = api_hougeki.api_cl_list;
-		for (var i = 1; i < api_at_list.length; ++i) {
-			var api_at = api_at_list[i];
-			if (1 <= api_at && api_at <= 6) {
-				var atShip = ships[api_at];
+		_.forEach(_.range(atacks.length), function (i) {
+			var atack = atacks[i];
+			if (atack.friendAtack) {
+				var o = atack.origin[0];
+				var atShip = getAtShip(battle, atack, o);
 				var atShipParam = atShip.getParam();
 				var atShipParamMax = atShip.getMax();
 				var atShipSlotParam = atShip.getSlotParam();
-				var atShipInfo = atShip.shipInfo;
-				var atItemList = atShip.getItem2();
-				var atItem1 = onItem(atItemList, 0);
-				var atItem2 = onItem(atItemList, 1);
-				var atItem3 = onItem(atItemList, 2);
-				var atItem4 = onItem(atItemList, 3);
-				var api_df = api_df_list[i];
-				var api_cl = api_cl_list[i];
-				var api_dam = api_damage[i];
-				for (var j = 0; j < api_df.length; ++j) {
-					var dfShip = ships[api_df[j].toString()];
+				var atShipInfo = atShip.getShipInfo();
+				var atShipItemList = atShip.getItem2();
+				var atackHps = hougekiHps[i];
+				var originHp = atackHps.origin[0];
+				var api_cl = api_cl_list[i + 1];
+				_.forEach(atack.target, function (t, j) {
+					var dfShip = getDfShip(battle, atack, t);
 					var dfShipInfo = dfShip.getShipInfo();
+					var targetHp = atackHps.target[j];
+					var damage = atack.damage[j];
 					raw.push([
-						atShipInfo.getFullName().toString()
-						, atShip.getLv().toString()
-						, atShipParam.getLuck().toString()
-						, atShipSlotParam.getHoug().toString()
-						, atShip.getCond().toString()
-						, atShip.getBull().toString()
+						atShipInfo.getFullName()
+						, atShip.getLv()
+						, atShipParam.getLuck()
+						, atShipSlotParam.getHoug()
+						, atShip.getCond()
+						, atShip.getBull()
 						, atShipInfo.getMaxBull()
-						, atItem1.name
-						, atItem2.name
-						, atItem3.name
-						, atItem4.name
-						, dfShipInfo.getFullName().toString()
+						, getShipItemName(atShip, 0)
+						, getShipItemName(atShip, 1)
+						, getShipItemName(atShip, 2)
+						, getShipItemName(atShip, 3)
+						, dfShipInfo.getFullName()
 						, dfShipInfo.getShipId()
 						, dfShip.getLv()
-						, phaseJson.api_search[0].toString()
-						, phaseJson.api_search[1].toString()
-						, battle.getFormation()[0].toString()
-						, battle.getFormation()[1].toString()
-						, battle.getFormationMatch().toString()
-						, Math.floor(api_dam[j]).toString()
-						, api_cl[j].toString()
+						, phaseJson.api_search[0]
+						, phaseJson.api_search[1]
+						, battle.getFormation()[0]
+						, battle.getFormation()[1]
+						, battle.getFormationMatch()
+						, damage
+						, api_cl[j]
+						, ([
+							"大破"
+							, "中破"
+							, "小破"
+							, "小破未満"
+							, "小破未満"
+						])[Math.floor(4 * originHp / atShipParam.getHP())]
 					]);
-				}
+				});
 			}
-		}
+		});
 	}
 }
 
-function onItem(itemList, i) {
-	if (i < itemList.length) {
-		var item = itemList.get(i);
-		if (item != null) {
-			return {
-				name: item.getName().toString()
-				, level: item.getLevel().toString()
-			}
-		}
+function getAtShip(battle, atack, i) {
+	if (atack.friendAtack) {
+		return getFriendShip(battle, i);
 	}
-	return {
-		name: "なし"
-		, level: "0"
+	else {
+		return getEnemyShip(battle, i);
+	}
+}
+
+function getDfShip(battle, atack, i) {
+	if (atack.friendAtack) {
+		return getEnemyShip(battle, i);
+	}
+	else {
+		return getFriendShip(battle, i);
+	}
+}
+
+function getFriendShip(battle, i) {
+	if (i < 6) {
+		return battle.getDock().getShips()[i];
+	}
+	else {
+		return battle.getDockCombined().getShips()[i - 6];
+	}
+}
+
+function getEnemyShip(battle, i) {
+	return battle.getEnemy()[i];
+}
+
+function getShipItemName(ships, i) {
+	var shipItem = getShipItem(ships, i);
+	if (shipItem != null) {
+		return shipItem.getInfo().getName();
+	}
+	else {
+		return "なし";
+	}
+}
+
+function getShipItem(ships, i) {
+	var shipItemList = ships.getItem2();
+	if (i < shipItemList.length) {
+		return shipItemList[i];
+	}
+	else {
+		return null;
+	}
+}
+
+function getBattleHps(battle) {
+	shipHps = {
+		friend: new Array(6 * 2)
+		, enemy: new Array(6)
+	};
+	_.forEach(battle.getStartFriendHp(), function (hp, i) {
+		shipHps.friend[i] = hp;
+	});
+	_.forEach(battle.getStartEnemyHp(), function (hp, i) {
+		shipHps.enemy[i] = hp;
+	});
+	if (battle.isCombined()) {
+		_.forEach(battle.getStartFriendHpCombined(), function (hp, i) {
+			shipHps.friend[i + 6] = hp;
+		});
+	}
+	return battleHps = _.map(battle.getPhaseList(), function (phase) {
+		var phaseHps = {};
+		phaseHps.air = getAirHps(shipHps, phase.getAir());
+		phaseHps.support = getHps(shipHps, phase.getSupport());
+		phaseHps.opening = getHps(shipHps, phase.getOpening());
+		phaseHps.air2 = getAirHps(shipHps, phase.getAir2());
+		phaseHps.hougeki = getHougekiHps(shipHps, phase.getHougeki());
+		phaseHps.hougeki1 = getHougekiHps(shipHps, phase.getHougeki1());
+		if (phase.getKind().toString() === "COMBINED_BATTLE") {
+			phaseHps.raigeki = getHps(shipHps, phase.getRaigeki());
+			phaseHps.hougeki2 = getHougekiHps(shipHps, phase.getHougeki2());
+			phaseHps.hougeki3 = getHougekiHps(shipHps, phase.getHougeki3());
+		}
+		else {
+			phaseHps.hougeki2 = getHougekiHps(shipHps, phase.getHougeki2());
+			phaseHps.hougeki3 = getHougekiHps(shipHps, phase.getHougeki3());
+			phaseHps.raigeki = getHps(shipHps, phase.getRaigeki());
+		}
+		return phaseHps;
+	});
+}
+
+function getAirHps(shipHps, air) {
+	if (air != null) {
+		return getHps(shipHps, air.atacks);
+	}
+	else {
+		return null;
+	}
+}
+
+function getHps(shipHps, atacks) {
+	if (shipHps != null) {
+		var beforeShipHps = _.clone(shipHps);
+		getHougekiHps(shipHps, atacks);
+		return beforeShipHps;
+	}
+	else {
+		return null;
+	}
+}
+
+function getHougekiHps(shipHps, atacks) {
+	if (atacks != null) {
+		return _.map(atacks, function (atack) {
+			if (atack.friendAtack) {
+				originHps = shipHps.friend;
+				targetHps = shipHps.enemy;
+			}
+			else {
+				originHps = shipHps.enemy;
+				targetHps = shipHps.friend;
+			}
+			return {
+				origin: getOriginHps(originHps, atack)
+				, target: getTargetHps(targetHps, atack)
+			}
+		});
+	}
+	else {
+		return null;
+	}
+}
+
+function getOriginHps(originHps, atack) {
+	var origin = atack.origin;
+	if (origin != null) {
+		return _.map(origin, function (o) {
+			return originHps[o];
+		});
+	}
+	else {
+		return null;
+	}
+}
+
+function getTargetHps(targetHps, atack) {
+	var target = atack.target;
+	var damage = atack.damage;
+	if (target != null && damage != null) {
+		return _.map(target, function (t, i) {
+			var targetHp = targetHps[t];
+			targetHps[t] = Math.max(0, targetHp - damage[i])
+			return targetHp;
+		});
+	}
+	else {
+		return null;
 	}
 }
 
@@ -136,34 +268,42 @@ function end() { }
 // Comparable[]に変換しておく
 // undefinedはnullに変換される
 function toComparable(raw) {
-	if (isArray(raw)) {
-		if (isArray(raw[0])) {
-			var ret = new ComparableArrayArrayType(raw.length);
-			for (var j = 0; j < raw.length; ++j) {
-				ret[j] = toComparableArray(raw[j]);
-			}
-			return ret;
+	if (_.isArray(raw)) {
+		var ComparableArrayType = Java.type("java.lang.Comparable[]");
+		if (_.isArray(raw[0])) {
+			var ComparableArrayArrayType = Java.type("java.lang.Comparable[][]");
+			return Java.to(_.map(raw, toComparableArray), ComparableArrayArrayType);
 		}
 		else {
 			return toComparableArray(raw);
 		}
 	}
-	return raw;
-
-	function isArray(o) {
-		return Object.prototype.toString.call(o) === '[object Array]';
+	else {
+		return raw;
 	}
 	
 	function toComparableArray(raw) {
-		var ret = new ComparableArrayType(raw.length);
-		for(var i=0; i<raw.length; ++i) {
-			if(raw[i] == null) {
-				ret[i] = null;
+		return Java.to(_.map(raw, function (r) {
+			if (_.isUndefined(r)) {
+				return "undefined"
+			}
+			else if (_.isNull(r)) {
+				return "null"
 			}
 			else {
-				ret[i] = raw[i];
+				return r.toString()
 			}
-		}
-		return ret;
+		}), ComparableArrayType);
 	}
+}
+
+// メッセージボックス表示
+function alert(str) {
+	SWT = Java.type("org.eclipse.swt.SWT");
+	MessageBox = Java.type("org.eclipse.swt.widgets.MessageBox");
+	Display = Java.type("org.eclipse.swt.widgets.Display");
+	var shell = Display.getDefault().getActiveShell();
+	var box = new MessageBox(shell,SWT.OK);
+	box.setMessage(String(str));
+	box.open();
 }

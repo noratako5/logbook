@@ -19,46 +19,6 @@ function header() {
 		, "交戦形態"
 		, "巡目"
 		, "ダメージ"
-		, "ヒット判定"
-		, "素火力"
-		, "装備火力"
-		, "損傷比率"
-		, "交戦形態比率"
-		, "装甲"
-		, "キャップ前"
-		, "キャップ後"
-		, "攻撃力"
-		, "クリ"
-		, "クリ"
-		, "装甲大"
-		, "装甲大切捨て"
-		, "装甲小"
-		, "装甲小切捨て"
-		, "ダメ最小"
-		, "ダメ最小切捨て"
-		, "ダメ最大"
-		, "ダメ最大切捨て"
-		, "クリ最小"
-		, "クリ最小切捨て"
-		, "クリ最大"
-		, "クリ最大切捨て"
-		, ""
-		, "ミス"
-		, "通常ダメ範囲"
-		, "クリダメ範囲"
-		, "攻装備込火力"
-		, "攻cond"
-		, "攻弾薬"
-		, "攻最大弾薬"
-		, "防御艦"
-		, "防ID"
-		, "防レベル"
-		, "味方索敵"
-		, "敵索敵"
-		, "味方陣形"
-		, "敵陣形"
-		, "T字"
-		, "クリティカル"
 	];
 }
 
@@ -130,46 +90,6 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 						, battle.getFormationMatch()
 						, hougekiIndex
 						, damage
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, ""
-						, atShipSlotParam.getHoug()
-						, atShip.getCond()
-						, atShip.getBull()
-						, atShipInfo.getMaxBull()
-						, dfShipInfo.getFullName().toString()
-						, dfShipInfo.getShipId()
-						, dfShip.getLv()
-						, phaseJson.api_search[0]
-						, phaseJson.api_search[1]
-						, battle.getFormation()[0]
-						, battle.getFormation()[1]
-						, battle.getFormationMatch()
-						, api_cl[j]
 					]);
 				});
 			}
