@@ -216,6 +216,21 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             }
         });
 
+        MenuItem resetSortKeys = new MenuItem(this.opemenu, SWT.NONE);
+        resetSortKeys.setText("行の順番をリセット");
+        resetSortKeys.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                MessageBox box = new MessageBox(AbstractTableDialog.this.getShell(), SWT.YES | SWT.NO
+                        | SWT.ICON_QUESTION);
+                box.setText("行の順番をリセット");
+                box.setMessage("行の順番を初期表示に戻します。よろしいですか？");
+                if (box.open() == SWT.YES) {
+                    AbstractTableDialog.this.resetSortKeys();
+                }
+            }
+        });
+
         MenuItem resetWidth = new MenuItem(this.opemenu, SWT.NONE);
         resetWidth.setText("列幅を自動調整");
         resetWidth.addSelectionListener(new SelectionAdapter() {
@@ -497,6 +512,11 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             this.config.setColumnOrder(columnOrder);
         }
         this.table.setColumnOrder(columnOrder);
+    }
+
+    private void resetSortKeys() {
+        this.config.setSortKeys(new SortKey[3]);
+        this.reloadTable();
     }
 
     private static void renumberColumnPosision(Column[] columns) {

@@ -39,6 +39,21 @@ public class TableRowHeader implements Comparable<TableRowHeader> {
 
     @Override
     public int compareTo(TableRowHeader o) {
-        return this.comparable.compareTo(o.comparable);
+        if (this.comparable == null) {
+            if (o.comparable == null) {
+                return 0;
+            }
+            else {
+                return +1;
+            }
+        }
+        else {
+            if (o.comparable == null) {
+                return -1;
+            }
+            else {
+                return this.comparable.compareTo(o.comparable);
+            }
+        }
     }
 }
