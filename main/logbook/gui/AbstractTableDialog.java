@@ -656,7 +656,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         String title = this.getTitleMain();
         if ((this.body != null) && (this.table != null)) {
             if (this.table.getItemCount() != this.body.size()) {
-                title += " " + this.body.size() + "件中" + this.table.getItemCount() + "件のみ表示";
+                title += " | " + this.body.size() + "件中" + this.table.getItemCount() + "件のみ表示";
             }
             int selectionCount = this.table.getSelectionCount();
             if (selectionCount > 1) {
