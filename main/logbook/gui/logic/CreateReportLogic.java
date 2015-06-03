@@ -202,10 +202,8 @@ public final class CreateReportLogic {
      * 
      * @return ヘッダー
      */
-    public static String[] getCombatResultHeader(String prefix) {
-        return ArrayUtils.addAll(new String[] {
-                "No." },
-                CombatLogProxy.get(prefix).header());
+    public static String[] getCombatResultHeader(CombatLogProxy proxy) {
+        return ArrayUtils.addAll(new String[] { "No." }, proxy.header());
     }
 
     /**
@@ -213,18 +211,16 @@ public final class CreateReportLogic {
      * @param filter フィルタ
      * @return 内容
      */
-    public static List<Comparable[]> getCombatResultBody(String prefix, BattleResultFilter filter) {
+    public static List<Comparable[]> getCombatResultBody(CombatLogProxy proxy, BattleResultFilter filter) {
         List<BattleResultDto> results = BattleResultServer.get().getFilteredList(filter);
         List<Comparable[]> body = new ArrayList<Comparable[]>();
 
         int i = 0;
         for (int k = 0; k < results.size(); k++) {
             BattleResultDto item = results.get(k);
-            Comparable[][] combatExtData = item.getCombatExtData(prefix);
+            Comparable[][] combatExtData = item.getCombatExtData(proxy.getPrefix());
             for (int j = 0; j < combatExtData.length; j++, i++) {
-                body.add(ArrayUtils.addAll(new Comparable[] {
-                        new TableRowHeader(i + 1, item) },
-                        combatExtData[j]));
+                body.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(i + 1, item) }, combatExtData[j]));
             }
         }
         return body;

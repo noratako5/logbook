@@ -733,7 +733,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
     /**
      * テーブル行を作成するクリエイターを返します
      * 
-     * @return TableItemCreator
+     * @return TableItemCreatorProxy
      */
     protected abstract TableItemCreator getTableItemCreator();
 

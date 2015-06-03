@@ -1,9 +1,11 @@
 package logbook.gui;
 
 import logbook.gui.logic.CreateReportLogic;
+import logbook.gui.logic.GuiUpdator;
 import logbook.gui.logic.TableItemCreator;
+import logbook.internal.BattleResultServer;
 import logbook.scripting.CombatLogProxy;
-import logbook.scripting.TableItemCreatorProxy;
+import logbook.scripting.CombatTableItemCreatorProxy;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.MenuItem;
@@ -13,19 +15,28 @@ import org.eclipse.swt.widgets.Shell;
  * 戦闘報告書
  *
  */
-public final class CombatReportTable extends DropOrCombatReportTable {
+public final class CombatReportTable extends DropReportTable {
 
-    private final String title;
-    private final String prefix;
+    private final CombatLogProxy logProxy;
+    private final CombatTableItemCreatorProxy tableItemCreatorProxy;
+    private final String defaultTitleMain;
+    private String titleMain;
 
     /**
      * @param parent
      */
-    public CombatReportTable(Shell parent, MenuItem menuItem, String title, String prefix) {
+    public CombatReportTable(Shell parent, MenuItem menuItem, String prefix, String defaultTitleMain) {
         super(parent, menuItem);
-        this.title = title;
-        this.prefix = prefix;
-        CombatLogProxy.put(prefix);
+        this.logProxy = CombatLogProxy.get(prefix);
+        this.tableItemCreatorProxy = CombatTableItemCreatorProxy.get(prefix);
+        this.defaultTitleMain = defaultTitleMain;
+        this.titleMain = this.defaultTitleMain;
+        BattleResultServer.addListener(new GuiUpdator(new Runnable() {
+            @Override
+            public void run() {
+                CombatReportTable.this.updateTitleMain();
+            }
+        }));
     }
 
     /**
@@ -34,12 +45,19 @@ public final class CombatReportTable extends DropOrCombatReportTable {
      */
     @Override
     public String getWindowId() {
-        return this.getClass().getName() + "/" + this.title;
+        return this.getClass().getName() + "/" + this.defaultTitleMain;
     }
 
     @Override
     protected String getTitleMain() {
-        return this.title;
+        return this.titleMain;
+    }
+
+    private void updateTitleMain() {
+        this.titleMain = this.tableItemCreatorProxy.title(this.defaultTitleMain);
+        if (this.shell != null) {
+            this.shell.setText(this.getTitle());
+        }
     }
 
     @Override
@@ -49,17 +67,17 @@ public final class CombatReportTable extends DropOrCombatReportTable {
 
     @Override
     protected String[] getTableHeader() {
-        return CreateReportLogic.getCombatResultHeader(this.prefix);
+        return CreateReportLogic.getCombatResultHeader(this.logProxy);
     }
 
     @Override
     protected void updateTableBody() {
-        this.body = CreateReportLogic.getCombatResultBody(this.prefix, this.getFilter());
+        this.body = CreateReportLogic.getCombatResultBody(this.logProxy, this.getFilter());
     }
 
     @Override
     protected TableItemCreator getTableItemCreator() {
         //return CreateReportLogic.DEFAULT_TABLE_ITEM_CREATOR;
-        return TableItemCreatorProxy.get(this.prefix);
+        return this.tableItemCreatorProxy;
     }
 }

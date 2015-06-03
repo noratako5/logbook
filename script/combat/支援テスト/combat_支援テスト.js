@@ -14,11 +14,23 @@ function begin() { }
 
 function body(battle) {
 	return toComparable([
-		battle.getBattleDate()
+		toString(battle.getBattleDate())
 		, battle.getNickname()
 		, battle.getMemberId()
-		, battle.getDockSupport()
+		, toString(battle.getDockSupport())
 	]);
+}
+
+function toString(val) {
+	if (_.isUndefined(val)) {
+		return "undefined";
+	}
+	else if (_.isNull(val)) {
+		return "null";
+	}
+	else {
+		return val.toString();
+	}
 }
 
 function end() { }
@@ -44,17 +56,7 @@ function toComparable(raw) {
 	}
 	
 	function toComparableArray(raw) {
-		return Java.to(_.map(raw, function (r) {
-			if (_.isUndefined(r)) {
-				return "undefined";
-			}
-			else if (_.isNull(r)) {
-				return "null";
-			}
-			else {
-				return r;
-			}
-		}), ComparableArrayType);
+		return Java.to(raw, ComparableArrayType);
 	}
 }
 

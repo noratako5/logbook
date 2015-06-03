@@ -48,12 +48,13 @@ public class CombatLogProxy {
 
     private static final Map<String, CombatLogProxy> instance = new TreeMap<String, CombatLogProxy>();
 
-    public static void put(String prefix) {
-        instance.put(prefix, new CombatLogProxy(prefix));
-    }
-
     public static CombatLogProxy get(String prefix) {
-        return instance.get(prefix);
+        CombatLogProxy value = instance.get(prefix);
+        if (value == null) {
+            value = new CombatLogProxy(prefix);
+            instance.put(prefix, value);
+        }
+        return value;
     }
 
     public static Collection<CombatLogProxy> getAll() {
@@ -82,12 +83,16 @@ public class CombatLogProxy {
         }
     }
 
-    public CombatLogProxy(String prefix) {
+    private CombatLogProxy(String prefix) {
         this.prefix = prefix;
     }
 
     private TableScriptCollection getScript() {
         return ScriptLoader.getTableScript(this.prefix, CombatLogListener.class);
+    }
+
+    public String getPrefix() {
+        return this.prefix;
     }
 
     public String[] header() {

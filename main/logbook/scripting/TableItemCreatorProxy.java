@@ -3,6 +3,9 @@
  */
 package logbook.scripting;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import logbook.constants.AppConstants;
 import logbook.gui.logic.ColorManager;
 import logbook.gui.logic.TableItemCreator;
@@ -31,14 +34,26 @@ public class TableItemCreatorProxy implements TableItemCreator {
         }
     }
 
-    private Script script;
+    protected final String prefix;
     private final CreateMethod createMethod = new CreateMethod();
 
-    private static TableItemCreatorProxy instance = new TableItemCreatorProxy();
+    protected static final Map<String, TableItemCreatorProxy> instance = new TreeMap<String, TableItemCreatorProxy>();
 
     public static TableItemCreatorProxy get(String prefix) {
-        instance.script = ScriptLoader.getTableStyleScript(prefix);
-        return instance;
+        TableItemCreatorProxy value = instance.get(prefix);
+        if (value == null) {
+            value = new TableItemCreatorProxy(prefix);
+            instance.put(prefix, value);
+        }
+        return value;
+    }
+
+    protected TableItemCreatorProxy(String prefix) {
+        this.prefix = prefix;
+    }
+
+    protected Script getScript() {
+        return ScriptLoader.getTableStyleScript(this.prefix);
     }
 
     @Override
@@ -46,15 +61,15 @@ public class TableItemCreatorProxy implements TableItemCreator {
         this.createMethod.table = table;
         this.createMethod.data = data;
         this.createMethod.index = index;
-        TableItem item = (TableItem) this.script.invoke(this.createMethod);
+        TableItem item = (TableItem) this.getScript().invoke(this.createMethod);
         if (item == null) {
             // 作れてなかったらデフォルトロジックで作る
-            item = this.defautlCreate(table, data, index);
+            item = this.defaultCreate(table, data, index);
         }
         return item;
     }
 
-    private TableItem defautlCreate(Table table, Comparable[] data, int index) {
+    private TableItem defaultCreate(Table table, Comparable[] data, int index) {
         TableItem item = new TableItem(table, SWT.NONE);
         // 偶数行に背景色を付ける
         if ((index % 2) != 0) {
@@ -66,7 +81,7 @@ public class TableItemCreatorProxy implements TableItemCreator {
 
     @Override
     public void begin(final String[] header) {
-        this.script.invoke(new MethodInvoke() {
+        this.getScript().invoke(new MethodInvoke() {
             @Override
             public Object invoke(Object arg) {
                 ((TableItemCreator) arg).begin(header);
@@ -77,7 +92,7 @@ public class TableItemCreatorProxy implements TableItemCreator {
 
     @Override
     public void end() {
-        this.script.invoke(new MethodInvoke() {
+        this.getScript().invoke(new MethodInvoke() {
             @Override
             public Object invoke(Object arg) {
                 ((TableItemCreator) arg).end();

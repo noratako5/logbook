@@ -535,7 +535,7 @@ public final class ApplicationMain extends WindowBase {
                 String title = combatDirPath.getFileName().toString();
                 MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
                 cmdcombatItem.setText(title);
-                this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem, title, prefix));
+                this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem, prefix, title));
             }
         }
         cmdcombatroot.setMenu(cmdcombat);

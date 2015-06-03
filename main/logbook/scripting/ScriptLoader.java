@@ -536,7 +536,17 @@ public class ScriptLoader {
      * @return
      */
     public static Script getTableStyleScript(String prefix) {
-        return instance.getTableStyleScript_(prefix);
+        return instance.getTableStyleScript_(prefix, TableItemCreator.class);
+    }
+
+    /**
+     * テープル行を作るスクリプトを取得
+     * @param prefix
+     * @param type スクリプトのインターフェイス
+     * @return
+     */
+    public static Script getTableStyleScript(String prefix, Class<?> type) {
+        return instance.getTableStyleScript_(prefix, type);
     }
 
     private synchronized TableScriptCollection getTableScript_(String prefix, Class<?> type) {
@@ -568,11 +578,11 @@ public class ScriptLoader {
                 + prefix + AppConstants.TABLE_STYLE_SUFFIX + ".js");
     }
 
-    private synchronized Script getTableStyleScript_(String prefix) {
+    private synchronized Script getTableStyleScript_(String prefix, Class<?> type) {
         Script script = this.scripts.get(prefix);
         if (script == null) {
             File scriptFile = this.getTableStyleScriptFile(prefix);
-            script = new Script(scriptFile, TableItemCreator.class, scriptFile.exists());
+            script = new Script(scriptFile, type, scriptFile.exists());
             this.scripts.put(prefix, script);
         }
         else if (script.isUpdated()) {

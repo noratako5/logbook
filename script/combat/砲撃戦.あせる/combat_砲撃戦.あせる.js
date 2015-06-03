@@ -278,17 +278,7 @@ function toComparable(raw) {
 	}
 	
 	function toComparableArray(raw) {
-		return Java.to(_.map(raw, function (r) {
-			if (_.isUndefined(r)) {
-				return "undefined";
-			}
-			else if (_.isNull(r)) {
-				return "null";
-			}
-			else {
-				return r;
-			}
-		}), ComparableArrayType);
+		return Java.to(raw, ComparableArrayType);
 	}
 }
 
