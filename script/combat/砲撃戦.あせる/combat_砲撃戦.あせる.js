@@ -80,7 +80,7 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 						])[Math.floor(4 * originHp / atShipParam.getHP())]
 						, dfShip.getFullName()
 						, ({
-							1: "発見：索敵機無し"
+							1: "発見：索敵機有り"
 							, 2: "発見：索敵機有り(未帰還機有り)"
 							, 3: "発見できず：索敵機有り(未帰還機有り)"
 							, 4: "発見できず：索敵機有り"
