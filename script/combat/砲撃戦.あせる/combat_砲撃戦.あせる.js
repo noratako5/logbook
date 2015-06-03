@@ -87,7 +87,12 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 							, 5: "発見：索敵機無し"
 							, 6: "索敵フェイズ無し"
 						})[phaseJson.api_search[0]]
-						, battle.getFormationMatch()
+						, ({
+							1: "同航戦"
+							, 2: "反航戦"
+							, 3: "T字有利"
+							, 4: "T字不利"
+						})[phaseJson.api_formation[2]]
 						, hougekiIndex
 						, damage
 					]);
