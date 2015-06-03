@@ -77,7 +77,7 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 							, "小破"
 							, "小破未満"
 							, "小破未満"
-						])[Math.floor(4 * originHp / atShipParam.getHP())]
+						])[Math.floor(4 * originHp / atShipParamMax.getHP())]
 						, dfShip.getFullName()
 						, ({
 							1: "発見：索敵機有り"

@@ -70,7 +70,7 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 						atShipInfo.getFullName()
 						, atShip.getLv()
 						, atShipParam.getLuck()
-						, atShipSlotParam.getHoug()
+						, atShipParam.getHoug()
 						, atShip.getCond()
 						, atShip.getBull()
 						, atShipInfo.getMaxBull()
@@ -94,7 +94,7 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 							, "小破"
 							, "小破未満"
 							, "小破未満"
-						])[Math.floor(4 * originHp / atShipParam.getHP())]
+						])[Math.floor(4 * originHp / atShipParamMax.getHP())]
 					]);
 				});
 			}
