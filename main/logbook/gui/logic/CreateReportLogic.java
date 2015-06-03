@@ -203,7 +203,7 @@ public final class CreateReportLogic {
      * @return ヘッダー
      */
     public static String[] getCombatResultHeader(CombatLogProxy proxy) {
-        return ArrayUtils.addAll(new String[] { "No." }, proxy.header());
+        return proxy.header();
     }
 
     /**
@@ -213,17 +213,23 @@ public final class CreateReportLogic {
      */
     public static List<Comparable[]> getCombatResultBody(CombatLogProxy proxy, BattleResultFilter filter) {
         List<BattleResultDto> results = BattleResultServer.get().getFilteredList(filter);
-        List<Comparable[]> body = new ArrayList<Comparable[]>();
+        List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
 
         int i = 0;
-        for (int k = 0; k < results.size(); k++) {
-            BattleResultDto item = results.get(k);
-            Comparable[][] combatExtData = item.getCombatExtData(proxy.getPrefix());
-            for (int j = 0; j < combatExtData.length; j++, i++) {
-                body.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(i + 1, item) }, combatExtData[j]));
+        for (BattleResultDto item : results) {
+            for (Comparable[] body : item.getCombatExtData(proxy.getPrefix())) {
+                Comparable[] rows = new Comparable[body.length];
+                if (rows.length > 0) {
+                    rows[0] = new TableRowHeader(i + 1, item, body[0]);
+                    ++i;
+                    for (int j = 1; j < rows.length; ++j) {
+                        rows[j] = body[j];
+                    }
+                }
+                allBodies.add(rows);
             }
         }
-        return body;
+        return allBodies;
     }
 
     /**
