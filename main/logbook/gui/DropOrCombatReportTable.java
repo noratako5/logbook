@@ -73,6 +73,7 @@ public abstract class DropOrCombatReportTable extends AbstractTableDialog {
     @Override
     protected void createContents() {
 
+        new MenuItem(this.opemenu, SWT.SEPARATOR);
         final MenuItem reloadDB = new MenuItem(this.opemenu, SWT.NONE);
         reloadDB.setText("データベースを再読み込み");
         reloadDB.addSelectionListener(new SelectionAdapter() {
