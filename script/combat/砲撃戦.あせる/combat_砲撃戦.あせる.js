@@ -280,13 +280,13 @@ function toComparable(raw) {
 	function toComparableArray(raw) {
 		return Java.to(_.map(raw, function (r) {
 			if (_.isUndefined(r)) {
-				return "undefined"
+				return "undefined";
 			}
 			else if (_.isNull(r)) {
-				return "null"
+				return "null";
 			}
 			else {
-				return r.toString()
+				return r;
 			}
 		}), ComparableArrayType);
 	}
