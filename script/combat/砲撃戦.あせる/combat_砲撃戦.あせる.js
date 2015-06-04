@@ -41,6 +41,12 @@ function body(battle) {
 
 function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougeki, hougekiIndex) {
 	if (atacks != null && hougekiHps != null && api_hougeki != null) {
+		if (battle.getBasicJsonString() != null) {
+			var nickname = JSON.parse(battle.getBasicJsonString()).api_nickname;
+		}
+		else {
+			var nickname 
+		}
 		var api_cl_list = api_hougeki.api_cl_list;
 		_.forEach(_.range(atacks.length), function (i) {
 			var atack = atacks[i];
@@ -61,7 +67,7 @@ function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougek
 					var targetHp = atackHps.target[j];
 					var damage = atack.damage[j];
 					raw.push([
-						battle.getNickname()
+						nickname
 						, battle.getHqLv()
 						, atShip.getFullName()
 						, atShip.getLv()
@@ -283,7 +289,14 @@ function toComparable(raw) {
 	}
 	
 	function toComparableArray(raw) {
-		return Java.to(raw, ComparableArrayType);
+		return Java.to(_.map(raw, function (r) {
+			if (r != null) {
+				return r;
+			}
+			else {
+				return null;
+			}
+		}), ComparableArrayType);
 	}
 }
 

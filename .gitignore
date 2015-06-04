@@ -6,6 +6,7 @@
 /doc
 /config
 /logs
+/json
 
 *.csv
 *.dat

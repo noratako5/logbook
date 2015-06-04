@@ -80,7 +80,7 @@ public final class ShipInfoDto extends AbstractDto {
     private ShipParameters max;
 
     @Tag(20)
-    private String json;
+    private final String json;
 
     /**
      * コンストラクター
@@ -101,6 +101,7 @@ public final class ShipInfoDto extends AbstractDto {
         this.maxFuel = maxFuel;
         this.param = new ShipParameters();
         this.max = new ShipParameters();
+        this.json = null;
     }
 
     /**
@@ -133,7 +134,7 @@ public final class ShipInfoDto extends AbstractDto {
         ShipParameters[] params = ShipParameters.fromMasterShip(object);
         this.param = params[0];
         this.max = params[1];
-        this.json = object.toString();
+        this.json = JsonUtils.toString(object);
     }
 
     public String getFullName() {
@@ -355,6 +356,13 @@ public final class ShipInfoDto extends AbstractDto {
      */
     public JsonObject getJson() {
         return JsonUtils.fromString(this.json);
+    }
+
+    /**
+     * @return json文字列
+     */
+    public String getJsonString() {
+        return this.json;
     }
 
     /**

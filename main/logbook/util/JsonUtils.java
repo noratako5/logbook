@@ -39,9 +39,23 @@ public class JsonUtils {
     }
 
     public static JsonObject fromString(String str) {
-        JsonReader jsonReader = Json.createReader(new StringReader(str));
-        JsonObject object = jsonReader.readObject();
-        jsonReader.close();
-        return object;
+        if (str != null) {
+            JsonReader jsonReader = Json.createReader(new StringReader(str));
+            JsonObject object = jsonReader.readObject();
+            jsonReader.close();
+            return object;
+        }
+        else {
+            return null;
+        }
+    }
+
+    public static String toString(JsonObject object) {
+        if (object != null) {
+            return object.toString();
+        }
+        else {
+            return null;
+        }
     }
 }

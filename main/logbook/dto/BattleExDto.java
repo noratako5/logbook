@@ -168,16 +168,10 @@ public class BattleExDto extends AbstractDto {
     @Tag(51)
     private String resultJson;
 
-    /** ユーザのニックネーム */
     @Tag(52)
-    private String nickname;
+    private String basicJson;
 
-    /** ユーザのメンバID */
     @Tag(53)
-    private long memberId;
-
-    /** 支援艦隊 */
-    @Tag(54)
     private DockDto support;
 
     /////////////////////////////////////////////////
@@ -340,7 +334,7 @@ public class BattleExDto extends AbstractDto {
             this.doAtack(this.hougeki2);
             this.doAtack(this.hougeki3);
 
-            this.json = object.toString();
+            this.json = JsonUtils.toString(object);
         }
 
         public void battleDamage(BattleExDto battle) {
@@ -652,10 +646,15 @@ public class BattleExDto extends AbstractDto {
          * @return
          */
         public JsonObject getJson() {
-            if (this.json == null) {
-                return null;
-            }
             return JsonUtils.fromString(this.json);
+        }
+
+        /**
+         * 受け取ったJSON文字列
+         * @return
+         */
+        public String getJsonString() {
+            return this.json;
         }
 
         /**
@@ -829,16 +828,14 @@ public class BattleExDto extends AbstractDto {
 
     /**
      * 母港情報を設定
+     * @param object
      * @param shipSpace
      * @param itemSpace
-     * @param nickname
-     * @param memberId
      */
-    public void setBasicInfo(int shipSpace, int itemSpace, String nickname, long memberId) {
+    public void setBasicInfo(JsonObject object, int shipSpace, int itemSpace) {
+        this.basicJson = JsonUtils.toString(object);
         this.shipSpace = shipSpace;
         this.itemSpace = itemSpace;
-        this.nickname = nickname;
-        this.memberId = memberId;
     }
 
     /**
@@ -1088,7 +1085,7 @@ public class BattleExDto extends AbstractDto {
      * @param mapInfo マス情報
      */
     public void setResult(JsonObject object, MapCellDto mapInfo) {
-        this.resultJson = object.toString();
+        this.resultJson = JsonUtils.toString(object);
         this.mapCellDto = mapInfo;
         this.readResultJson(object);
     }
@@ -1320,14 +1317,6 @@ public class BattleExDto extends AbstractDto {
         if (this.friends.size() < 2)
             return null;
         return this.friends.get(1);
-    }
-
-    /**
-     * 支援艦隊
-     * @return
-     */
-    public DockDto getDockSupport() {
-        return this.support;
     }
 
     /**
@@ -1574,22 +1563,6 @@ public class BattleExDto extends AbstractDto {
     }
 
     /**
-     * ユーザのニックネーム
-     * @return nickname
-     */
-    public String getNickname() {
-        return this.nickname;
-    }
-
-    /**
-     * ユーザのメンバID
-     * @return nickname
-     */
-    public long getMemberId() {
-        return this.memberId;
-    }
-
-    /**
      * 連合艦隊における退避意見 [退避する艦(0-11), 護衛艦(0-11)]
      * @return escapeInfo
      */
@@ -1611,10 +1584,11 @@ public class BattleExDto extends AbstractDto {
      * @return resultJson
      */
     public JsonObject getResultJson() {
-        if (this.resultJson == null) {
-            return null;
-        }
         return JsonUtils.fromString(this.resultJson);
+    }
+
+    public String getResultJsonString() {
+        return this.resultJson;
     }
 
     /**
@@ -1629,5 +1603,21 @@ public class BattleExDto extends AbstractDto {
      */
     public int getDropShipId() {
         return this.dropShipId;
+    }
+
+    public JsonObject getBasicJson() {
+        return JsonUtils.fromString(this.basicJson);
+    }
+
+    public String getBasicJsonString() {
+        return this.basicJson;
+    }
+
+    /**
+     * 支援艦隊
+     * @return
+     */
+    public DockDto getDockSupport() {
+        return this.support;
     }
 }

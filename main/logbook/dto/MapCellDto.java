@@ -7,6 +7,7 @@ import javax.json.JsonObject;
 
 import logbook.internal.EnemyData;
 import logbook.internal.MasterData;
+import logbook.util.JsonUtils;
 
 import com.dyuproject.protostuff.Tag;
 
@@ -32,6 +33,8 @@ public class MapCellDto implements Comparable<MapCellDto> {
     private EnemyData enemyData;
     @Tag(10)
     private boolean start;
+    @Tag(11)
+    private final String json;
 
     public MapCellDto(JsonObject object, boolean start) {
         this.map[0] = object.getInt("api_maparea_id");
@@ -48,6 +51,7 @@ public class MapCellDto implements Comparable<MapCellDto> {
         this.bosscellNo = object.getInt("api_bosscell_no");
         this.enemyData = EnemyData.get(this.enemyId);
         this.start = start;
+        this.json = JsonUtils.toString(object);
     }
 
     private String toString(boolean detailed, boolean withBoss) {
@@ -197,4 +201,17 @@ public class MapCellDto implements Comparable<MapCellDto> {
         this.start = start;
     }
 
+    /**
+     * JSONオブジェクト
+     */
+    public JsonObject getJson() {
+        return JsonUtils.fromString(this.json);
+    }
+
+    /**
+     * JSON文字列
+     */
+    public String getJsonString() {
+        return this.json;
+    }
 }

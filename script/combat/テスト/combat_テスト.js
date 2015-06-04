@@ -3,30 +3,61 @@ load("script/util/underscore.js");
 
 function header() {
 	return [
-		"日付"
-		, "提督名"
-		, "提督ID"
-		, "支援"
+		"1"
+		, "2"
+		, "3"
+		, "4"
+		, "5"
+		, "6"
+		, "7"
+		, "8"
+		, "9"
+		, "10"
+		, "11"
+		, "12"
+		, "13"
+		, "14"
+		, "15"
+		, "16"
+		, "17"
+		, "18"
+		
 	];
 }
 
 function begin() { }
 
 function body(battle) {
+	var basicJson = battle.getBasicJsonString();
+	if (basicJson != null) {
+		var nickname = JSON.parse(basicJson).api_nickname;
+	}
 	return toComparable([
-		toString(battle.getBattleDate())
-		, battle.getNickname()
-		, battle.getMemberId()
-		, toString(battle.getDockSupport())
+		type(nickname)
+		, type(battle.resultJson)
+		, type(battle.getResultJsonString())
+		, type(battle.basicJson)
+		, type(battle.getBasicJsonString())
+		, type(battle.support)
+		, type(battle.getDockSupport())
 	]);
+}
+
+function type(val) {
+	if (val === null) {
+		return "Null";
+	}
+	else {
+		return Object.prototype.toString.call(val).match(/^\[object (.*)\]$/)[1];
+	}
 }
 
 function toString(val) {
 	if (_.isUndefined(val)) {
-		return "undefined";
+		return "Undefined";
 	}
 	else if (_.isNull(val)) {
-		return "null";
+		return "Null";
 	}
 	else {
 		return val.toString();
