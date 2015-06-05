@@ -203,7 +203,7 @@ public final class CreateReportLogic {
      * @return ヘッダー
      */
     public static String[] getCombatResultHeader(CombatLogProxy proxy) {
-        return proxy.header();
+        return ArrayUtils.addAll(new String[] { "No." }, proxy.header());
     }
 
     /**
@@ -218,15 +218,7 @@ public final class CreateReportLogic {
         int i = 0;
         for (BattleResultDto item : results) {
             for (Comparable[] body : item.getCombatExtData(proxy.getPrefix())) {
-                Comparable[] rows = new Comparable[body.length];
-                if (rows.length > 0) {
-                    rows[0] = new TableRowHeader(i + 1, item, body[0]);
-                    ++i;
-                    for (int j = 1; j < rows.length; ++j) {
-                        rows[j] = body[j];
-                    }
-                }
-                allBodies.add(rows);
+                allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++i, item) }, body));
             }
         }
         return allBodies;
