@@ -29,6 +29,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import logbook.constants.AppConstants;
+import logbook.gui.logic.TableCell;
 import logbook.gui.logic.TableItemCreator;
 import logbook.internal.LoggerHolder;
 
@@ -314,26 +315,23 @@ public class ScriptLoader {
             if (this.exception) {
                 return new Comparable[][] { this.exceptionBody };
             }
-            else if (obj instanceof Comparable[][]) {
-                Comparable[][] anyRaw = (Comparable[][]) obj;
-                for (int j = 0; j < anyRaw.length; ++j) {
-                    Comparable[] raw = anyRaw[j];
-                    if ((raw == null) || (raw.length != this.header.length)) {
-                        anyRaw[j] = this.resize(raw);
+            else if (obj instanceof Object[]) {
+                Object[] array = (Object[]) obj;
+                if (array.length > 0) {
+                    if (array[0] instanceof Object[]) {
+                        Object[][] sourceTable = (Object[][]) obj;
+                        Comparable[][] targetTable = new Comparable[sourceTable.length][];
+                        for (int j = 0; j < sourceTable.length; ++j) {
+                            targetTable[j] = this.body(sourceTable[j]);
+                        }
+                        return targetTable;
+                    }
+                    else {
+                        return new Comparable[][] { this.body(array) };
                     }
                 }
-                return anyRaw;
-            }
-            else if (obj instanceof Comparable[]) {
-                Comparable[] raw = (Comparable[]) obj;
-                if (raw.length == 0) {
-                    return new Comparable[][] {};
-                }
-                else if (raw.length != this.header.length) {
-                    return new Comparable[][] { this.resize(raw) };
-                }
                 else {
-                    return new Comparable[][] { raw };
+                    return new Comparable[][] {};
                 }
             }
             else if (obj == null) {
@@ -342,6 +340,20 @@ public class ScriptLoader {
             else {
                 return new Comparable[][] { this.exceptionBody };
             }
+        }
+
+        private Comparable[] body(Object[] sourceRow) {
+            Comparable[] targetRow = new Comparable[sourceRow.length];
+            for (int i = 0; i < targetRow.length; ++i) {
+                Object sourceCell = sourceRow[i];
+                if (sourceCell instanceof Comparable) {
+                    targetRow[i] = (Comparable) sourceCell;
+                }
+                else {
+                    targetRow[i] = new TableCell(String.valueOf(sourceCell));
+                }
+            }
+            return this.resize(targetRow);
         }
 
         private Comparable[] resize(Comparable[] raw) {
