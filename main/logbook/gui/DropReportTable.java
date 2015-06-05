@@ -95,6 +95,23 @@ public class DropReportTable extends AbstractTableDialog {
                 }
             }
         });
+        final MenuItem restoreDB = new MenuItem(this.opemenu, SWT.NONE);
+        restoreDB.setText("データベースを修復");
+        restoreDB.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                MessageBox box = new MessageBox(DropReportTable.this.shell, SWT.YES | SWT.NO
+                        | SWT.ICON_QUESTION);
+                box.setText("データベース修復");
+                box.setMessage("データベースを修復します。よろしいですか？");
+
+                if (box.open() == SWT.YES) {
+                    BattleResultServer.get().restore();
+                    BattleResultServer.get().reloadFiles();
+                    DropReportTable.this.reloadTable();
+                }
+            }
+        });
 
         this.table.addMouseListener(new MouseAdapter() {
             @Override
