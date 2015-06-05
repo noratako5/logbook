@@ -8,5 +8,5 @@ function create(table, data, index) {
 function end() { }
 
 function title(defaultTitle) {
-	return defaultTitle + " 1.9.0.8"
+	return defaultTitle + " 1.9.0.9"
 }
