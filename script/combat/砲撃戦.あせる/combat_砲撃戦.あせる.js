@@ -8,17 +8,32 @@ function header() {
 		, "攻撃艦"
 		, "攻レベル"
 		, "攻運"
-		, "装備"
+		, "攻装備"
 		, "攻装備1"
 		, "攻装備2"
 		, "攻装備3"
 		, "攻装備4"
-		, "損傷状況"
-		, "敵艦"
+		, "攻損傷"
+		, "防御艦"
 		, "索敵"
-		, "交戦形態"
+		, "T字"
 		, "巡目"
 		, "ダメージ"
+		, "クリティカル"
+		, "攻装備込火力"
+		, "攻cond"
+		, "攻弾薬"
+		, "攻最大弾薬"
+		, "攻装備レベル1"
+		, "攻装備レベル2"
+		, "攻装備レベル3"
+		, "攻装備レベル4"
+		, "防ID"
+		, "防レベル"
+		, "味方索敵"
+		, "敵索敵"
+		, "味方陣形"
+		, "敵陣形"
 	];
 }
 
@@ -37,130 +52,165 @@ function body(battle) {
 		onHougeki(raw, battle, phase, phaseJson, phase.getHougeki3(), phaseHps.hougeki3, phaseJson.api_hougeki3, 3);
 	});
 	return toComparable(raw);
-}
 
-function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougeki, hougekiIndex) {
-	if (atacks != null && hougekiHps != null && api_hougeki != null) {
-		if (battle.getBasicJsonString() != null) {
-			var nickname = JSON.parse(battle.getBasicJsonString()).api_nickname;
+	function onHougeki(raw, battle, phase, phaseJson, atacks, hougekiHps, api_hougeki, hougekiIndex) {
+		if (atacks != null && hougekiHps != null && api_hougeki != null) {
+			if (battle.getBasicJsonString() != null) {
+				var nickname = JSON.parse(battle.getBasicJsonString()).api_nickname;
+			}
+			else {
+				var nickname 
+			}
+			var api_cl_list = api_hougeki.api_cl_list;
+			_.forEach(_.range(atacks.length), function (i) {
+				var atack = atacks[i];
+				if (atack.friendAtack) {
+					var o = atack.origin[0];
+					var atShip = getAtShip(battle, atack, o);
+					var atShipParam = atShip.getParam();
+					var atShipParamMax = atShip.getMax();
+					var atShipSlotParam = atShip.getSlotParam();
+					var atShipInfo = atShip.getShipInfo();
+					var atShipItemList = atShip.getItem2();
+					var atackHps = hougekiHps[i];
+					var originHp = atackHps.origin[0];
+					var api_cl = api_cl_list[i + 1];
+					_.forEach(atack.target, function (t, j) {
+						var dfShip = getDfShip(battle, atack, t);
+						var dfShipInfo = dfShip.getShipInfo();
+						var targetHp = atackHps.target[j];
+						var damage = atack.damage[j];
+						raw.push([
+							nickname
+							, battle.getHqLv()
+							, atShip.getFullName()
+							, atShip.getLv()
+							, atShipParam.getLuck()
+							, ""
+							, getShipItemName(atShip, 0)
+							, getShipItemName(atShip, 1)
+							, getShipItemName(atShip, 2)
+							, getShipItemName(atShip, 3)
+							, ([
+								"轟沈"
+								, "大破"
+								, "中破"
+								, "小破"
+								, "小破未満"
+							])[Math.ceil(4 * originHp / atShipParamMax.getHP())]
+							, dfShip.getFullName()
+							, ({
+								1: "発見：索敵機有り"
+								, 2: "発見：索敵機有り(未帰還機有り)"
+								, 3: "発見できず：索敵機有り(未帰還機有り)"
+								, 4: "発見できず：索敵機有り"
+								, 5: "発見：索敵機無し"
+								, 6: "索敵フェイズ無し"
+							})[phaseJson.api_search[0]]
+							, ({
+								1: "同航戦"
+								, 2: "反航戦"
+								, 3: "T字有利"
+								, 4: "T字不利"
+							})[phaseJson.api_formation[2]]
+							, hougekiIndex
+							, damage
+							, api_cl[j] >>> 0
+							, atShipParam.getHoug()
+							, atShip.getCond()
+							, atShip.getBull()
+							, atShipInfo.getMaxBull()
+							, getShipItemLevel(atShip, 0)
+							, getShipItemLevel(atShip, 1)
+							, getShipItemLevel(atShip, 2)
+							, getShipItemLevel(atShip, 3)
+							, dfShipInfo.getShipId()
+							, dfShip.getLv()
+							, phaseJson.api_search[0] >>> 0
+							, phaseJson.api_search[1] >>> 0
+							, battle.getFormation()[0]
+							, battle.getFormation()[1]
+						]);
+					});
+				}
+			});
+		}
+	}
+
+	function getAtShip(battle, atack, i) {
+		if (atack.friendAtack) {
+			return getFriendShip(battle, i);
 		}
 		else {
-			var nickname 
+			return getEnemyShip(battle, i);
 		}
-		var api_cl_list = api_hougeki.api_cl_list;
-		_.forEach(_.range(atacks.length), function (i) {
-			var atack = atacks[i];
-			if (atack.friendAtack) {
-				var o = atack.origin[0];
-				var atShip = getAtShip(battle, atack, o);
-				var atShipParam = atShip.getParam();
-				var atShipParamMax = atShip.getMax();
-				var atShipSlotParam = atShip.getSlotParam();
-				var atShipInfo = atShip.getShipInfo();
-				var atShipItemList = atShip.getItem2();
-				var atackHps = hougekiHps[i];
-				var originHp = atackHps.origin[0];
-				var api_cl = api_cl_list[i + 1];
-				_.forEach(atack.target, function (t, j) {
-					var dfShip = getDfShip(battle, atack, t);
-					var dfShipInfo = dfShip.getShipInfo();
-					var targetHp = atackHps.target[j];
-					var damage = atack.damage[j];
-					raw.push([
-						nickname
-						, battle.getHqLv()
-						, atShip.getFullName()
-						, atShip.getLv()
-						, atShipParam.getLuck()
-						, ""
-						, getShipItemName(atShip, 0)
-						, getShipItemName(atShip, 1)
-						, getShipItemName(atShip, 2)
-						, getShipItemName(atShip, 3)
-						, ([
-							"大破"
-							, "中破"
-							, "小破"
-							, "小破未満"
-							, "小破未満"
-						])[Math.floor(4 * originHp / atShipParamMax.getHP())]
-						, dfShip.getFullName()
-						, ({
-							1: "発見：索敵機有り"
-							, 2: "発見：索敵機有り(未帰還機有り)"
-							, 3: "発見できず：索敵機有り(未帰還機有り)"
-							, 4: "発見できず：索敵機有り"
-							, 5: "発見：索敵機無し"
-							, 6: "索敵フェイズ無し"
-						})[phaseJson.api_search[0]]
-						, ({
-							1: "同航戦"
-							, 2: "反航戦"
-							, 3: "T字有利"
-							, 4: "T字不利"
-						})[phaseJson.api_formation[2]]
-						, hougekiIndex
-						, damage
-					]);
-				});
-			}
-		});
 	}
-}
 
-function getAtShip(battle, atack, i) {
-	if (atack.friendAtack) {
-		return getFriendShip(battle, i);
+	function getDfShip(battle, atack, i) {
+		if (atack.friendAtack) {
+			return getEnemyShip(battle, i);
+		}
+		else {
+			return getFriendShip(battle, i);
+		}
 	}
-	else {
-		return getEnemyShip(battle, i);
-	}
-}
 
-function getDfShip(battle, atack, i) {
-	if (atack.friendAtack) {
-		return getEnemyShip(battle, i);
+	function getFriendShip(battle, i) {
+		if (i < 6) {
+			return battle.getDock().getShips()[i];
+		}
+		else {
+			return battle.getDockCombined().getShips()[i - 6];
+		}
 	}
-	else {
-		return getFriendShip(battle, i);
-	}
-}
 
-function getFriendShip(battle, i) {
-	if (i < 6) {
-		return battle.getDock().getShips()[i];
+	function getEnemyShip(battle, i) {
+		return battle.getEnemy()[i];
 	}
-	else {
-		return battle.getDockCombined().getShips()[i - 6];
+	
+	function getShipItemName(ships, i) {
+		var itemInfo = getShipItemInfo(ships, i);
+		if (itemInfo != null) {
+			return itemInfo.getName();
+		}
+		else {
+			return "なし";
+		}
 	}
-}
+	
+	function getShipItemLevel(ships, i) {
+		var item = getShipItem(ships, i);
+		if (item != null) {
+			return item.getLevel();
+		}
+		else {
+			return 0;
+		}
+	}
 
-function getEnemyShip(battle, i) {
-	return battle.getEnemy()[i];
-}
-
-function getShipItemName(ships, i) {
-	var shipItem = getShipItem(ships, i);
-	if (shipItem != null) {
-		return shipItem.getInfo().getName();
+	function getShipItem(ships, i) {
+		var shipItemList = ships.getItem2();
+		if (i < shipItemList.length) {
+			return shipItemList[i];
+		}
+		else {
+			return null;
+		}
 	}
-	else {
-		return "なし";
-	}
-}
-
-function getShipItem(ships, i) {
-	var shipItemList = ships.getItem2();
-	if (i < shipItemList.length) {
-		return shipItemList[i];
-	}
-	else {
-		return null;
+	
+	function getShipItemInfo(ships, i) {
+		var shipItemList = ships.getItem();
+		if (i < shipItemList.length) {
+			return shipItemList[i];
+		}
+		else {
+			return null;
+		}
 	}
 }
 
 function getBattleHps(battle) {
-	shipHps = {
+	var shipHps = {
 		friend: new Array(6 * 2)
 		, enemy: new Array(6)
 	};
@@ -195,74 +245,74 @@ function getBattleHps(battle) {
 		}
 		return phaseHps;
 	});
-}
 
-function getAirHps(shipHps, air) {
-	if (air != null) {
-		return getHps(shipHps, air.atacks);
+	function getAirHps(shipHps, air) {
+		if (air != null) {
+			return getHps(shipHps, air.atacks);
+		}
+		else {
+			return null;
+		}
 	}
-	else {
-		return null;
-	}
-}
 
-function getHps(shipHps, atacks) {
-	if (shipHps != null) {
-		var beforeShipHps = _.clone(shipHps);
-		getHougekiHps(shipHps, atacks);
-		return beforeShipHps;
+	function getHps(shipHps, atacks) {
+		if (atacks != null) {
+			var beforeShipHps = _.clone(shipHps);
+			getHougekiHps(shipHps, atacks);
+			return beforeShipHps;
+		}
+		else {
+			return null;
+		}
 	}
-	else {
-		return null;
-	}
-}
 
-function getHougekiHps(shipHps, atacks) {
-	if (atacks != null) {
-		return _.map(atacks, function (atack) {
-			if (atack.friendAtack) {
-				originHps = shipHps.friend;
-				targetHps = shipHps.enemy;
-			}
-			else {
-				originHps = shipHps.enemy;
-				targetHps = shipHps.friend;
-			}
-			return {
-				origin: getOriginHps(originHps, atack)
-				, target: getTargetHps(targetHps, atack)
-			}
-		});
+	function getHougekiHps(shipHps, atacks) {
+		if (atacks != null) {
+			return _.map(atacks, function (atack) {
+				if (atack.friendAtack) {
+					var originHps = shipHps.friend;
+					var targetHps = shipHps.enemy;
+				}
+				else {
+					var originHps = shipHps.enemy;
+					var targetHps = shipHps.friend;
+				}
+				return {
+					origin: getOriginHps(originHps, atack)
+					, target: getTargetHps(targetHps, atack)
+				}
+			});
+		}
+		else {
+			return null;
+		}
 	}
-	else {
-		return null;
-	}
-}
 
-function getOriginHps(originHps, atack) {
-	var origin = atack.origin;
-	if (origin != null) {
-		return _.map(origin, function (o) {
-			return originHps[o];
-		});
+	function getOriginHps(originHps, atack) {
+		var origin = atack.origin;
+		if (origin != null) {
+			return _.map(origin, function (o) {
+				return originHps[o];
+			});
+		}
+		else {
+			return null;
+		}
 	}
-	else {
-		return null;
-	}
-}
 
-function getTargetHps(targetHps, atack) {
-	var target = atack.target;
-	var damage = atack.damage;
-	if (target != null && damage != null) {
-		return _.map(target, function (t, i) {
-			var targetHp = targetHps[t];
-			targetHps[t] = Math.max(0, targetHp - damage[i])
-			return targetHp;
-		});
-	}
-	else {
-		return null;
+	function getTargetHps(targetHps, atack) {
+		var target = atack.target;
+		var damage = atack.damage;
+		if (target != null && damage != null) {
+			return _.map(target, function (t, i) {
+				var targetHp = targetHps[t];
+				targetHps[t] = Math.max(0, targetHp - damage[i]);
+				return targetHp;
+			});
+		}
+		else {
+			return null;
+		}
 	}
 }
 
