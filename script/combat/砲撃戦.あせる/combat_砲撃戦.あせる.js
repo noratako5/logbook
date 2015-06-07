@@ -34,6 +34,7 @@ function header() {
 		, "敵索敵"
 		, "味方陣形"
 		, "敵陣形"
+		, "攻編成順"
 	];
 }
 
@@ -130,6 +131,7 @@ function body(battle) {
 							, phaseJson.api_search[1] >>> 0
 							, battle.getFormation()[0]
 							, battle.getFormation()[1]
+							, (o + 1) >>> 0
 						]);
 					});
 				}
