@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -172,7 +174,7 @@ public class BattleExDto extends AbstractDto {
     private String basicJson;
 
     @Tag(53)
-    private DockDto support;
+    private final Map<String, DockDto> docksMission = new TreeMap<String, DockDto>();
 
     /////////////////////////////////////////////////
 
@@ -917,27 +919,16 @@ public class BattleExDto extends AbstractDto {
                     }
                 }
             }
-            JsonNumber support_flag = object.getJsonNumber("api_support_flag");
-            if ((support_flag != null) && (support_flag.intValue() != 0)) {
-                JsonObject support = object.getJsonObject("api_support_info");
-                JsonValue support_hourai = support.get("api_support_hourai");
-                JsonValue support_air = support.get("api_support_airatack");
-                if ((support_hourai != null) && (support_hourai != JsonValue.NULL)) {
-                    JsonValue support_deck_id = ((JsonObject) support_hourai).get("api_deck_id");
-                    this.support = GlobalContext.getDock(support_deck_id.toString());
-                }
-                else if ((support_air != null) && (support_air != JsonValue.NULL)) {
-                    JsonValue support_deck_id = ((JsonObject) support_air).get("api_deck_id");
-                    this.support = GlobalContext.getDock(support_deck_id.toString());
-                }
-            }
 
+            Map<String, DockDto> docks = new TreeMap(GlobalContext.getDock());
             if (this.friends.size() == 0) { // 再読み込みの場合はスキップ
-                this.friends.add(GlobalContext.getDock(dockId));
+                this.friends.add(docks.remove(dockId));
                 if (numFshipsCombined > 0) {
-                    this.friends.add(GlobalContext.getDock("2"));
+                    this.friends.add(docks.remove("2"));
                 }
             }
+            this.docksMission.putAll(docks);
+            ;
 
             JsonArray shipKe = object.getJsonArray("api_ship_ke");
             JsonArray eSlots = object.getJsonArray("api_eSlot");
@@ -1643,10 +1634,10 @@ public class BattleExDto extends AbstractDto {
     }
 
     /**
-     * 支援艦隊
+     * 遠征艦隊
      * @return
      */
-    public DockDto getDockSupport() {
-        return this.support;
+    public Map<String, DockDto> getDocksMission() {
+        return this.docksMission;
     }
 }
