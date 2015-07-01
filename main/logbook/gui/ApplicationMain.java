@@ -3,7 +3,6 @@ package logbook.gui;
 import java.awt.Desktop;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -522,20 +521,27 @@ public final class ApplicationMain extends WindowBase {
         Menu cmdcombat = new Menu(cmdcombatroot);
         Path scriptDirPath = AppConstants.SCRIPT_DIR.toPath();
         File combatRootDir = scriptDirPath.resolve(AppConstants.COMBATTABLE_PREFIX).toFile();
-        if (combatRootDir.exists()) {
-            for (File combatDir : combatRootDir.listFiles(new FileFilter() {
-                @Override
-                public boolean accept(File file) {
-                    return file.isDirectory();
+        if (combatRootDir.isDirectory()) {
+            for (File combatDir : combatRootDir.listFiles()) {
+                if (combatDir.isDirectory()) {
+                    for (File combatFile : combatDir.listFiles()) {
+                        if (combatFile.isFile()) {
+                            String combatFileName = combatFile.getName();
+                            if (combatFileName.startsWith(AppConstants.COMBATTABLE_PREFIX + "_")
+                                    && combatFileName.endsWith(".js")) {
+                                Path combatDirPath = combatDir.toPath();
+                                String prefix = scriptDirPath.relativize(
+                                        combatDirPath.resolve(AppConstants.COMBATTABLE_PREFIX)).toString();
+                                String title = combatDirPath.getFileName().toString();
+                                MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
+                                cmdcombatItem.setText(title);
+                                this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem,
+                                        prefix, title));
+                                break;
+                            }
+                        }
+                    }
                 }
-            })) {
-                Path combatDirPath = combatDir.toPath();
-                String prefix = scriptDirPath.relativize(combatDirPath.resolve(AppConstants.COMBATTABLE_PREFIX))
-                        .toString();
-                String title = combatDirPath.getFileName().toString();
-                MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
-                cmdcombatItem.setText(title);
-                this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem, prefix, title));
             }
         }
         cmdcombatroot.setMenu(cmdcombat);
