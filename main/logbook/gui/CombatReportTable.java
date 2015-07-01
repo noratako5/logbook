@@ -1,11 +1,9 @@
 package logbook.gui;
 
 import logbook.gui.logic.CreateReportLogic;
-import logbook.gui.logic.GuiUpdator;
 import logbook.gui.logic.TableItemCreator;
-import logbook.internal.BattleResultServer;
 import logbook.scripting.CombatLogProxy;
-import logbook.scripting.CombatTableItemCreatorProxy;
+import logbook.scripting.TableItemCreatorProxy;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.MenuItem;
@@ -18,9 +16,9 @@ import org.eclipse.swt.widgets.Shell;
 public final class CombatReportTable extends DropReportTable {
 
     private final CombatLogProxy logProxy;
-    private final CombatTableItemCreatorProxy tableItemCreatorProxy;
+    private final TableItemCreatorProxy tableItemCreatorProxy;
     private final String defaultTitleMain;
-    private String titleMain;
+    private final String titleMain;
 
     /**
      * @param parent
@@ -28,15 +26,9 @@ public final class CombatReportTable extends DropReportTable {
     public CombatReportTable(Shell parent, MenuItem menuItem, String prefix, String defaultTitleMain) {
         super(parent, menuItem);
         this.logProxy = CombatLogProxy.get(prefix);
-        this.tableItemCreatorProxy = CombatTableItemCreatorProxy.get(prefix);
+        this.tableItemCreatorProxy = TableItemCreatorProxy.get(prefix);
         this.defaultTitleMain = defaultTitleMain;
         this.titleMain = this.defaultTitleMain;
-        BattleResultServer.addListener(new GuiUpdator(new Runnable() {
-            @Override
-            public void run() {
-                CombatReportTable.this.updateTitleMain();
-            }
-        }));
     }
 
     /**
@@ -51,13 +43,6 @@ public final class CombatReportTable extends DropReportTable {
     @Override
     protected String getTitleMain() {
         return this.titleMain;
-    }
-
-    private void updateTitleMain() {
-        this.titleMain = this.tableItemCreatorProxy.title(this.defaultTitleMain);
-        if (this.shell != null) {
-            this.shell.setText(this.getTitle());
-        }
     }
 
     @Override
