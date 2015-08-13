@@ -80,7 +80,7 @@ public abstract class ShipBaseDto extends AbstractDto {
      * @param shipId ship_id
      * @param slot 装備
      */
-    public ShipBaseDto(ShipInfoDto shipinfo, int[] slot, boolean friend) {
+    public ShipBaseDto(ShipInfoDto shipinfo, int[] slot, int[] param, boolean friend) {
         this.shipInfo = shipinfo;
         this.slot = slot;
         if (friend) {
@@ -95,7 +95,7 @@ public abstract class ShipBaseDto extends AbstractDto {
             this.slotItem2 = createItemList(this.slotItem);
         }
         ShipParameters[] params = ShipParameters.fromBaseAndSlotItem(
-                this.shipInfo.getParam(), this.getItem());
+                this.shipInfo.getParam(), param, this.getItem());
         this.param = params[0];
         this.max = this.shipInfo.getMax();
         this.slotParam = params[1];
@@ -148,7 +148,7 @@ public abstract class ShipBaseDto extends AbstractDto {
     }
 
     public boolean isFriend() {
-        return this.shipInfo.getMaxBull() > 0;
+        return !this.shipInfo.isEnemy();
     }
 
     /**
@@ -232,7 +232,7 @@ public abstract class ShipBaseDto extends AbstractDto {
      * @return 現在の艦載機搭載数
      */
     public int[] getOnSlot() {
-        return this.shipInfo.getMaxeq();
+        return this.shipInfo.getMaxeq2();
     }
 
     /**
@@ -240,7 +240,7 @@ public abstract class ShipBaseDto extends AbstractDto {
      * @return 艦載機最大搭載数
      */
     public int[] getMaxeq() {
-        return this.shipInfo.getMaxeq();
+        return this.shipInfo.getMaxeq2();
     }
 
     /**
@@ -306,17 +306,21 @@ public abstract class ShipBaseDto extends AbstractDto {
      * 制空値
      * @return 制空値
      */
-    public int getSeiku() {
+    public Integer getSeiku() {
         List<ItemInfoDto> items = this.getItem();
         int seiku = 0;
         for (int i = 0; i < items.size(); i++) {
             ItemInfoDto item = items.get(i);
             if (item != null) {
+                //6:艦上戦闘機,7:艦上爆撃機,8:艦上攻撃機,11:瑞雲系の水上偵察機の場合は制空値を計算する
                 if ((item.getType2() == 6)
                         || (item.getType2() == 7)
                         || (item.getType2() == 8)
                         || (item.getType2() == 11)) {
-                    //6:艦上戦闘機,7:艦上爆撃機,8:艦上攻撃機,11:瑞雲系の水上偵察機の場合は制空値を計算する
+                    // スロット数が分からないと計算できない
+                    if (this.getOnSlot() == null)
+                        return null;
+
                     seiku += (int) Math.floor(item.getParam().getTyku() * Math.sqrt(this.getOnSlot()[i]));
                 }
             }

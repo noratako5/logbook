@@ -22,6 +22,7 @@ import logbook.gui.listener.TableKeyShortcutAdapter;
 import logbook.gui.listener.TableToClipboardAdapter;
 import logbook.gui.listener.TableToCsvSaveAdapter;
 import logbook.gui.logic.TableItemCreator;
+import logbook.gui.logic.TableRowHeader;
 import logbook.internal.LoggerHolder;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -402,6 +403,10 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             col.setText(this.header[i]);
             col.setMoveable(true);
             col.addSelectionListener(listener);
+            if (i == 0) {
+                // No.列はソートしない
+                col.setData("unsortable", new Object());
+            }
         }
         if (this.config.getColumnOrder() != null) {
             this.table.setColumnOrder(this.config.getColumnOrder());
@@ -418,6 +423,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         int numPrintItems = Math.min(MAX_PRINT_ITEMS, this.body.size());
         for (int i = 0; i < numPrintItems; i++) {
             Comparable[] line = this.body.get(i);
+            ((TableRowHeader) line[0]).setNumber(i + 1); // ソート順に関係ない番号
             creator.create(this.table, line, i);
         }
         creator.end();
@@ -751,7 +757,10 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             @Override
             public void widgetSelected(SelectionEvent e) {
                 if (e.getSource() instanceof TableColumn) {
-                    AbstractTableDialog.this.sortTableItems((TableColumn) e.getSource());
+                    TableColumn col = (TableColumn) e.getSource();
+                    if (col.getData("unsortable") == null) {
+                        AbstractTableDialog.this.sortTableItems(col);
+                    }
                 }
             }
         };

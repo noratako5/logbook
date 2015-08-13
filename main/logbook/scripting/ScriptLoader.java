@@ -29,7 +29,6 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import logbook.constants.AppConstants;
-import logbook.gui.logic.TableCell;
 import logbook.gui.logic.TableItemCreator;
 import logbook.internal.LoggerHolder;
 
@@ -350,7 +349,7 @@ public class ScriptLoader {
                     targetRow[i] = (Comparable) sourceCell;
                 }
                 else {
-                    targetRow[i] = new TableCell(String.valueOf(sourceCell));
+                    targetRow[i] = String.valueOf(sourceCell);
                 }
             }
             return this.resize(targetRow);
