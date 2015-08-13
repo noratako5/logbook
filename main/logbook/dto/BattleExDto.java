@@ -174,7 +174,7 @@ public class BattleExDto extends AbstractDto {
     private String basicJson;
 
     @Tag(53)
-    private final Map<String, DockDto> docksMission = new TreeMap<String, DockDto>();
+    private Map<String, DockDto> docksOther;
 
     /////////////////////////////////////////////////
 
@@ -927,8 +927,7 @@ public class BattleExDto extends AbstractDto {
                     this.friends.add(docks.remove("2"));
                 }
             }
-            this.docksMission.putAll(docks);
-            ;
+            this.docksOther = docks;
 
             JsonArray shipKe = object.getJsonArray("api_ship_ke");
             JsonArray eSlots = object.getJsonArray("api_eSlot");
@@ -1634,10 +1633,10 @@ public class BattleExDto extends AbstractDto {
     }
 
     /**
-     * 遠征艦隊
+     * その他の艦隊
      * @return
      */
-    public Map<String, DockDto> getDocksMission() {
-        return this.docksMission;
+    public Map<String, DockDto> getDocksOther() {
+        return this.docksOther;
     }
 }
