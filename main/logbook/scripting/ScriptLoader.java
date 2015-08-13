@@ -310,47 +310,27 @@ public class ScriptLoader {
             if (this.header == null) {
                 return null;
             }
-            Object obj = this.invoke(invokable);
+            Comparable[][] rows = (Comparable[][]) this.invoke(invokable);
             if (this.exception) {
                 return new Comparable[][] { this.exceptionBody };
             }
-            else if (obj instanceof Object[]) {
-                Object[] array = (Object[]) obj;
-                if (array.length > 0) {
-                    if (array[0] instanceof Object[]) {
-                        Object[][] sourceTable = (Object[][]) obj;
-                        Comparable[][] targetTable = new Comparable[sourceTable.length][];
-                        for (int j = 0; j < sourceTable.length; ++j) {
-                            targetTable[j] = this.body(sourceTable[j]);
-                        }
-                        return targetTable;
-                    }
-                    else {
-                        return new Comparable[][] { this.body(array) };
-                    }
-                }
-                else {
-                    return new Comparable[][] {};
+            if (rows == null) {
+                rows = new Comparable[][] {};
+            }
+            for (int j = 0; j < rows.length; ++j) {
+                Comparable[] row = rows[j];
+                if ((row == null) || (row.length == this.header.length)) {
+                    rows[j] = this.resize(row);
                 }
             }
-            else if (obj == null) {
-                return new Comparable[][] {};
-            }
-            else {
-                return new Comparable[][] { this.exceptionBody };
-            }
+            return rows;
         }
 
         private Comparable[] body(Object[] sourceRow) {
             Comparable[] targetRow = new Comparable[sourceRow.length];
             for (int i = 0; i < targetRow.length; ++i) {
                 Object sourceCell = sourceRow[i];
-                if (sourceCell instanceof Comparable) {
-                    targetRow[i] = (Comparable) sourceCell;
-                }
-                else {
-                    targetRow[i] = String.valueOf(sourceCell);
-                }
+                targetRow[i] = (Comparable) sourceCell;
             }
             return this.resize(targetRow);
         }
