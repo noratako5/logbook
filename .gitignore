@@ -1,6 +1,7 @@
 /bin
 /dest
 /launcher/winrun4j
+/launcher/win-*
 /2014*
 /2015*
 /doc
