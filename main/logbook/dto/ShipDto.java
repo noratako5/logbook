@@ -576,14 +576,10 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
      * @return json
      */
     public JsonObject getJson() {
-        return JsonUtils.fromString(this.json);
-    }
+        if (this.json == null)
+            return null;
 
-    /**
-     * データの更新に使ったJSON文字列
-     */
-    public String getJsonString() {
-        return this.json;
+        return JsonUtils.fromString(this.json);
     }
 
     /**

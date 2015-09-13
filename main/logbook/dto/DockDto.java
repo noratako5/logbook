@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.json.JsonObject;
-
 import com.dyuproject.protostuff.Tag;
 
 /**
@@ -36,7 +34,7 @@ public final class DockDto extends AbstractDto {
     /**
      * コンストラクター
      */
-    public DockDto(JsonObject object, String id, String name, DockDto oldDock) {
+    public DockDto(String id, String name, DockDto oldDock) {
         this.id = id;
         this.name = name;
         if (oldDock != null) {

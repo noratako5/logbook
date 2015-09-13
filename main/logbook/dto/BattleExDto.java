@@ -335,7 +335,7 @@ public class BattleExDto extends AbstractDto {
             this.doAtack(this.hougeki2);
             this.doAtack(this.hougeki3);
 
-            this.json = JsonUtils.toString(object);
+            this.json = object.toString();
         }
 
         public void battleDamage(BattleExDto battle) {
@@ -652,15 +652,10 @@ public class BattleExDto extends AbstractDto {
          * @return
          */
         public JsonObject getJson() {
+            if (this.json == null) {
+                return null;
+            }
             return JsonUtils.fromString(this.json);
-        }
-
-        /**
-         * 受け取ったJSON文字列
-         * @return
-         */
-        public String getJsonString() {
-            return this.json;
         }
 
         /**
@@ -848,7 +843,6 @@ public class BattleExDto extends AbstractDto {
 
     /**
      * 母港情報を設定
-     * @param object
      * @param shipSpace
      * @param itemSpace
      */
@@ -1096,7 +1090,7 @@ public class BattleExDto extends AbstractDto {
      * @param mapInfo マス情報
      */
     public void setResult(JsonObject object, MapCellDto mapInfo) {
-        this.resultJson = JsonUtils.toString(object);
+        this.resultJson = object.toString();
         this.mapCellDto = mapInfo;
         this.readResultJson(object);
     }
@@ -1595,11 +1589,10 @@ public class BattleExDto extends AbstractDto {
      * @return resultJson
      */
     public JsonObject getResultJson() {
+        if (this.resultJson == null) {
+            return null;
+        }
         return JsonUtils.fromString(this.resultJson);
-    }
-
-    public String getResultJsonString() {
-        return this.resultJson;
     }
 
     /**

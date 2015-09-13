@@ -267,4 +267,5 @@ public class MapCellDto implements Comparable<MapCellDto> {
     public void setEventKind(int eventKind) {
         this.eventKind = eventKind;
     }
+
 }
