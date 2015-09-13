@@ -15,11 +15,13 @@ import logbook.data.context.GlobalContext;
 import logbook.data.context.TimerContext;
 import logbook.dto.DeckMissionDto;
 import logbook.dto.DockDto;
+import logbook.dto.ItemDto;
 import logbook.dto.ItemInfoDto;
 import logbook.dto.ShipDto;
 import logbook.gui.logic.ColorManager;
 import logbook.gui.logic.DamageRate;
 import logbook.gui.logic.SakutekiString;
+import logbook.gui.logic.SeikuString;
 import logbook.gui.logic.TimeLogic;
 import logbook.gui.logic.TimeString;
 import logbook.internal.AkashiTimer;
@@ -445,10 +447,11 @@ public class FleetComposite extends Composite {
             }
 
             // ステータス.ダメコン
-            List<ItemInfoDto> item = ship.getItem();
+            List<ItemDto> item = new ArrayList<ItemDto>(ship.getItem2());
+            item.add(ship.getSlotExItem());
             int dmgcsty = 0;
             int dmgcstm = 0;
-            for (ItemInfoDto itemDto : item) {
+            for (ItemDto itemDto : item) {
                 if (itemDto != null) {
                     if (itemDto.getName().equals("応急修理要員")) {
                         dmgcsty++;
@@ -598,11 +601,6 @@ public class FleetComposite extends Composite {
             }
         }
 
-        // 制空値を計算
-        int seiku = 0;
-        for (ShipDto shipDto : ships) {
-            seiku += shipDto.getSeiku();
-        }
         // ドラム缶、大発の合計
         int dram = 0;
         int dramKanmusu = 0;
@@ -693,16 +691,17 @@ public class FleetComposite extends Composite {
         }
         this.addStyledText(this.message, "\n", null);
         // 制空
-        this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_SEIKU, seiku), null);
+        SeikuString seikuString = new SeikuString(ships);
+        this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_SEIKU, seikuString.toString()), null);
         if (lostPlanes > 0) {
             this.addStyledText(this.message,
-                    MessageFormat.format("損失機:" + lostPlanes + "(ボーキ:" + (lostPlanes * 5) + ")", seiku), null);
+                    MessageFormat.format("損失機:{0}(ボーキ:{1})", lostPlanes, lostPlanes * 5), null);
         }
         this.addStyledText(this.message, "\n", null);
         // 索敵
-        SakutekiString fleetStatus = new SakutekiString(ships, GlobalContext.hqLevel());
+        SakutekiString sakutekiString = new SakutekiString(ships, GlobalContext.hqLevel());
         this.addStyledText(this.message,
-                MessageFormat.format(AppConstants.MESSAGE_SAKUTEKI, fleetStatus.toString()), null);
+                MessageFormat.format(AppConstants.MESSAGE_SAKUTEKI, sakutekiString.toString()), null);
         this.addStyledText(this.message, "\n", null);
         // 合計Lv
         this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_TOTAL_LV, totallv), null);
@@ -729,13 +728,7 @@ public class FleetComposite extends Composite {
             this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_COND, this.clearDate), null);
         }
 
-        for (org.eclipse.swt.widgets.Control control : this.fleetGroup.getChildren()) {
-            if (control instanceof Composite) {
-                ((Composite) control).layout();
-            }
-        }
-        this.fleetGroup.layout();
-
+        SwtUtils.layoutCompositeRecursively(this.fleetGroup);
         this.getShell().setRedraw(true);
     }
 

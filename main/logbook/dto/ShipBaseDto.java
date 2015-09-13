@@ -5,7 +5,6 @@ package logbook.dto;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.json.JsonObject;
 
@@ -109,21 +108,8 @@ public abstract class ShipBaseDto extends AbstractDto {
      */
     private static List<ItemDto> createItemDtoList(int[] slot) {
         List<ItemDto> items = new ArrayList<>();
-        Map<Integer, ItemDto> itemMap = GlobalContext.getItemMap();
         for (int itemid : slot) {
-            if (-1 != itemid) {
-                ItemDto item = itemMap.get(itemid);
-                if (item != null) {
-                    items.add(item);
-                } else {
-                    ItemDto dto = new ItemDto();
-                    dto.setInfo(Item.UNKNOWN);
-                    items.add(dto);
-                }
-            }
-            else {
-                items.add(null);
-            }
+            items.add(GlobalContext.getItem(itemid));
         }
         return items;
     }
@@ -287,17 +273,6 @@ public abstract class ShipBaseDto extends AbstractDto {
             // 古いバージョンはslotItem2がないのでnullの場合がある
             // その場合はItemInfoDtoから作成
             return createItemList(this.getItem());
-        }
-        else {
-            // デシリアライズしたデータはiteminfoへの参照がないので作る
-            List<ItemInfoDto> slotItem = this.getItem();
-            for (int i = 0; i < slotItem.size(); ++i) {
-                ItemDto dto = this.slotItem2.get(i);
-                if ((dto != null) && (dto.getInfo() == null)) {
-                    ItemInfoDto info = slotItem.get(i);
-                    dto.setInfo((info != null) ? info : Item.UNKNOWN);
-                }
-            }
         }
         return this.slotItem2;
     }

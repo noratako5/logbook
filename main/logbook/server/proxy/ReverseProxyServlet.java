@@ -1,11 +1,9 @@
 package logbook.server.proxy;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
-import java.util.zip.GZIPInputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +15,6 @@ import logbook.data.DataType;
 import logbook.data.UndefinedData;
 import logbook.data.context.GlobalContext;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpRequest;
@@ -25,7 +22,7 @@ import org.eclipse.jetty.client.api.ProxyConfiguration;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.proxy.ProxyServlet;
+import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -59,13 +56,22 @@ public final class ReverseProxyServlet extends ProxyServlet {
     protected void customizeProxyRequest(Request proxyRequest, HttpServletRequest request) {
         proxyRequest.onRequestContent(new RequestContentListener(request));
 
-        // Hop-by-Hop ヘッダーを除去します
-        proxyRequest.header(HttpHeader.VIA, null);
-        proxyRequest.header(HttpHeader.X_FORWARDED_FOR, null);
-        proxyRequest.header(HttpHeader.X_FORWARDED_PROTO, null);
-        proxyRequest.header(HttpHeader.X_FORWARDED_HOST, null);
-        proxyRequest.header(HttpHeader.X_FORWARDED_SERVER, null);
-        proxyRequest.header("Origin", null);
+        if (!AppConfig.get().isUseProxy()) { // アップストリームプロキシがある場合は除外
+
+            // HTTP/1.1 ならkeep-aliveを追加します
+            if (proxyRequest.getVersion() == HttpVersion.HTTP_1_1) {
+                proxyRequest.header(HttpHeader.CONNECTION, "keep-alive");
+            }
+
+            // Pragma: no-cache はプロキシ用なので Cache-Control: no-cache に変換します
+            String pragma = proxyRequest.getHeaders().get(HttpHeader.PRAGMA);
+            if ((pragma != null) && pragma.equals("no-cache")) {
+                proxyRequest.header(HttpHeader.PRAGMA, null);
+                if (!proxyRequest.getHeaders().containsKey(HttpHeader.CACHE_CONTROL.asString())) {
+                    proxyRequest.header(HttpHeader.CACHE_CONTROL, "no-cache");
+                }
+            }
+        }
 
         String queryString = ((org.eclipse.jetty.server.Request) request).getQueryString();
         fixQueryString(proxyRequest, queryString);
@@ -119,30 +125,21 @@ public final class ReverseProxyServlet extends ProxyServlet {
             byte[] postField = (byte[]) request.getAttribute(Filter.REQUEST_BODY);
             ByteArrayOutputStream stream = (ByteArrayOutputStream) request.getAttribute(Filter.RESPONSE_BODY);
             if (stream != null) {
-                byte[] responseBody = stream.toByteArray();
-
-                // 圧縮されていたら解凍する
-                String contentEncoding = (String) request.getAttribute(Filter.CONTENT_ENCODING);
-                if ((contentEncoding != null) && contentEncoding.equals("gzip")) {
-                    try {
-                        responseBody = IOUtils.toByteArray(new GZIPInputStream(new ByteArrayInputStream(responseBody)));
-                    } catch (IOException e) {
-                        //
-                    }
-                }
-
                 final UndefinedData rawData = new UndefinedData(request.getRequestURL().toString(),
-                        request.getRequestURI(), postField, responseBody);
+                        request.getRequestURI(), postField, stream.toByteArray());
+                final String contentEncoding = (String) request.getAttribute(Filter.CONTENT_ENCODING);
                 final String serverName = request.getServerName();
 
                 Display.getDefault().asyncExec(new Runnable() {
                     @Override
                     public void run() {
+                        UndefinedData decodedData = rawData.decode(contentEncoding);
+
                         // 統計データベース(http://kancolle-db.net/)に送信する
-                        DatabaseClient.send(rawData);
+                        DatabaseClient.send(decodedData);
 
                         // キャプチャしたバイト配列は何のデータかを決定する
-                        Data data = rawData.toDefinedData();
+                        Data data = decodedData.toDefinedData();
                         if (data.getDataType() != DataType.UNDEFINED) {
                             // 定義済みのデータの場合にキューに追加する
                             GlobalContext.updateContext(data);

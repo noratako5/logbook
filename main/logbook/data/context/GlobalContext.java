@@ -212,12 +212,7 @@ public final class GlobalContext {
         Collection<ItemDto> items = config.getItems();
         if ((items != null) && (items.size() > 0)) {
             for (ItemDto item : items) {
-                int id = item.getSlotitemId();
-                ItemInfoDto info = Item.get(id);
-                if (info != null) {
-                    item.setInfo(info);
-                    GlobalContext.itemMap.put(item.getId(), item);
-                }
+                GlobalContext.itemMap.put(item.getId(), item);
             }
         }
         DeckMissionDto[] previousMissions = config.getPreviousMissions();
@@ -241,6 +236,24 @@ public final class GlobalContext {
      */
     public static Map<Integer, ItemDto> getItemMap() {
         return itemMap;
+    }
+
+    /**
+     * アイテムIDからアイテム
+     * @param itemId
+     * @return
+     */
+    public static ItemDto getItem(int itemId) {
+        if (itemId == -1) {
+            return null;
+        }
+        ItemDto item = itemMap.get(itemId);
+        if (item == null) {
+            ItemDto dto = new ItemDto();
+            dto.setInfo(Item.UNKNOWN);
+            return dto;
+        }
+        return item;
     }
 
     /**
