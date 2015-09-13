@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -169,12 +167,6 @@ public class BattleExDto extends AbstractDto {
 
     @Tag(51)
     private String resultJson;
-
-    @Tag(52)
-    private String basicJson;
-
-    @Tag(53)
-    private Map<String, DockDto> docksOther;
 
     /////////////////////////////////////////////////
 
@@ -857,8 +849,7 @@ public class BattleExDto extends AbstractDto {
      * @param shipSpace
      * @param itemSpace
      */
-    public void setBasicInfo(JsonObject object, int shipSpace, int itemSpace) {
-        this.basicJson = JsonUtils.toString(object);
+    public void setBasicInfo(int shipSpace, int itemSpace) {
         this.shipSpace = shipSpace;
         this.itemSpace = itemSpace;
     }
@@ -920,14 +911,12 @@ public class BattleExDto extends AbstractDto {
                 }
             }
 
-            Map<String, DockDto> docks = new TreeMap(GlobalContext.getDock());
             if (this.friends.size() == 0) { // 再読み込みの場合はスキップ
-                this.friends.add(docks.remove(dockId));
+                this.friends.add(GlobalContext.getDock(dockId));
                 if (numFshipsCombined > 0) {
-                    this.friends.add(docks.remove("2"));
+                    this.friends.add(GlobalContext.getDock("2"));
                 }
             }
-            this.docksOther = docks;
 
             JsonArray shipKe = object.getJsonArray("api_ship_ke");
             JsonArray eSlots = object.getJsonArray("api_eSlot");
@@ -1622,21 +1611,5 @@ public class BattleExDto extends AbstractDto {
      */
     public int getDropShipId() {
         return this.dropShipId;
-    }
-
-    public JsonObject getBasicJson() {
-        return JsonUtils.fromString(this.basicJson);
-    }
-
-    public String getBasicJsonString() {
-        return this.basicJson;
-    }
-
-    /**
-     * その他の艦隊
-     * @return
-     */
-    public Map<String, DockDto> getDocksOther() {
-        return this.docksOther;
     }
 }
