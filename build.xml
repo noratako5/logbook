@@ -39,5 +39,10 @@
 		<copy todir="${destlib.dir}">
 			<fileset refid="jar.set" />
 		</copy>
+    	<mkdir dir="${build.dir}/script" />
+    	<mkdir dir="${build.dir}/script/combat" />
+    	<copy todir="${build.dir}/script/combat">
+    		<fileset dir="script/combat" />
+    	</copy>
     </target>
 </project>
