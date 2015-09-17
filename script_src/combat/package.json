@@ -1,0 +1,10 @@
+{
+  "name": "Packages.logbook",
+  "version": "0.0.0",
+  "description": "Packages.logbook",
+  "main": "app.js",
+  "author": {
+    "name": "Master",
+    "email": ""
+  }
+}
