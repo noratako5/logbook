@@ -1,5 +1,5 @@
 ﻿
-declare module kcsapi {
+declare module combat {
 
     /** 戦闘 */
     interface DayPhaseApi {

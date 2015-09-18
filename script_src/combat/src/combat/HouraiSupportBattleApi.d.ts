@@ -1,5 +1,5 @@
 ﻿
-declare module kcsapi {
+declare module combat {
 
     interface HouraiSupportBattleApi extends SupportInfoApi {
 

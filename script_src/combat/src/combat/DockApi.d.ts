@@ -1,5 +1,5 @@
 ﻿
-declare module kcsapi {
+declare module combat {
 
     /** 艦隊情報 個数はそのまま保有艦隊数と同じになる(パディング等はない) */
     interface DockApi {

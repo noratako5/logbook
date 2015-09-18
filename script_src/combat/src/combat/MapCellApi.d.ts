@@ -1,5 +1,5 @@
 ﻿
-declare module kcsapi {
+declare module combat {
 
     /** 進撃 */
     interface MapCellApi {

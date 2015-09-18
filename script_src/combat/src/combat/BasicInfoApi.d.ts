@@ -1,5 +1,5 @@
 ﻿
-declare module kcsapi {
+declare module combat {
 
     /** 艦隊司令部情報 */
     interface BasicInfoApi {

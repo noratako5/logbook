@@ -6,60 +6,59 @@ module combat {
     import JavaList = Packages.java.util.List;
     import DateTimeString = Packages.logbook.gui.logic.DateTimeString;
     import BattleExDto = Packages.logbook.dto.BattleExDto;
-    import BasicInfoApi = combat.BasicInfoApi;
-    import MapCellApi = combat.MapCellApi;
-    import BattleResultApi = combat.BattleResultApi;
     import ShipBaseDto = Packages.logbook.dto.ShipBaseDto;
     import ShipDto = Packages.logbook.dto.ShipDto;
     import EnemyShipDto = Packages.logbook.dto.EnemyShipDto;
-    import ShipApi = combat.ShipApi;
-    import ShipInfoApi = combat.ShipInfoApi;
     import ItemDto = Packages.logbook.dto.ItemDto;
-    import ItemApi = combat.ItemApi;
     import ItemInfoDto = Packages.logbook.dto.ItemInfoDto;
-    import ItemInfoApi = combat.ItemInfoApi;
     import BattleAtackDto = Packages.logbook.dto.BattleAtackDto;
-    import DayPhaseApi = combat.DayPhaseApi;
-    import HougekiBattleApi = combat.HougekiBattleApi;
 
     type ComparableArray = JavaArray<any>;
     type ComparableArrayArray = JavaArray<ComparableArray>;
 
-    export class HougekiTable {
+    export class NightTable {
 
         static header() {
-            var row = DayPhaseRow.header();
-            row.push.apply(row, HougekiRow.header());
+            var row = NightPhaseRow.header();
+            row.push.apply(row, NightRow.header());
             return row;
         }
 
         static body(battleExDto: BattleExDto) {
-            var hougekiRows = <any[][]>[];
-            var phaseDto = battleExDto.getPhase1();
-            if (phaseDto != null) {
-                var phaseKindDto = phaseDto.getKind();
-                if (phaseKindDto != null) {
-                    if (!phaseKindDto.isNight()) {
-                        var phaseJson = phaseDto.getJson();
-                        if (phaseJson != null) {
-                            var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
-                            if (phaseApi != null) {
-                                var ships = new Ships(battleExDto);
-                                var battleRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_hougeki1));
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_hougeki2));
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki3(), phaseApi.api_hougeki3));
-                                _.forEach(hougekiRows, (hougekiRow) => (hougekiRow.unshift.apply(hougekiRow, battleRow)));
-                            }
+            var rows = <any[][]>[];
+            var phase1Dto = battleExDto.getPhase1();
+            if (phase1Dto != null) {
+                var phase1KindDto = phase1Dto.getKind();
+                if (phase1KindDto != null && phase1KindDto.isNight()) {
+                    var phaseDto = phase1Dto;
+                }
+                else {
+                    var phase2Dto = battleExDto.getPhase2();
+                    if (phase2Dto != null) {
+                        var phase2KindDto = phase2Dto.getKind();
+                        if (phase2KindDto != null && phase2KindDto.isNight()) {
+                            var phaseDto = phase2Dto;
                         }
                     }
                 }
             }
-            return toComparable(hougekiRows);
+            if (phaseDto != null) {
+                var ships = new Ships(battleExDto);
+                var phaseJson = phaseDto.getJson();
+                if (phaseJson != null) {
+                    var phaseApi = <NightPhaseApi>JSON.parse(phaseJson.toString());
+                    if (phaseApi != null) {
+                        var battleRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                        rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto.getHougeki(), phaseApi.api_hougeki));
+                        _.forEach(rows, (hougekiRow) => (hougekiRow.unshift.apply(hougekiRow, battleRow)));
+                    }
+                }
+            }
+            return toComparable(rows);
         }
     }
 
-    export class HougekiRow {
+    export class NightRow {
 
         static header() {
             var row = [
@@ -76,16 +75,16 @@ module combat {
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships, battleAtackDtoList: JavaList<BattleAtackDto>, hougekiBattleApi: HougekiBattleApi) {
+        static body(battleExDto: BattleExDto, ships: Ships, battleAtackDtoList: JavaList<BattleAtackDto>, api_hougeki: NightHougekiBattleApi) {
             var rows = <any[][]>[];
-            if (hougekiBattleApi != null) {
-                for (var i = 1; i < hougekiBattleApi.api_at_list.length; ++i) {
-                    var api_at = hougekiBattleApi.api_at_list[i];
-                    var api_at_type = hougekiBattleApi.api_at_type[i];
-                    var api_df_list = hougekiBattleApi.api_df_list[i];
-                    var api_si_list = hougekiBattleApi.api_si_list[i];
-                    var api_cl_list = hougekiBattleApi.api_cl_list[i];
-                    var api_damage = hougekiBattleApi.api_damage[i];
+            if (api_hougeki != null) {
+                for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
+                    var api_at = api_hougeki.api_at_list[i];
+                    var api_sp = api_hougeki.api_sp_list[i];
+                    var api_df_list = api_hougeki.api_df_list[i];
+                    var api_si_list = api_hougeki.api_si_list[i];
+                    var api_cl_list = api_hougeki.api_cl_list[i];
+                    var api_damage = api_hougeki.api_damage[i];
                     if (api_at < 7) {
                         var itemInfoDtos = battleExDto.getDock().getShips()[api_at - 1].getItem();
                     }
@@ -105,7 +104,7 @@ module combat {
                         var api_df = api_df_list[j];
                         var damage = JavaInteger.valueOf(api_damage[j]);
                         var row = [
-                            api_at_type
+                            api_sp
                             , itemNames[0]
                             , itemNames[1]
                             , itemNames[2]
@@ -141,9 +140,9 @@ function end() {
 }
 
 function header() {
-    return combat.HougekiTable.header();
+    return combat.NightTable.header();
 }
 
 function body(battleExDto: Packages.logbook.dto.BattleExDto) {
-    return combat.HougekiTable.body(battleExDto);
+    return combat.NightTable.body(battleExDto);
 }

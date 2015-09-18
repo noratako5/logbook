@@ -396,45 +396,53 @@ var combat;
 var combat;
 (function (combat) {
     var JavaInteger = Packages.java.lang.Integer;
-    var HougekiTable = (function () {
-        function HougekiTable() {
+    var NightTable = (function () {
+        function NightTable() {
         }
-        HougekiTable.header = function () {
-            var row = combat.DayPhaseRow.header();
-            row.push.apply(row, HougekiRow.header());
+        NightTable.header = function () {
+            var row = combat.NightPhaseRow.header();
+            row.push.apply(row, NightRow.header());
             return row;
         };
-        HougekiTable.body = function (battleExDto) {
-            var hougekiRows = [];
-            var phaseDto = battleExDto.getPhase1();
-            if (phaseDto != null) {
-                var phaseKindDto = phaseDto.getKind();
-                if (phaseKindDto != null) {
-                    if (!phaseKindDto.isNight()) {
-                        var phaseJson = phaseDto.getJson();
-                        if (phaseJson != null) {
-                            var phaseApi = JSON.parse(phaseJson.toString());
-                            if (phaseApi != null) {
-                                var ships = new combat.Ships(battleExDto);
-                                var battleRow = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_hougeki1));
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_hougeki2));
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki3(), phaseApi.api_hougeki3));
-                                _.forEach(hougekiRows, function (hougekiRow) { return (hougekiRow.unshift.apply(hougekiRow, battleRow)); });
-                            }
+        NightTable.body = function (battleExDto) {
+            var rows = [];
+            var phase1Dto = battleExDto.getPhase1();
+            if (phase1Dto != null) {
+                var phase1KindDto = phase1Dto.getKind();
+                if (phase1KindDto != null && phase1KindDto.isNight()) {
+                    var phaseDto = phase1Dto;
+                }
+                else {
+                    var phase2Dto = battleExDto.getPhase2();
+                    if (phase2Dto != null) {
+                        var phase2KindDto = phase2Dto.getKind();
+                        if (phase2KindDto != null && phase2KindDto.isNight()) {
+                            var phaseDto = phase2Dto;
                         }
                     }
                 }
             }
-            return combat.toComparable(hougekiRows);
+            if (phaseDto != null) {
+                var ships = new combat.Ships(battleExDto);
+                var phaseJson = phaseDto.getJson();
+                if (phaseJson != null) {
+                    var phaseApi = JSON.parse(phaseJson.toString());
+                    if (phaseApi != null) {
+                        var battleRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                        rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto.getHougeki(), phaseApi.api_hougeki));
+                        _.forEach(rows, function (hougekiRow) { return (hougekiRow.unshift.apply(hougekiRow, battleRow)); });
+                    }
+                }
+            }
+            return combat.toComparable(rows);
         };
-        return HougekiTable;
+        return NightTable;
     })();
-    combat.HougekiTable = HougekiTable;
-    var HougekiRow = (function () {
-        function HougekiRow() {
+    combat.NightTable = NightTable;
+    var NightRow = (function () {
+        function NightRow() {
         }
-        HougekiRow.header = function () {
+        NightRow.header = function () {
             var row = [
                 '砲撃種別',
                 '表示装備1',
@@ -448,16 +456,16 @@ var combat;
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
             return row;
         };
-        HougekiRow.body = function (battleExDto, ships, battleAtackDtoList, hougekiBattleApi) {
+        NightRow.body = function (battleExDto, ships, battleAtackDtoList, api_hougeki) {
             var rows = [];
-            if (hougekiBattleApi != null) {
-                for (var i = 1; i < hougekiBattleApi.api_at_list.length; ++i) {
-                    var api_at = hougekiBattleApi.api_at_list[i];
-                    var api_at_type = hougekiBattleApi.api_at_type[i];
-                    var api_df_list = hougekiBattleApi.api_df_list[i];
-                    var api_si_list = hougekiBattleApi.api_si_list[i];
-                    var api_cl_list = hougekiBattleApi.api_cl_list[i];
-                    var api_damage = hougekiBattleApi.api_damage[i];
+            if (api_hougeki != null) {
+                for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
+                    var api_at = api_hougeki.api_at_list[i];
+                    var api_sp = api_hougeki.api_sp_list[i];
+                    var api_df_list = api_hougeki.api_df_list[i];
+                    var api_si_list = api_hougeki.api_si_list[i];
+                    var api_cl_list = api_hougeki.api_cl_list[i];
+                    var api_damage = api_hougeki.api_damage[i];
                     if (api_at < 7) {
                         var itemInfoDtos = battleExDto.getDock().getShips()[api_at - 1].getItem();
                     }
@@ -477,7 +485,7 @@ var combat;
                         var api_df = api_df_list[j];
                         var damage = JavaInteger.valueOf(api_damage[j]);
                         var row = [
-                            api_at_type,
+                            api_sp,
                             itemNames[0],
                             itemNames[1],
                             itemNames[2],
@@ -503,17 +511,17 @@ var combat;
             }
             return rows;
         };
-        return HougekiRow;
+        return NightRow;
     })();
-    combat.HougekiRow = HougekiRow;
+    combat.NightRow = NightRow;
 })(combat || (combat = {}));
 function begin() {
 }
 function end() {
 }
 function header() {
-    return combat.HougekiTable.header();
+    return combat.NightTable.header();
 }
 function body(battleExDto) {
-    return combat.HougekiTable.body(battleExDto);
+    return combat.NightTable.body(battleExDto);
 }

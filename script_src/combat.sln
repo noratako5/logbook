@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat", "combat\combat.njsproj", "{84160115-3AB6-4E3B-8879-13E90044FA3D}"
+EndProject
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_砲撃戦", "combat_砲撃戦\combat_砲撃戦.njsproj", "{5D1A8EB2-CC93-4957-BB3C-FB9D864D3B4B}"
 EndProject
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat", "combat\combat.njsproj", "{20722564-C3B0-483B-8BBF-ECF793A6BF93}"
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_夜戦", "combat_夜戦\combat_夜戦.njsproj", "{C1FC6401-ABDA-4C3B-85BA-C354A255FAA2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +15,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84160115-3AB6-4E3B-8879-13E90044FA3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84160115-3AB6-4E3B-8879-13E90044FA3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84160115-3AB6-4E3B-8879-13E90044FA3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84160115-3AB6-4E3B-8879-13E90044FA3D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5D1A8EB2-CC93-4957-BB3C-FB9D864D3B4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5D1A8EB2-CC93-4957-BB3C-FB9D864D3B4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D1A8EB2-CC93-4957-BB3C-FB9D864D3B4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D1A8EB2-CC93-4957-BB3C-FB9D864D3B4B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{20722564-C3B0-483B-8BBF-ECF793A6BF93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{20722564-C3B0-483B-8BBF-ECF793A6BF93}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{20722564-C3B0-483B-8BBF-ECF793A6BF93}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{20722564-C3B0-483B-8BBF-ECF793A6BF93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1FC6401-ABDA-4C3B-85BA-C354A255FAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1FC6401-ABDA-4C3B-85BA-C354A255FAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1FC6401-ABDA-4C3B-85BA-C354A255FAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1FC6401-ABDA-4C3B-85BA-C354A255FAA2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

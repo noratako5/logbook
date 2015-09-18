@@ -10,11 +10,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>20722564-c3b0-483b-8bbf-ecf793a6bf93</ProjectGuid>
+    <ProjectGuid>{84160115-3ab6-4e3b-8879-13e90044fa3d}</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>
-    </StartupFile>
+    <StartupFile>combat.ts</StartupFile>
     <StartWebBrowser>False</StartWebBrowser>
     <SearchPath>
     </SearchPath>
@@ -38,25 +37,27 @@
     <Content Include="package.json" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="combat.ts" />
+    <TypeScriptCompile Include="logbook.d.ts" />
     <TypeScriptCompile Include="src\Global.d.ts" />
     <TypeScriptCompile Include="src\Java.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\AirBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\AirSupportBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\BasicInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\BattleResultApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\DayPhaseApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\DockApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\HougekiBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\HouraiSupportBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\ItemApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\ItemInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\MapCellApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\NightHougekiBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\NightPhaseApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\RaigekiBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\ShipApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\ShipInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\kcsapi\SupportInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\AirBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\AirSupportBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\BasicInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\BattleResultApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\DayPhaseApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\DockApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\HougekiBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\HouraiSupportBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\ItemApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\ItemInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\MapCellApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\NightHougekiBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\NightPhaseApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\RaigekiBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\ShipApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\ShipInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\combat\SupportInfoApi.d.ts" />
     <TypeScriptCompile Include="src\lodash.d.ts" />
     <TypeScriptCompile Include="src\Packages\javax\json\JsonObject.d.ts" />
     <TypeScriptCompile Include="src\JavaArray.d.ts" />
@@ -94,7 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\" />
-    <Folder Include="src\kcsapi\" />
+    <Folder Include="src\combat\" />
     <Folder Include="src\Packages\" />
     <Folder Include="src\Packages\javax\" />
     <Folder Include="src\Packages\javax\json\" />
@@ -108,20 +109,23 @@
     <Folder Include="src\Packages\logbook\gui\logic\" />
     <Folder Include="src\Packages\logbook\internal\" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="lodash.js" />
+  </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <TypeScriptNoImplicitAny>False</TypeScriptNoImplicitAny>
-    <TypeScriptOutFile>
-    </TypeScriptOutFile>
+    <TypeScriptOutFile>.</TypeScriptOutFile>
     <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
     <TypeScriptTarget>ES5</TypeScriptTarget>
-    <TypeScriptCompileOnSaveEnabled>False</TypeScriptCompileOnSaveEnabled>
+    <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
     <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
     <TypeScriptOutDir>
     </TypeScriptOutDir>
     <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
     <TypeScriptMapRoot />
     <TypeScriptSourceRoot />
+    <TypeScriptSourceMap>False</TypeScriptSourceMap>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
