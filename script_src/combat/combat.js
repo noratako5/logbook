@@ -1,40 +1,26 @@
-﻿/// <reference path="logbook.d.ts" />
-
-module combat {
-
+/// <reference path="logbook.d.ts" />
+var combat;
+(function (combat) {
     load('script/combat/lodash.js');
-
-    import JavaString = Packages.java.lang.String;
-    import JavaInteger = Packages.java.lang.Integer;
-    import JavaList = Packages.java.util.List;
-    import DateTimeString = Packages.logbook.gui.logic.DateTimeString;
-    import BattleExDto = Packages.logbook.dto.BattleExDto;
-    import ShipBaseDto = Packages.logbook.dto.ShipBaseDto;
-    import ShipDto = Packages.logbook.dto.ShipDto;
-    import EnemyShipDto = Packages.logbook.dto.EnemyShipDto;
-    import ItemDto = Packages.logbook.dto.ItemDto;
-    import ItemInfoDto = Packages.logbook.dto.ItemInfoDto;
-    import BattleAtackDto = Packages.logbook.dto.BattleAtackDto;
-
-    type ComparableArray = JavaArray<any>;
-    type ComparableArrayArray = JavaArray<ComparableArray>;
-
-    export class DayPhaseRow {
-
-        static header() {
+    var JavaString = Packages.java.lang.String;
+    var DateTimeString = Packages.logbook.gui.logic.DateTimeString;
+    var ShipDto = Packages.logbook.dto.ShipDto;
+    var DayPhaseRow = (function () {
+        function DayPhaseRow() {
+        }
+        DayPhaseRow.header = function () {
             var row = PhaseRow.header();
             row.push.apply(row, [
-                '自索敵'
-                , '敵索敵'
-                , '制空権'
-                , '会敵'
-                , '自昼触接'
-                , '敵昼触接'
+                '自索敵',
+                '敵索敵',
+                '制空権',
+                '会敵',
+                '自昼触接',
+                '敵昼触接'
             ]);
             return row;
-        }
-
-        static body(battleExDto: BattleExDto, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi, itemInfos: ItemInfos) {
+        };
+        DayPhaseRow.body = function (battleExDto, phaseDto, phaseApi, itemInfos) {
             var row = PhaseRow.body(battleExDto);
             var sakuteki = battleExDto.getSakuteki();
             if (sakuteki != null) {
@@ -60,23 +46,24 @@ module combat {
             row.push(touchPlane0);
             row.push(touchPlane1);
             return row;
+        };
+        return DayPhaseRow;
+    })();
+    combat.DayPhaseRow = DayPhaseRow;
+    var NightPhaseRow = (function () {
+        function NightPhaseRow() {
         }
-    }
-
-    export class NightPhaseRow {
-
-        static header() {
+        NightPhaseRow.header = function () {
             var row = PhaseRow.header();
             row.push.apply(row, [
-                '自夜触接'
-                , '敵夜触接'
-                , '自照明弾'
-                , '敵照明弾'
+                '自夜触接',
+                '敵夜触接',
+                '自照明弾',
+                '敵照明弾'
             ]);
             return row;
-        }
-
-        static body(battleExDto: BattleExDto, phaseDto: BattleExDto.Phase, phaseApi: NightPhaseApi, itemInfos: ItemInfos) {
+        };
+        NightPhaseRow.body = function (battleExDto, phaseDto, phaseApi, itemInfos) {
             var row = PhaseRow.body(battleExDto);
             var touchPlane = phaseDto.getTouchPlane();
             if (touchPlane != null) {
@@ -99,26 +86,27 @@ module combat {
             row.push(flarePos0);
             row.push(flarePos1);
             return row;
+        };
+        return NightPhaseRow;
+    })();
+    combat.NightPhaseRow = NightPhaseRow;
+    var PhaseRow = (function () {
+        function PhaseRow() {
         }
-    }
-
-    export class PhaseRow {
-
-        static header() {
+        PhaseRow.header = function () {
             return [
-                '日付'
-                , '海域'
-                , 'マス'
-                , '出撃'
-                , 'ランク'
-                , '敵艦隊'
-                , '提督レベル'
-                , '自陣形'
-                , '敵陣形'
+                '日付',
+                '海域',
+                'マス',
+                '出撃',
+                'ランク',
+                '敵艦隊',
+                '提督レベル',
+                '自陣形',
+                '敵陣形'
             ];
-        }
-
-        static body(battleExDto: BattleExDto) {
+        };
+        PhaseRow.body = function (battleExDto) {
             var row = [];
             var battleDate = battleExDto.getBattleDate();
             if (battleDate != null) {
@@ -151,41 +139,38 @@ module combat {
             row.push(formation0);
             row.push(formation1);
             return row;
+        };
+        return PhaseRow;
+    })();
+    combat.PhaseRow = PhaseRow;
+    var ItemInfos = (function () {
+        function ItemInfos() {
+            this.dtos = {};
         }
-    }
-
-    export class ItemInfos {
-
-        dtos: { [id: number]: ItemInfoDto } = {};
-
-        getName(id: number) {
+        ItemInfos.prototype.getName = function (id) {
             var dto = this.dtos[id];
             if (dto != null) {
                 return dto.getName();
             }
-        }
-    }
-
-    export class Ships {
-
-        itemInfos: ItemInfos;
-        friendRows: any[][];
-        friendCombinedShipRows: any[][];
-        enemyRows: any[][];
-
-        constructor(battleExDto: BattleExDto) {
+        };
+        return ItemInfos;
+    })();
+    combat.ItemInfos = ItemInfos;
+    var Ships = (function () {
+        function Ships(battleExDto) {
+            var _this = this;
             this.itemInfos = new ItemInfos();
-            var construct = (shipDtos: JavaList<ShipBaseDto>) => {
-                var shipRows = [];
+            var constructShip = function (shipDtos) {
+                var shipRows = new Array(shipDtos.length);
                 for (var i = 0; i < 6; ++i) {
                     if (shipDtos != null && i < shipDtos.length) {
                         var shipDto = shipDtos[i];
                         if (shipDto != null) {
                             var itemInfoDtos = shipDto.getItem();
                             if (itemInfoDtos != null) {
-                                _.forEach(itemInfoDtos, (itemInfoDto) => {
+                                _.forEach(itemInfoDtos, function (itemInfoDto) {
                                     if (itemInfoDto != null) {
-                                        this.itemInfos.dtos[itemInfoDto.getId()] = itemInfoDto;
+                                        _this.itemInfos.dtos[itemInfoDto.getId()] = itemInfoDto;
                                     }
                                 });
                             }
@@ -197,47 +182,48 @@ module combat {
             };
             var dockDto = battleExDto.getDock();
             if (dockDto != null) {
-                this.friendRows = construct(dockDto.getShips());
+                this.friendRows = constructShip(dockDto.getShips());
             }
             var dockCombinedDto = battleExDto.getDockCombined();
             if (dockCombinedDto != null) {
-                this.friendCombinedShipRows = construct(dockCombinedDto.getShips());
+                this.friendCombinedShipRows = constructShip(dockCombinedDto.getShips());
             }
-            this.enemyRows = construct(battleExDto.getEnemy());
+            this.enemyRows = constructShip(battleExDto.getEnemy());
         }
-    }
-
-    export class ShipRow {
-
-        static header() {
+        return Ships;
+    })();
+    combat.Ships = Ships;
+    var ShipRow = (function () {
+        function ShipRow() {
+        }
+        ShipRow.header = function () {
             var row = [
-                'ID'
-                , '名前'
-                , '種別'
-                , '疲労'
-                , '残り燃料'
-                , '最大燃料'
-                , '残り弾薬'
-                , '最大弾薬'
-                , 'Lv'
-                , '速力'
-                , '火力'
-                , '雷装'
-                , '対空'
-                , '装甲'
-                , '回避'
-                , '対潜'
-                , '索敵'
-                , '運'
-                , '射程'
+                'ID',
+                '名前',
+                '種別',
+                '疲労',
+                '残り燃料',
+                '最大燃料',
+                '残り弾薬',
+                '最大弾薬',
+                'Lv',
+                '速力',
+                '火力',
+                '雷装',
+                '対空',
+                '装甲',
+                '回避',
+                '対潜',
+                '索敵',
+                '運',
+                '射程'
             ];
             for (var i = 1; i <= 5; ++i) {
-                row.push.apply(row, _.map(ItemRow.header(), (s) => ('装備' + i + '.' + s)));
+                row.push.apply(row, _.map(ItemRow.header(), function (s) { return ('装備' + i + '.' + s); }));
             }
             return row;
-        }
-
-        static body(shipBaseDto: ShipBaseDto) {
+        };
+        ShipRow.body = function (shipBaseDto) {
             if (shipBaseDto != null) {
                 var row = [];
                 var shipInfoDto = shipBaseDto.getShipInfo();
@@ -249,7 +235,7 @@ module combat {
                     var maxBull = shipInfoDto.getMaxBull();
                 }
                 if (shipBaseDto instanceof ShipDto) {
-                    var shipDto = <ShipDto>shipBaseDto;
+                    var shipDto = shipBaseDto;
                     var cond = shipDto.getCond();
                     var fuel = shipDto.getFuel();
                     var bull = shipDto.getBull();
@@ -346,42 +332,44 @@ module combat {
             else {
                 return new Array(this.header().length);
             }
+        };
+        return ShipRow;
+    })();
+    combat.ShipRow = ShipRow;
+    var ItemRow = (function () {
+        function ItemRow() {
         }
-    }
-
-    export class ItemRow {
-
-        static header() {
+        ItemRow.header = function () {
             return [
-                '名前'
-                , '改修'
-                , '熟練度'
-                , '搭載数'
+                '名前',
+                '改修',
+                '熟練度',
+                '搭載数'
             ];
-        }
-
-        static body(itemDto: ItemDto, itemInfoDto: ItemInfoDto, onslot: number) {
+        };
+        ItemRow.body = function (itemDto, itemInfoDto, onslot) {
             if (itemInfoDto != null) {
                 return [
-                    itemInfoDto.getName()
-                    , (itemDto != null) ? itemDto.getLevel() : null
-                    , (itemDto != null) ? itemDto.getAlv() : null
-                    , onslot
+                    itemInfoDto.getName(),
+                    (itemDto != null) ? itemDto.getLevel() : null,
+                    (itemDto != null) ? itemDto.getAlv() : null,
+                    onslot
                 ];
             }
             else {
                 return new Array(this.header().length);
             }
-        }
-    }
-
+        };
+        return ItemRow;
+    })();
+    combat.ItemRow = ItemRow;
     // javascriptの配列をそのまま返すと遅いので
     // Comparable[]に変換しておく
     // undefinedはnullに変換される
-    export function toComparable(sourceRows: any[][]) {
+    function toComparable(sourceRows) {
         var ComparableType = Java.type('java.lang.Comparable');
-        var ComparableArrayType = <ComparableArray>Java.type('java.lang.Comparable[]');
-        var ComparableArrayArrayType = <ComparableArrayArray>Java.type('java.lang.Comparable[][]');
+        var ComparableArrayType = Java.type('java.lang.Comparable[]');
+        var ComparableArrayArrayType = Java.type('java.lang.Comparable[][]');
         var targetRows = new ComparableArrayArrayType(sourceRows.length);
         for (var j = 0; j < sourceRows.length; ++j) {
             var sourceRow = sourceRows[j];
@@ -402,4 +390,6 @@ module combat {
         }
         return targetRows;
     }
-}
+    combat.toComparable = toComparable;
+})(combat || (combat = {}));
+//# sourceMappingURL=combat.js.map

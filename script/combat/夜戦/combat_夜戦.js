@@ -160,8 +160,8 @@ var combat;
         function Ships(battleExDto) {
             var _this = this;
             this.itemInfos = new ItemInfos();
-            var constructShip = function (shipDtos) {
-                var shipRows = new Array(shipDtos.length);
+            var construct = function (shipDtos) {
+                var shipRows = [];
                 for (var i = 0; i < 6; ++i) {
                     if (shipDtos != null && i < shipDtos.length) {
                         var shipDto = shipDtos[i];
@@ -182,13 +182,13 @@ var combat;
             };
             var dockDto = battleExDto.getDock();
             if (dockDto != null) {
-                this.friendRows = constructShip(dockDto.getShips());
+                this.friendRows = construct(dockDto.getShips());
             }
             var dockCombinedDto = battleExDto.getDockCombined();
             if (dockCombinedDto != null) {
-                this.friendCombinedShipRows = constructShip(dockCombinedDto.getShips());
+                this.friendCombinedShipRows = construct(dockCombinedDto.getShips());
             }
-            this.enemyRows = constructShip(battleExDto.getEnemy());
+            this.enemyRows = construct(battleExDto.getEnemy());
         }
         return Ships;
     })();
@@ -428,9 +428,9 @@ var combat;
                 if (phaseJson != null) {
                     var phaseApi = JSON.parse(phaseJson.toString());
                     if (phaseApi != null) {
-                        var battleRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                        var phaseRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
                         rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto.getHougeki(), phaseApi.api_hougeki));
-                        _.forEach(rows, function (hougekiRow) { return (hougekiRow.unshift.apply(hougekiRow, battleRow)); });
+                        _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
                     }
                 }
             }

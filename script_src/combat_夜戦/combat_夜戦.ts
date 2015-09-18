@@ -25,7 +25,7 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
-            var rows = <any[][]>[];
+            var rows = [];
             var phase1Dto = battleExDto.getPhase1();
             if (phase1Dto != null) {
                 var phase1KindDto = phase1Dto.getKind();
@@ -48,9 +48,9 @@ module combat {
                 if (phaseJson != null) {
                     var phaseApi = <NightPhaseApi>JSON.parse(phaseJson.toString());
                     if (phaseApi != null) {
-                        var battleRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                        var phaseRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
                         rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto.getHougeki(), phaseApi.api_hougeki));
-                        _.forEach(rows, (hougekiRow) => (hougekiRow.unshift.apply(hougekiRow, battleRow)));
+                        _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
                     }
                 }
             }

@@ -34,7 +34,7 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
-            var hougekiRows = <any[][]>[];
+            var rows = [];
             var phaseDto = battleExDto.getPhase1();
             if (phaseDto != null) {
                 var phaseKindDto = phaseDto.getKind();
@@ -45,17 +45,17 @@ module combat {
                             var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
                             if (phaseApi != null) {
                                 var ships = new Ships(battleExDto);
-                                var battleRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_hougeki1));
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_hougeki2));
-                                hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki3(), phaseApi.api_hougeki3));
-                                _.forEach(hougekiRows, (hougekiRow) => (hougekiRow.unshift.apply(hougekiRow, battleRow)));
+                                var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_hougeki1));
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_hougeki2));
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki3(), phaseApi.api_hougeki3));
+                                _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
                             }
                         }
                     }
                 }
             }
-            return toComparable(hougekiRows);
+            return toComparable(rows);
         }
     }
 
@@ -76,16 +76,16 @@ module combat {
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships, battleAtackDtoList: JavaList<BattleAtackDto>, hougekiBattleApi: HougekiBattleApi) {
+        static body(battleExDto: BattleExDto, ships: Ships, battleAtackDtoList: JavaList<BattleAtackDto>, api_hougeki: HougekiBattleApi) {
             var rows = <any[][]>[];
-            if (hougekiBattleApi != null) {
-                for (var i = 1; i < hougekiBattleApi.api_at_list.length; ++i) {
-                    var api_at = hougekiBattleApi.api_at_list[i];
-                    var api_at_type = hougekiBattleApi.api_at_type[i];
-                    var api_df_list = hougekiBattleApi.api_df_list[i];
-                    var api_si_list = hougekiBattleApi.api_si_list[i];
-                    var api_cl_list = hougekiBattleApi.api_cl_list[i];
-                    var api_damage = hougekiBattleApi.api_damage[i];
+            if (api_hougeki != null) {
+                for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
+                    var api_at = api_hougeki.api_at_list[i];
+                    var api_at_type = api_hougeki.api_at_type[i];
+                    var api_df_list = api_hougeki.api_df_list[i];
+                    var api_si_list = api_hougeki.api_si_list[i];
+                    var api_cl_list = api_hougeki.api_cl_list[i];
+                    var api_damage = api_hougeki.api_damage[i];
                     if (api_at < 7) {
                         var itemInfoDtos = battleExDto.getDock().getShips()[api_at - 1].getItem();
                     }

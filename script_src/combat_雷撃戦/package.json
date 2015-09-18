@@ -1,0 +1,10 @@
+﻿{
+  "name": "combat_---",
+  "version": "0.0.0",
+  "description": "combat_雷撃戦",
+  "main": "app.js",
+  "author": {
+    "name": "Master",
+    "email": ""
+  }
+}
