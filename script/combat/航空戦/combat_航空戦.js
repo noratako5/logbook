@@ -396,15 +396,15 @@ var combat;
 var combat;
 (function (combat) {
     var JavaInteger = Packages.java.lang.Integer;
-    var HougekiTable = (function () {
-        function HougekiTable() {
+    var AirTable = (function () {
+        function AirTable() {
         }
-        HougekiTable.header = function () {
+        AirTable.header = function () {
             var row = combat.DayPhaseRow.header();
-            row.push.apply(row, HougekiRow.header());
+            row.push.apply(row, AirRow.header());
             return row;
         };
-        HougekiTable.body = function (battleExDto) {
+        AirTable.body = function (battleExDto) {
             var rows = [];
             var phaseDto = battleExDto.getPhase1();
             if (phaseDto != null) {
@@ -417,9 +417,8 @@ var combat;
                             if (phaseApi != null) {
                                 var ships = new combat.Ships(battleExDto);
                                 var phaseRow = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_hougeki1));
-                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_hougeki2));
-                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto.getHougeki3(), phaseApi.api_hougeki3));
+                                rows.push.apply(rows, AirRow.body(battleExDto, ships, phaseDto.getAir(), phaseApi.api_kouku));
+                                rows.push.apply(rows, AirRow.body(battleExDto, ships, phaseDto.getAir2(), phaseApi.api_kouku2));
                                 _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
                             }
                         }
@@ -428,92 +427,130 @@ var combat;
             }
             return combat.toComparable(rows);
         };
-        return HougekiTable;
+        return AirTable;
     })();
-    combat.HougekiTable = HougekiTable;
-    var HougekiRow = (function () {
-        function HougekiRow() {
+    combat.AirTable = AirTable;
+    var AirRow = (function () {
+        function AirRow() {
         }
-        HougekiRow.header = function () {
+        AirRow.header = function () {
             var row = [
-                '砲撃種別',
-                '表示装備1',
-                '表示装備2',
-                '表示装備3',
-                'クリティカル',
-                'ダメージ',
-                'かばう'
+                'ステージ1.自艦載機総数',
+                'ステージ1.自艦載機喪失数',
+                'ステージ1.敵艦載機総数',
+                'ステージ1.敵艦載機喪失数',
+                'ステージ2.自艦載機総数',
+                'ステージ2.自艦載機喪失数',
+                'ステージ2.敵艦載機総数',
+                'ステージ2.敵艦載機喪失数',
+                '対空カットイン.インデックス',
+                '対空カットイン.種別',
+                '対空カットイン.表示装備1',
+                '対空カットイン.表示装備2',
+                '対空カットイン.表示装備3'
             ];
-            row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('攻撃艦.' + s); }));
-            row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
+            _.forEach(['自艦', '敵艦'], function (x) {
+                for (var i = 1; i <= 6; ++i) {
+                    var r = [
+                        '被雷撃',
+                        '被爆撃',
+                        '被クリティカル',
+                        '被ダメージ',
+                        'かばう'
+                    ];
+                    //r.push.apply(r, ShipRow.header());
+                    row.push.apply(row, _.map(r, function (y) { return (x + i + '.' + y); }));
+                }
+            });
             return row;
         };
-        HougekiRow.body = function (battleExDto, ships, battleAtackDtoList, api_hougeki) {
+        AirRow.body = function (battleExDto, ships, battleAtackDtoList, api_kouku) {
             var rows = [];
-            if (api_hougeki != null) {
-                for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
-                    var api_at = api_hougeki.api_at_list[i];
-                    var api_at_type = api_hougeki.api_at_type[i];
-                    var api_df_list = api_hougeki.api_df_list[i];
-                    var api_si_list = api_hougeki.api_si_list[i];
-                    var api_cl_list = api_hougeki.api_cl_list[i];
-                    var api_damage = api_hougeki.api_damage[i];
-                    if (api_at < 7) {
-                        var itemInfoDtos = battleExDto.getDock().getShips()[api_at - 1].getItem();
-                    }
-                    else {
-                        var itemInfoDtos = battleExDto.getEnemy()[api_at - 7].getItem();
-                    }
-                    var itemNames = _.map(api_si_list, function (api_si) {
-                        var itemDto = _.find(itemInfoDtos, function (itemInfoDto) { return itemInfoDto != null ? itemInfoDto.getId() == api_si : false; });
-                        if (itemDto != null) {
-                            return itemDto.getName();
-                        }
-                        else {
-                            return null;
-                        }
-                    });
-                    for (var j = 0; j < api_df_list.length; ++j) {
-                        var api_df = api_df_list[j];
-                        var damage = JavaInteger.valueOf(api_damage[j]);
-                        var row = [
-                            api_at_type,
-                            itemNames[0],
-                            itemNames[1],
-                            itemNames[2],
-                            JavaInteger.valueOf(api_cl_list[j]),
-                            damage,
-                            damage != api_damage[j] ? 1 : 0
-                        ];
-                        if (api_at < 7) {
-                            row.push.apply(row, ships.friendRows[api_at - 1]);
-                        }
-                        else {
-                            row.push.apply(row, ships.enemyRows[api_at - 7]);
-                        }
-                        if (api_df < 7) {
-                            row.push.apply(row, ships.friendRows[api_df - 1]);
-                        }
-                        else {
-                            row.push.apply(row, ships.enemyRows[api_df - 7]);
-                        }
-                        rows.push(row);
+            if (api_kouku != null) {
+                var row = [];
+                var api_stage1 = api_kouku.api_stage1;
+                if (api_stage1 != null) {
+                    var stage1_f_count = api_stage1.api_f_count;
+                    var stage1_f_lostcount = api_stage1.api_f_lostcount;
+                    var stage1_e_count = api_stage1.api_e_count;
+                    var stage1_e_lostcount = api_stage1.api_e_lostcount;
+                }
+                row.push(stage1_f_count);
+                row.push(stage1_f_lostcount);
+                row.push(stage1_e_count);
+                row.push(stage1_e_lostcount);
+                var api_stage2 = api_kouku.api_stage2;
+                if (api_stage2 != null) {
+                    var stage2_f_count = api_stage2.api_f_count;
+                    var stage2_f_lostcount = api_stage2.api_f_lostcount;
+                    var stage2_e_count = api_stage2.api_e_count;
+                    var stage2_e_lostcount = api_stage2.api_e_lostcount;
+                    var api_air_fire = api_kouku.api_stage2.api_air_fire;
+                    if (api_air_fire != null) {
+                        var idx = 1 + api_air_fire.api_idx;
+                        var kind = api_air_fire.api_kind;
+                        var use_item0 = ships.itemInfos.getName(api_air_fire.api_use_items[0]);
+                        var use_item1 = ships.itemInfos.getName(api_air_fire.api_use_items[1]);
+                        var use_item2 = ships.itemInfos.getName(api_air_fire.api_use_items[2]);
                     }
                 }
+                row.push(stage2_f_count);
+                row.push(stage2_f_lostcount);
+                row.push(stage2_e_count);
+                row.push(stage2_e_lostcount);
+                row.push(idx);
+                row.push(kind);
+                row.push(use_item0);
+                row.push(use_item1);
+                row.push(use_item2);
+                var construct = function (shipRows, api_rai_flag, api_bak_flag, api_cl_flag, api_dam) {
+                    var row = [];
+                    for (var i = 1; i <= 6; ++i) {
+                        if (api_rai_flag != null) {
+                            var rai = JavaInteger.valueOf(api_rai_flag[i]);
+                        }
+                        row.push(rai);
+                        if (api_bak_flag != null) {
+                            var bak = JavaInteger.valueOf(api_bak_flag[i]);
+                        }
+                        row.push(bak);
+                        if (api_cl_flag != null) {
+                            var cl = JavaInteger.valueOf(api_cl_flag[i]);
+                        }
+                        row.push(cl);
+                        if (api_dam != null) {
+                            var dam = JavaInteger.valueOf(api_dam[i]);
+                            var protects = dam != api_dam[i] ? 1 : 0;
+                        }
+                        row.push(dam);
+                        row.push(protects);
+                    }
+                    return row;
+                };
+                var api_stage3 = api_kouku.api_stage3;
+                if (api_stage3 != null) {
+                    row.push.apply(row, construct(ships.friendRows, api_kouku.api_stage3.api_frai_flag, api_kouku.api_stage3.api_fbak_flag, api_kouku.api_stage3.api_fcl_flag, api_kouku.api_stage3.api_fdam));
+                    row.push.apply(row, construct(ships.enemyRows, api_kouku.api_stage3.api_erai_flag, api_kouku.api_stage3.api_ebak_flag, api_kouku.api_stage3.api_ecl_flag, api_kouku.api_stage3.api_edam));
+                }
+                else {
+                    row.push.apply(row, construct(ships.friendRows, null, null, null, null));
+                    row.push.apply(row, construct(ships.enemyRows, null, null, null, null));
+                }
+                rows.push(row);
             }
             return rows;
         };
-        return HougekiRow;
+        return AirRow;
     })();
-    combat.HougekiRow = HougekiRow;
+    combat.AirRow = AirRow;
 })(combat || (combat = {}));
 function begin() {
 }
 function end() {
 }
 function header() {
-    return combat.HougekiTable.header();
+    return combat.AirTable.header();
 }
 function body(battleExDto) {
-    return combat.HougekiTable.body(battleExDto);
+    return combat.AirTable.body(battleExDto);
 }

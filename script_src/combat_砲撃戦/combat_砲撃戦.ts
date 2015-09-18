@@ -6,21 +6,12 @@ module combat {
     import JavaList = Packages.java.util.List;
     import DateTimeString = Packages.logbook.gui.logic.DateTimeString;
     import BattleExDto = Packages.logbook.dto.BattleExDto;
-    import BasicInfoApi = combat.BasicInfoApi;
-    import MapCellApi = combat.MapCellApi;
-    import BattleResultApi = combat.BattleResultApi;
     import ShipBaseDto = Packages.logbook.dto.ShipBaseDto;
     import ShipDto = Packages.logbook.dto.ShipDto;
     import EnemyShipDto = Packages.logbook.dto.EnemyShipDto;
-    import ShipApi = combat.ShipApi;
-    import ShipInfoApi = combat.ShipInfoApi;
     import ItemDto = Packages.logbook.dto.ItemDto;
-    import ItemApi = combat.ItemApi;
     import ItemInfoDto = Packages.logbook.dto.ItemInfoDto;
-    import ItemInfoApi = combat.ItemInfoApi;
     import BattleAtackDto = Packages.logbook.dto.BattleAtackDto;
-    import DayPhaseApi = combat.DayPhaseApi;
-    import HougekiBattleApi = combat.HougekiBattleApi;
 
     type ComparableArray = JavaArray<any>;
     type ComparableArrayArray = JavaArray<ComparableArray>;
@@ -111,7 +102,7 @@ module combat {
                             , itemNames[2]
                             , JavaInteger.valueOf(api_cl_list[j])
                             , damage
-                            , damage != api_damage[j]
+                            , damage != api_damage[j] ? 1 : 0
                         ];
                         if (api_at < 7) {
                             row.push.apply(row, ships.friendRows[api_at - 1]);

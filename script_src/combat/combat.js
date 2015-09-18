@@ -160,8 +160,8 @@ var combat;
         function Ships(battleExDto) {
             var _this = this;
             this.itemInfos = new ItemInfos();
-            var constructShip = function (shipDtos) {
-                var shipRows = new Array(shipDtos.length);
+            var construct = function (shipDtos) {
+                var shipRows = [];
                 for (var i = 0; i < 6; ++i) {
                     if (shipDtos != null && i < shipDtos.length) {
                         var shipDto = shipDtos[i];
@@ -182,13 +182,13 @@ var combat;
             };
             var dockDto = battleExDto.getDock();
             if (dockDto != null) {
-                this.friendRows = constructShip(dockDto.getShips());
+                this.friendRows = construct(dockDto.getShips());
             }
             var dockCombinedDto = battleExDto.getDockCombined();
             if (dockCombinedDto != null) {
-                this.friendCombinedShipRows = constructShip(dockCombinedDto.getShips());
+                this.friendCombinedShipRows = construct(dockCombinedDto.getShips());
             }
-            this.enemyRows = constructShip(battleExDto.getEnemy());
+            this.enemyRows = construct(battleExDto.getEnemy());
         }
         return Ships;
     })();
@@ -392,4 +392,3 @@ var combat;
     }
     combat.toComparable = toComparable;
 })(combat || (combat = {}));
-//# sourceMappingURL=combat.js.map

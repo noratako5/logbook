@@ -11,6 +11,8 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_夜戦", "combat_夜
 EndProject
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_雷撃戦", "combat_雷撃戦\combat_雷撃戦.njsproj", "{325F56A0-E66F-4AD4-8E31-215AD003C50C}"
 EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_航空戦", "combat_航空戦\combat_航空戦.njsproj", "{9E2D5ECB-69A2-4C03-B4DC-79D00123611D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{325F56A0-E66F-4AD4-8E31-215AD003C50C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{325F56A0-E66F-4AD4-8E31-215AD003C50C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{325F56A0-E66F-4AD4-8E31-215AD003C50C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E2D5ECB-69A2-4C03-B4DC-79D00123611D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E2D5ECB-69A2-4C03-B4DC-79D00123611D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E2D5ECB-69A2-4C03-B4DC-79D00123611D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E2D5ECB-69A2-4C03-B4DC-79D00123611D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

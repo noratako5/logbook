@@ -491,7 +491,7 @@ var combat;
                             itemNames[2],
                             JavaInteger.valueOf(api_cl_list[j]),
                             damage,
-                            damage != api_damage[j]
+                            damage != api_damage[j] ? 1 : 0
                         ];
                         if (api_at < 7) {
                             row.push.apply(row, ships.friendRows[api_at - 1]);
