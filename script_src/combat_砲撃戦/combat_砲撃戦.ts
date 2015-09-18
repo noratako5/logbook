@@ -75,13 +75,23 @@ module combat {
                 , friendsCombined: friendCombinedShipRows
                 , enemies: enemyShipRows
             };
-            var dayPhaseDto = battleExDto.getPhase1();
-            var dayPhaseApi = <DayPhaseApi>JSON.parse(dayPhaseDto.getJson().toString());
             var hougekiRows = <any[][]>[];
-            hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, shipRows, dayPhaseDto.getHougeki1(), dayPhaseApi.api_hougeki1));
-            hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, shipRows, dayPhaseDto.getHougeki2(), dayPhaseApi.api_hougeki2));
-            hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, shipRows, dayPhaseDto.getHougeki3(), dayPhaseApi.api_hougeki3));
-            _.forEach(hougekiRows, (hougekiRow) => (hougekiRow.unshift.apply(hougekiRow, battleRow)));
+            var phaseDto = battleExDto.getPhase1();
+            if (phaseDto != null) {
+                var phaseKind = phaseDto.getKind();
+                if (!phaseKind.isNight()) {
+                    var phaseJson = phaseDto.getJson();
+                    if (phaseJson != null) {
+                        var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
+                        if (phaseApi != null) {
+                            hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, shipRows, phaseDto.getHougeki1(), phaseApi.api_hougeki1));
+                            hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, shipRows, phaseDto.getHougeki2(), phaseApi.api_hougeki2));
+                            hougekiRows.push.apply(hougekiRows, HougekiRow.body(battleExDto, shipRows, phaseDto.getHougeki3(), phaseApi.api_hougeki3));
+                            _.forEach(hougekiRows, (hougekiRow) => (hougekiRow.unshift.apply(hougekiRow, battleRow)));
+                        }
+                    }
+                }
+            }
             return toComparable(hougekiRows);
         }
     }
@@ -107,35 +117,54 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
+            var row = [];
+            var battleDate = battleExDto.getBattleDate();
+            if (battleDate != null) {
+                var battleDateTimeString = new DateTimeString(battleDate);
+            }
+            row.push(battleDateTimeString);
+            row.push(battleExDto.getQuestName());
             var mapCellDto = battleExDto.getMapCellDto();
-            var dayPhaseDto = battleExDto.getPhase1();
-            var airBattleDto = dayPhaseDto.getAir();
-            var battleResultApi = <BattleResultApi>JSON.parse(battleExDto.getResultJson().toString());
-            var bossTexts = [];
-            if (mapCellDto.isStart()) {
-                bossTexts.push('出撃');
+            if (mapCellDto != null) {
+                var reportString = mapCellDto.getReportString();
+                var bossTexts = [];
+                if (mapCellDto.isStart()) {
+                    bossTexts.push('出撃');
+                }
+                if (mapCellDto.isBoss()) {
+                    bossTexts.push('ボス');
+                }
+                var bossText = bossTexts.join('&');
             }
-            if (mapCellDto.isBoss()) {
-                bossTexts.push('ボス');
-            }
+            row.push(reportString);
+            row.push(bossText);
+            row.push(battleExDto.getRank());
+            row.push(battleExDto.getEnemyName());
+            row.push(battleExDto.getHqLv());
             var formation = battleExDto.getFormation();
+            if (formation != null) {
+                var formation0 = formation[0];
+                var formation1 = formation[1];
+            }
+            row.push(formation0);
+            row.push(formation1);
             var sakuteki = battleExDto.getSakuteki();
-            return [
-                new DateTimeString(battleExDto.getBattleDate())
-                , battleExDto.getQuestName()
-                , mapCellDto.getReportString()
-                , bossTexts.join('&')
-                , battleExDto.getRank()
-                , battleExDto.getEnemyName()
-                , battleExDto.getHqLv()
-                , formation[0]
-                , formation[1]
-                , sakuteki[0]
-                , sakuteki[1]
-                , airBattleDto.seiku
-                , battleExDto.getFormationMatch()
-            ];
-            battleExDto.getDock()
+            if (sakuteki != null) {
+                var sakuteki0 = sakuteki[0];
+                var sakuteki1 = sakuteki[1];
+            }
+            row.push(sakuteki0);
+            row.push(sakuteki1);
+            var phaseDto = battleExDto.getPhase1();
+            if (phaseDto != null) {
+                var airBattleDto = phaseDto.getAir();
+                if (airBattleDto != null) {
+                    var seiku = airBattleDto.seiku;
+                }
+            }
+            row.push(seiku);
+            row.push(battleExDto.getFormationMatch());
+            return row;
         }
     }
 
