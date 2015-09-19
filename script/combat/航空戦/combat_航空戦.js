@@ -597,7 +597,7 @@ var combat;
                         }
                         row.push(d);
                         row.push(protects);
-                        row.push.apply(row, shipRows[i]);
+                        row.push.apply(row, shipRows[i - 1]);
                     }
                     return row;
                 };
