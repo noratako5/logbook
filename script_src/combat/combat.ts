@@ -173,7 +173,7 @@ module combat {
         friendCombinedShipRows: any[][];
         enemyRows: any[][];
 
-        constructor(battleExDto: BattleExDto) {
+        constructor(battleExDto: BattleExDto, body: (shipBaseDto: ShipBaseDto) => any[] = ShipRow.body) {
             this.itemInfos = new ItemInfos();
             var construct = (shipDtos: JavaList<ShipBaseDto>) => {
                 var shipRows = [];
@@ -191,7 +191,7 @@ module combat {
                             }
                         }
                     }
-                    shipRows.push(ShipRow.body(shipDto));
+                    shipRows.push(body(shipDto));
                 }
                 return shipRows;
             };
@@ -231,9 +231,7 @@ module combat {
                 , '運'
                 , '射程'
             ];
-            for (var i = 1; i <= 5; ++i) {
-                row.push.apply(row, _.map(ItemRow.header(), (s) => ('装備' + i + '.' + s)));
-            }
+            row.push.apply(row, ItemRow.header());
             return row;
         }
 
@@ -312,35 +310,7 @@ module combat {
                 row.push(saku);
                 row.push(luck);
                 row.push(leng);
-                if (shipDto != null) {
-                    var itemDtos = shipDto.getItem2();
-                    var itemExDto = shipDto.getSlotExItem();
-                    if (itemExDto != null) {
-                        var itemInfoExDto = itemExDto.getInfo();
-                    }
-                }
-                var itemInfoDtos = shipBaseDto.getItem();
-                var onSlots = shipBaseDto.getOnSlot();
-                for (var i = 0; i < 5; ++i) {
-                    if (i === 4 && itemExDto != null && itemInfoExDto != null) {
-                        var itemRow = ItemRow.body(itemExDto[i], itemInfoExDto[i], null);
-                    }
-                    else if (itemInfoDtos != null && i < itemInfoDtos.length) {
-                        if (onSlots != null && i < onSlots.length) {
-                            var onSlot = onSlots[i];
-                        }
-                        if (itemDtos != null && i < itemDtos.length) {
-                            var itemRow = ItemRow.body(itemDtos[i], itemInfoDtos[i], onSlot);
-                        }
-                        else {
-                            var itemRow = ItemRow.body(null, itemInfoDtos[i], onSlot);
-                        }
-                    }
-                    else {
-                        var itemRow = ItemRow.body(null, null, null);
-                    }
-                    row.push.apply(row, itemRow);
-                }
+                row.push.apply(row, ItemRow.body(shipBaseDto));
                 return row;
             }
             else {
@@ -352,26 +322,66 @@ module combat {
     export class ItemRow {
 
         static header() {
-            return [
-                '名前'
-                , '改修'
-                , '熟練度'
-                , '搭載数'
-            ];
+            var row = [];
+            for (var i = 1; i <= 5; ++i) {
+                row.push.apply(row, _.map([
+                    '名前'
+                    , '改修'
+                    , '熟練度'
+                    , '搭載数'
+                ], (s) => ('装備' + i + '.' + s)));
+            }
+            return row;
         }
 
-        static body(itemDto: ItemDto, itemInfoDto: ItemInfoDto, onslot: number) {
-            if (itemInfoDto != null) {
-                return [
-                    itemInfoDto.getName()
-                    , (itemDto != null) ? itemDto.getLevel() : null
-                    , (itemDto != null) ? itemDto.getAlv() : null
-                    , onslot
-                ];
+        static body(shipBaseDto: ShipBaseDto) {
+            var construct = (itemDto: ItemDto, itemInfoDto: ItemInfoDto, onSlot: number) => {
+                if (itemInfoDto != null) {
+                    return [
+                        itemInfoDto.getName()
+                        , (itemDto != null) ? itemDto.getLevel() : null
+                        , (itemDto != null) ? itemDto.getAlv() : null
+                        , onSlot
+                    ];
+                }
+                else {
+                    return new Array(this.header().length);
+                }
             }
-            else {
-                return new Array(this.header().length);
+            var row = [];
+            if (shipBaseDto != null) {
+                if (shipBaseDto instanceof ShipDto) {
+                    var shipDto = <ShipDto>(shipBaseDto);
+                    var itemDtos = shipDto.getItem2();
+                    var itemExDto = shipDto.getSlotExItem();
+                    if (itemExDto != null) {
+                        var itemInfoExDto = itemExDto.getInfo();
+                    }
+                }
+                var itemInfoDtos = shipBaseDto.getItem();
+                var onSlots = shipBaseDto.getOnSlot();
             }
+            for (var i = 0; i < 5; ++i) {
+                if (i === 4 && itemExDto != null && itemInfoExDto != null) {
+                    var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
+                }
+                else if (itemInfoDtos != null && i < itemInfoDtos.length) {
+                    if (onSlots != null && i < onSlots.length) {
+                        var onSlot = onSlots[i];
+                    }
+                    if (itemDtos != null && i < itemDtos.length) {
+                        var itemRow = construct(itemDtos[i], itemInfoDtos[i], onSlot);
+                    }
+                    else {
+                        var itemRow = construct(null, itemInfoDtos[i], onSlot);
+                    }
+                }
+                else {
+                    var itemRow = construct(null, null, null);
+                }
+                row.push.apply(row, itemRow);
+            }
+            return row;
         }
     }
 
