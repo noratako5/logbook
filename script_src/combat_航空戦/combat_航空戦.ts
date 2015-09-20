@@ -70,10 +70,11 @@ module combat {
                     var shipId = shipInfoDto.getShipId();
                     var fullName = shipInfoDto.getFullName();
                 }
+                var lv = shipBaseDto.getLv();
             }
             row.push(shipId);
             row.push(fullName);
-            row.push(shipBaseDto.getLv());
+            row.push(lv);
             //row.push.apply(row, ItemRow.body(shipBaseDto));
             return row;
         }
@@ -91,7 +92,7 @@ module combat {
                 , 'ステージ2.自艦載機喪失数'
                 , 'ステージ2.敵艦載機総数'
                 , 'ステージ2.敵艦載機喪失数'
-                , '対空カットイン.インデックス'
+                , '対空カットイン.発動艦'
                 , '対空カットイン.種別'
                 , '対空カットイン.表示装備1'
                 , '対空カットイン.表示装備2'
@@ -99,15 +100,16 @@ module combat {
             ];
             _.forEach(['自艦', '敵艦'], (x) => {
                 for (var i = 1; i <= 6; ++i) {
-                    var shipRow = [
+                    var shipRow = [];
+                    shipRow.push.apply(shipRow, ShipSummaryRow.header());
+                    shipRow.push.apply(shipRow, [
                         '発艦'
                         , '被雷撃'
                         , '被爆撃'
                         , '被クリティカル'
                         , '被ダメージ'
                         , 'かばう'
-                    ];
-                    shipRow.push.apply(shipRow, ShipSummaryRow.header());
+                    ]);
                     row.push.apply(row, _.map(shipRow, (y) => (x + i + '.' + y)));
                 }
             });
@@ -182,6 +184,7 @@ module combat {
                 var construct = (shipRows: any[][], plane_from: number[], rai_flag: number[], bak_flag: number[], cl_flag: number[], dam: number[]) => {
                     var row = [];
                     for (var i = 1; i <= 6; ++i) {
+                        row.push.apply(row, shipRows[i - 1]);
                         if (plane_from != null) {
                             var pf = plane_from[i];
                         }
@@ -204,7 +207,6 @@ module combat {
                         }
                         row.push(d);
                         row.push(protects);
-                        row.push.apply(row, shipRows[i - 1]);
                     }
                     return row;
                 };

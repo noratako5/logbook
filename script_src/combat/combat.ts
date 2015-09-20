@@ -178,6 +178,7 @@ module combat {
             var construct = (shipDtos: JavaList<ShipBaseDto>) => {
                 var shipRows = [];
                 for (var i = 0; i < 6; ++i) {
+                    shipDto = null;
                     if (shipDtos != null && i < shipDtos.length) {
                         var shipDto = shipDtos[i];
                         if (shipDto != null) {
