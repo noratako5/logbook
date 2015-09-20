@@ -27,14 +27,11 @@ public final class ItemInfoDto extends AbstractDto {
     private String name;
     @Tag(4)
     private ShipParameters param;
-    @Tag(5)
-    private final String json;
 
     /**
      * コンストラクター
      */
     public ItemInfoDto() {
-        this.json = null;
     }
 
     /**
@@ -47,7 +44,6 @@ public final class ItemInfoDto extends AbstractDto {
         this.type = JsonUtils.getIntArray(object, "api_type");
         this.name = object.getString("api_name");
         this.param = ShipParameters.fromMasterItem(object);
-        this.json = JsonUtils.toString(object);
     }
 
     /**
@@ -86,7 +82,6 @@ public final class ItemInfoDto extends AbstractDto {
         this.name = name;
         this.param = new ShipParameters(taik, houg, houm, raig, baku, tyku, souk,
                 houk, tais, saku, luck, soku, leng);
-        this.json = null;
     }
 
     public boolean isPlane() {
@@ -211,19 +206,5 @@ public final class ItemInfoDto extends AbstractDto {
      */
     public void setParam(ShipParameters param) {
         this.param = param;
-    }
-
-    /**
-     * JSONオブジェクト
-     */
-    public JsonObject getJson() {
-        return JsonUtils.fromString(this.json);
-    }
-
-    /**
-     * JSON文字列
-     */
-    public String getJsonString() {
-        return this.json;
     }
 }

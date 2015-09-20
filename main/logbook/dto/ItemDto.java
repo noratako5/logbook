@@ -7,8 +7,6 @@ import java.beans.Transient;
 
 import javax.json.JsonObject;
 
-import logbook.util.JsonUtils;
-
 import com.dyuproject.protostuff.Tag;
 
 /**
@@ -34,18 +32,13 @@ public class ItemDto extends AbstractDto {
     @Tag(5)
     private int level;
 
-    @Tag(6)
-    private final String json;
-
     public ItemDto() {
-        this.json = null;
     }
 
     public ItemDto(ItemInfoDto info, int id) {
         this.info = info;
         this.slotitemId = info.getId();
         this.id = id;
-        this.json = null;
     }
 
     public ItemDto(ItemInfoDto info, JsonObject object) {
@@ -60,7 +53,6 @@ public class ItemDto extends AbstractDto {
             this.locked = false;
             this.level = 0;
         }
-        this.json = JsonUtils.toString(object);
     }
 
     /**
@@ -217,19 +209,5 @@ public class ItemDto extends AbstractDto {
      */
     public ShipParameters getParam() {
         return this.info.getParam();
-    }
-
-    /**
-     * JSONオブジェクト
-     */
-    public JsonObject getJson() {
-        return JsonUtils.fromString(this.json);
-    }
-
-    /**
-     * JSON文字列
-     */
-    public String getJsonString() {
-        return this.json;
     }
 }

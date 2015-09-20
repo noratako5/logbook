@@ -7,6 +7,7 @@
 /config
 /logs
 /json
+/battlelog
 
 *.csv
 *.dat

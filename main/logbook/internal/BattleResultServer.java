@@ -30,7 +30,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import logbook.constants.AppConstants;
-import logbook.dto.BattleExBaseDto;
 import logbook.dto.BattleExDto;
 import logbook.dto.BattleResultDto;
 import logbook.gui.logic.IntegerPair;
@@ -334,11 +333,7 @@ public class BattleResultServer {
         // 全部読み込む
         for (Map.Entry<String, DataFile> entry : this.fileMap.entrySet()) {
             DataFile file = entry.getValue();
-            try {
-                List<BattleExDto> result = file.readAll(this.schema);
-            } catch (IOException e) {
-                this.restore(FileSystems.getDefault().getPath(entry.getKey()));
-            }
+            this.restore(FileSystems.getDefault().getPath(entry.getKey()));
         }
     }
 
@@ -347,9 +342,9 @@ public class BattleResultServer {
             Path backupPath = targetPath.getParent().resolve(targetPath.getFileName() + ".bak");
             Files.move(targetPath, backupPath);
             DataFile file = new NormalDataFile(new File(backupPath.toString()));
-            Schema<BattleExBaseDto> schema = RuntimeSchema.getSchema(BattleExBaseDto.class);
+            Schema<BattleExDto> schema = RuntimeSchema.getSchema(BattleExDto.class);
             Map<String, DataFile> fileMap = new HashMap<String, DataFile>();
-            for (BattleExBaseDto dto : file.readAll(schema)) {
+            for (BattleExDto dto : file.readAll(schema)) {
                 // ファイルとリストに追加
                 if (dto.isCompleteResult()) {
                     File targetFile = new File(FilenameUtils.concat(this.path.toString(),

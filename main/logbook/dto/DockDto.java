@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.json.JsonObject;
-
-import logbook.util.JsonUtils;
-
 import com.dyuproject.protostuff.Tag;
 
 /**
@@ -32,22 +28,18 @@ public final class DockDto extends AbstractDto {
     @Tag(4)
     private boolean[] escaped = null;
 
-    @Tag(5)
-    private final String json;
-
     /** 更新フラグ */
     private transient boolean update;
 
     /**
      * コンストラクター
      */
-    public DockDto(JsonObject object, String id, String name, DockDto oldDock) {
+    public DockDto(String id, String name, DockDto oldDock) {
         this.id = id;
         this.name = name;
         if (oldDock != null) {
             this.escaped = oldDock.getEscaped();
         }
-        this.json = JsonUtils.toString(object);
     }
 
     /**
@@ -210,19 +202,5 @@ public final class DockDto extends AbstractDto {
         }
 
         return numRepairShips;
-    }
-
-    /**
-     * JSONオブジェクト
-     */
-    public JsonObject getJson() {
-        return JsonUtils.fromString(this.json);
-    }
-
-    /**
-     * JSON文字列
-     */
-    public String getJsonString() {
-        return this.json;
     }
 }

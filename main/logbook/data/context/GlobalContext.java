@@ -29,8 +29,8 @@ import logbook.constants.AppConstants;
 import logbook.data.Data;
 import logbook.data.EventListener;
 import logbook.dto.BasicInfoDto;
-import logbook.dto.BattleExBaseDto.Phase;
 import logbook.dto.BattleExDto;
+import logbook.dto.BattleExDto.Phase;
 import logbook.dto.BattlePhaseKind;
 import logbook.dto.BattleResultDto;
 import logbook.dto.CreateItemDto;
@@ -1124,7 +1124,7 @@ public final class GlobalContext {
             JsonObject apidata = data.getJsonObject().getJsonObject("api_data");
             if (battle == null) {
                 battle = new BattleExDto(data.getCreateDate());
-                battle.setBasicInfo(basic.getJson(), maxChara - shipMap.size(), maxSlotitem - itemMap.size());
+                battle.setBasicInfo(maxChara - shipMap.size(), maxSlotitem - itemMap.size());
             }
             BattleExDto.Phase phase = battle.addPhase(apidata, phaseKind);
 
@@ -1610,7 +1610,7 @@ public final class GlobalContext {
             String name = jsonObject.getString("api_name");
             JsonArray apiship = jsonObject.getJsonArray("api_ship");
 
-            DockDto dockdto = new DockDto(jsonObject, fleetidstr, name, dock.get(fleetidstr));
+            DockDto dockdto = new DockDto(fleetidstr, name, dock.get(fleetidstr));
             List<Integer> shipIds = new ArrayList<Integer>();
             dock.put(fleetidstr, dockdto);
 

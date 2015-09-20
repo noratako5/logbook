@@ -129,7 +129,7 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
         this.maxhp = this.getMax().getHP();
         this.slotnum = object.getJsonNumber("api_slotnum").intValue();
         this.onslot = JsonUtils.getIntArray(object, "api_onslot");
-        this.json = JsonUtils.toString(object);
+        this.json = object.toString();
     }
 
     /** 新規入手艦 */
@@ -558,14 +558,10 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
      * @return json
      */
     public JsonObject getJson() {
-        return JsonUtils.fromString(this.json);
-    }
+        if (this.json == null)
+            return null;
 
-    /**
-     * データの更新に使ったJSON文字列
-     */
-    public String getJsonString() {
-        return this.json;
+        return JsonUtils.fromString(this.json);
     }
 
     /**
