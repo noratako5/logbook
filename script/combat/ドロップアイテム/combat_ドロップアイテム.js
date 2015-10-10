@@ -424,7 +424,6 @@ var combat;
                 var ships = new combat.Ships(battleExDto, ShipRow.body);
                 var phaseRow = PhaseRow.body(battleExDto);
                 rows.push.apply(rows, FleetRow.body(battleExDto, ships));
-                rows.push.apply(rows, FleetRow.body(battleExDto, ships));
                 _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
                 return combat.toComparable(rows);
             };

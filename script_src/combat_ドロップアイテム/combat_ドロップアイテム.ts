@@ -30,7 +30,6 @@ module combat.DropItem {
             var ships = new Ships(battleExDto, ShipRow.body);
             var phaseRow = PhaseRow.body(battleExDto);
             rows.push.apply(rows, FleetRow.body(battleExDto, ships));
-            rows.push.apply(rows, FleetRow.body(battleExDto, ships));
             _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
             return toComparable(rows);
         }
