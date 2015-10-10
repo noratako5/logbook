@@ -324,19 +324,18 @@ var combat;
             return row;
         };
         ItemRow.body = function (shipBaseDto) {
-            var _this = this;
             var construct = function (itemDto, itemInfoDto, onSlot) {
                 if (itemInfoDto != null) {
-                    return [
-                        itemInfoDto.getName(),
-                        (itemDto != null) ? itemDto.getLevel() : null,
-                        (itemDto != null) ? itemDto.getAlv() : null,
-                        onSlot
-                    ];
+                    var name = itemInfoDto.getName();
+                    var level = (itemDto != null) ? itemDto.getLevel() : null;
+                    var alv = (itemDto != null) ? itemDto.getAlv() : null;
                 }
-                else {
-                    return new Array(_this.header().length);
-                }
+                return [
+                    name,
+                    level,
+                    alv,
+                    onSlot
+                ];
             };
             var row = [];
             if (shipBaseDto != null) {

@@ -407,88 +407,214 @@ var combat;
 /// <reference path="../combat/combat.ts" />
 var combat;
 (function (combat) {
-    var JavaInteger = Packages.java.lang.Integer;
-    var RaigekiTable = (function () {
-        function RaigekiTable() {
-        }
-        RaigekiTable.header = function () {
-            var row = combat.DayPhaseRow.header();
-            row.push.apply(row, RaigekiRow.header());
-            return row;
-        };
-        RaigekiTable.body = function (battleExDto) {
-            var rows = [];
-            var phaseDto = battleExDto.getPhase1();
-            if (phaseDto != null) {
-                var phaseKindDto = phaseDto.getKind();
-                if (phaseKindDto != null) {
-                    if (!phaseKindDto.isNight()) {
-                        var phaseJson = phaseDto.getJson();
-                        if (phaseJson != null) {
-                            var phaseApi = JSON.parse(phaseJson.toString());
-                            if (phaseApi != null) {
-                                var ships = new combat.Ships(battleExDto);
-                                var phaseRow = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_opening_atack));
-                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_raigeki));
-                                _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
-                            }
+    var DropItem;
+    (function (DropItem) {
+        var DateTimeString = Packages.logbook.gui.logic.DateTimeString;
+        var ShipDto = Packages.logbook.dto.ShipDto;
+        var Table = (function () {
+            function Table() {
+            }
+            Table.header = function () {
+                var row = PhaseRow.header();
+                row.push.apply(row, FleetRow.header());
+                return row;
+            };
+            Table.body = function (battleExDto) {
+                var rows = [];
+                var ships = new combat.Ships(battleExDto, ShipRow.body);
+                var phaseRow = PhaseRow.body(battleExDto);
+                rows.push.apply(rows, FleetRow.body(battleExDto, ships));
+                rows.push.apply(rows, FleetRow.body(battleExDto, ships));
+                _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
+                return combat.toComparable(rows);
+            };
+            return Table;
+        })();
+        DropItem.Table = Table;
+        var PhaseRow = (function () {
+            function PhaseRow() {
+            }
+            PhaseRow.header = function () {
+                return [
+                    '日付',
+                    '海域',
+                    'マス',
+                    '出撃',
+                    'ランク',
+                    '敵艦隊',
+                    '提督レベル',
+                    '夜戦',
+                    'ドロップアイテム'
+                ];
+            };
+            PhaseRow.body = function (battleExDto) {
+                var row = [];
+                var battleDate = battleExDto.getBattleDate();
+                if (battleDate != null) {
+                    var battleDateTimeString = new DateTimeString(battleDate);
+                }
+                row.push(battleDateTimeString);
+                row.push(battleExDto.getQuestName());
+                var mapCellDto = battleExDto.getMapCellDto();
+                if (mapCellDto != null) {
+                    var reportString = mapCellDto.getReportString();
+                    var bossTexts = [];
+                    if (mapCellDto.isStart()) {
+                        bossTexts.push('出撃');
+                    }
+                    if (mapCellDto.isBoss()) {
+                        bossTexts.push('ボス');
+                    }
+                    var bossText = bossTexts.join('&');
+                }
+                row.push(reportString);
+                row.push(bossText);
+                row.push(battleExDto.getRank());
+                row.push(battleExDto.getEnemyName());
+                row.push(battleExDto.getHqLv());
+                var formation = battleExDto.getFormation();
+                if (formation != null) {
+                    var formation0 = formation[0];
+                    var formation1 = formation[1];
+                }
+                row.push(_.any(_.filter(battleExDto.getPhaseList(), function (phaseDto) { return phaseDto.getKind().isNight(); })));
+                row.push(battleExDto.getDropItemName());
+                return row;
+            };
+            return PhaseRow;
+        })();
+        DropItem.PhaseRow = PhaseRow;
+        var ItemRow = (function () {
+            function ItemRow() {
+            }
+            ItemRow.header = function () {
+                var row = [];
+                for (var i = 1; i <= 5; ++i) {
+                    row.push.apply(row, _.map([
+                        '名前'
+                    ], function (s) { return ('装備' + i + '.' + s); }));
+                }
+                return row;
+            };
+            ItemRow.body = function (shipBaseDto) {
+                var construct = function (itemDto, itemInfoDto, onSlot) {
+                    if (itemInfoDto != null) {
+                        var name = itemInfoDto.getName();
+                    }
+                    return [
+                        name
+                    ];
+                };
+                var row = [];
+                if (shipBaseDto != null) {
+                    if (shipBaseDto instanceof ShipDto) {
+                        var shipDto = (shipBaseDto);
+                        var itemDtos = shipDto.getItem2();
+                        var itemExDto = shipDto.getSlotExItem();
+                        if (itemExDto != null) {
+                            var itemInfoExDto = itemExDto.getInfo();
                         }
                     }
+                    var itemInfoDtos = shipBaseDto.getItem();
+                    var onSlots = shipBaseDto.getOnSlot();
                 }
-            }
-            return combat.toComparable(rows);
-        };
-        return RaigekiTable;
-    })();
-    combat.RaigekiTable = RaigekiTable;
-    var RaigekiRow = (function () {
-        function RaigekiRow() {
-        }
-        RaigekiRow.header = function () {
-            var row = [
-                'クリティカル',
-                'ダメージ',
-                'かばう'
-            ];
-            row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('攻撃艦.' + s); }));
-            row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
-            return row;
-        };
-        RaigekiRow.body = function (battleExDto, ships, battleAtackDtoList, api_raigeki) {
-            var rows = [];
-            if (api_raigeki != null) {
-                var construct = function (atShipRows, dfShipRows, api_rai, api_ydam, api_cl) {
-                    var rows = [];
-                    for (var i = 1; i <= 6; ++i) {
-                        var row = [];
-                        var cl = JavaInteger.valueOf(api_cl[i]);
-                        var ydam = JavaInteger.valueOf(api_ydam[i]);
-                        row.push(cl);
-                        row.push(ydam);
-                        row.push(ydam != api_ydam[i] ? 1 : 0);
-                        row.push.apply(row, atShipRows[i - 1]);
-                        row.push.apply(row, dfShipRows[api_rai[i] - 1]);
-                        rows.push(row);
+                for (var i = 0; i < 5; ++i) {
+                    if (i === 4 && itemExDto != null && itemInfoExDto != null) {
+                        var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
                     }
-                    return rows;
-                };
-                rows.push.apply(rows, construct(ships.friendRows, ships.enemyRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl));
-                rows.push.apply(rows, construct(ships.enemyRows, ships.friendRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl));
+                    else if (itemInfoDtos != null && i < itemInfoDtos.length) {
+                        if (onSlots != null && i < onSlots.length) {
+                            var onSlot = onSlots[i];
+                        }
+                        if (itemDtos != null && i < itemDtos.length) {
+                            var itemRow = construct(itemDtos[i], itemInfoDtos[i], onSlot);
+                        }
+                        else {
+                            var itemRow = construct(null, itemInfoDtos[i], onSlot);
+                        }
+                    }
+                    else {
+                        var itemRow = construct(null, null, null);
+                    }
+                    row.push.apply(row, itemRow);
+                }
+                return row;
+            };
+            return ItemRow;
+        })();
+        DropItem.ItemRow = ItemRow;
+        var ShipRow = (function () {
+            function ShipRow() {
             }
-            return rows;
-        };
-        return RaigekiRow;
-    })();
-    combat.RaigekiRow = RaigekiRow;
+            ShipRow.header = function () {
+                var row = [
+                    'ID',
+                    '名前',
+                    'Lv'
+                ];
+                row.push.apply(row, ItemRow.header());
+                return row;
+            };
+            ShipRow.body = function (shipBaseDto) {
+                var row = [];
+                if (shipBaseDto != null) {
+                    var shipInfoDto = shipBaseDto.getShipInfo();
+                    if (shipInfoDto != null) {
+                        var shipId = shipInfoDto.getShipId();
+                        var fullName = shipInfoDto.getFullName();
+                    }
+                    var lv = shipBaseDto.getLv();
+                }
+                row.push(shipId);
+                row.push(fullName);
+                row.push(lv);
+                row.push.apply(row, ItemRow.body(shipBaseDto));
+                return row;
+            };
+            return ShipRow;
+        })();
+        DropItem.ShipRow = ShipRow;
+        var FleetRow = (function () {
+            function FleetRow() {
+            }
+            FleetRow.header = function () {
+                var row = [];
+                _.forEach(['自艦', '敵艦'], function (x) {
+                    for (var i = 1; i <= 6; ++i) {
+                        var shipRow = [];
+                        shipRow.push.apply(shipRow, ShipRow.header());
+                        row.push.apply(row, _.map(shipRow, function (y) { return (x + i + '.' + y); }));
+                    }
+                });
+                return row;
+            };
+            FleetRow.body = function (battleExDto, ships) {
+                var rows = [];
+                var row = [];
+                var construct = function (shipRows) {
+                    var row = [];
+                    for (var i = 1; i <= 6; ++i) {
+                        row.push.apply(row, shipRows[i - 1]);
+                    }
+                    return row;
+                };
+                row.push.apply(row, construct(ships.friendRows));
+                row.push.apply(row, construct(ships.enemyRows));
+                rows.push(row);
+                return rows;
+            };
+            return FleetRow;
+        })();
+        DropItem.FleetRow = FleetRow;
+    })(DropItem = combat.DropItem || (combat.DropItem = {}));
 })(combat || (combat = {}));
 function begin() {
 }
 function end() {
 }
 function header() {
-    return combat.RaigekiTable.header();
+    return combat.DropItem.Table.header();
 }
 function body(battleExDto) {
-    return combat.RaigekiTable.body(battleExDto);
+    return combat.DropItem.Table.body(battleExDto);
 }

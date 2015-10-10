@@ -338,16 +338,16 @@ module combat {
         static body(shipBaseDto: ShipBaseDto) {
             var construct = (itemDto: ItemDto, itemInfoDto: ItemInfoDto, onSlot: number) => {
                 if (itemInfoDto != null) {
-                    return [
-                        itemInfoDto.getName()
-                        , (itemDto != null) ? itemDto.getLevel() : null
-                        , (itemDto != null) ? itemDto.getAlv() : null
-                        , onSlot
-                    ];
+                    var name = itemInfoDto.getName();
+                    var level = (itemDto != null) ? itemDto.getLevel() : null;
+                    var alv = (itemDto != null) ? itemDto.getAlv() : null;
                 }
-                else {
-                    return new Array(this.header().length);
-                }
+                return [
+                    name
+                    , level
+                    , alv
+                    , onSlot
+                ];
             }
             var row = [];
             if (shipBaseDto != null) {

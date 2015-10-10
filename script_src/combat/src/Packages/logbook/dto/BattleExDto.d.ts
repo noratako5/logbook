@@ -207,6 +207,24 @@ declare module Packages.logbook.dto {
          * @return dropName
          */
         isDropName(): string;
+
+        /**
+         * ドロップ艦の艦種（アイテムの場合は「アイテム」）
+         * @return dropType
+         */
+        getDropType(): string;
+
+        /**
+         * ドロップ艦の名前
+         * @return dropName
+         */
+        getDropName(): string;
+
+        /**
+         * ドロップアイテムの名前
+         * @return dropItemName
+         */
+        getDropItemName(): string;
     
         /**
          * 戦闘フェーズ（昼戦・夜戦）リスト
