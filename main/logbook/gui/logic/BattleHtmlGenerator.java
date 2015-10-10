@@ -20,6 +20,8 @@ import logbook.dto.ItemDto;
 import logbook.dto.ShipBaseDto;
 import logbook.dto.ShipDto;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * @author Nekopanda
  *
@@ -775,7 +777,8 @@ public class BattleHtmlGenerator extends HTMLGenerator {
                 int[] flarePos = phase.getFlarePos();
                 if (flarePos != null) {
                     if (flarePos[0] != -1) {
-                        flare[0] = this.getShipName(friendShips, flarePos[0] - 1);
+                        int base = phase.getKind().isHougekiSecond() ? 6 : 0;
+                        flare[0] = this.getShipName(friendShips, (flarePos[0] - 1) + base);
                     }
                     if (flarePos[1] != -1) {
                         flare[1] = this.getShipName(enemyShips, flarePos[1] - 1);
@@ -947,7 +950,11 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         }
         this.begin("tr", null);
         this.inline("td", "ドロップ", null);
-        this.inline("td", (detail.isDropShip() || detail.isDropItem()) ? detail.getDropName() : "なし", null);
+        String dropText = StringUtils.join(
+                detail.getDropName(),
+                (detail.isDropShip() && detail.isDropItem()) ? "," : null,
+                detail.getDropItemName());
+        this.inline("td", StringUtils.isEmpty(dropText) ? "なし" : dropText, null);
         this.end(); // tr
         this.end(); // table
     }

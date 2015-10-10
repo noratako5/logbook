@@ -279,6 +279,17 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
         // ヘッダの右クリックメニュー
         this.headermenu = new Menu(this.table);
+        MenuItem resetSortItem = new MenuItem(this.headermenu, SWT.NONE);
+        resetSortItem.setText("ソート順リセット");
+        resetSortItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                AbstractTableDialog.this.resetTableSort();
+            }
+        });
+        new MenuItem(this.headermenu, SWT.SEPARATOR);
+
+        final List<MenuItem> columnMenuItems = new ArrayList<>();
         for (int i = 0; i < this.header.length; ++i) {
             final MenuItem item = new MenuItem(this.headermenu, SWT.CHECK);
             final int column_index = i;
@@ -292,15 +303,15 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
                     AbstractTableDialog.this.setColumnVisible(column_index, selected);
                 }
             });
+            columnMenuItems.add(item);
         }
         this.headermenu.addMenuListener(new MenuAdapter() {
             @Override
             public void menuShown(MenuEvent e) {
                 // 開くときに設定を反映させておく
-                MenuItem[] items = AbstractTableDialog.this.headermenu.getItems();
                 boolean[] visibles = AbstractTableDialog.this.getConfig().getVisibleColumn();
-                for (int i = 0; i < items.length; ++i) {
-                    items[i].setSelection(visibles[i]);
+                for (int i = 0; i < columnMenuItems.size(); ++i) {
+                    columnMenuItems.get(i).setSelection(visibles[i]);
                 }
             }
         });
@@ -423,8 +434,9 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         int numPrintItems = Math.min(MAX_PRINT_ITEMS, this.body.size());
         for (int i = 0; i < numPrintItems; i++) {
             Comparable[] line = this.body.get(i);
-            ((TableRowHeader) line[0]).setNumber(i + 1); // ソート順に関係ない番号
-            creator.create(this.table, line, i);
+            TableRowHeader rowHeader = (TableRowHeader) line[0];
+            rowHeader.setNumber(i + 1); // ソート順に関係ない番号
+            TableItem item = creator.create(this.table, line, i);
         }
         creator.end();
     }
@@ -610,6 +622,10 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
         // sortOrderをチェック
         SortKey[] sortKeys = this.config.getSortKeys();
+        if (sortKeys == null) {
+            sortKeys = new SortKey[3];
+            this.config.setSortKeys(sortKeys);
+        }
         for (int i = 0; i < sortKeys.length; ++i) {
             if (sortKeys[i] != null) {
                 if (sortKeys[i].index >= this.header.length) {
@@ -785,6 +801,11 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         TableConfigBean.SortKey[] sortKeys = new TableConfigBean.SortKey[3];
         config.setSortKeys(sortKeys);
         return config;
+    }
+
+    protected void resetTableSort() {
+        Arrays.fill(this.config.getSortKeys(), null);
+        this.reloadTable();
     }
 
     /**

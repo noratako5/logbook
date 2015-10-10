@@ -35,7 +35,6 @@ import logbook.dto.DockDto;
 import logbook.dto.EnemyShipDto;
 import logbook.dto.GetShipDto;
 import logbook.dto.ItemDto;
-import logbook.dto.ItemInfoDto;
 import logbook.dto.LostEntityDto;
 import logbook.dto.MaterialDto;
 import logbook.dto.MissionResultDto;
@@ -84,7 +83,7 @@ public final class CreateReportLogic {
      */
     public static String[] getBattleResultHeader() {
         return ArrayUtils.addAll(new String[] {
-                "No.", "日付", "海域", "マス", "出撃", "ランク", "敵艦隊", "ドロップ艦種", "ドロップ艦娘" },
+                "No.", "日付", "海域", "マス", "出撃", "ランク", "敵艦隊", "ドロップ艦種", "ドロップ艦娘", "ドロップアイテム" },
                 BattleLogProxy.get().header());
     }
 
@@ -108,7 +107,8 @@ public final class CreateReportLogic {
                     item.getRank(),
                     item.getEnemyName(),
                     item.getDropType(),
-                    item.getScreenDropName() },
+                    item.getScreenDropName(),
+                    item.getDropItemName() },
                     item.getExtData()));
         }
         return body;
@@ -365,9 +365,11 @@ public final class CreateReportLogic {
             info.getItems().add(item);
         }
         for (ShipDto ship : GlobalContext.getShipMap().values()) {
-            for (ItemInfoDto item : ship.getItem()) {
+            List<ItemDto> items = new ArrayList<>(ship.getItem2());
+            items.add(ship.getSlotExItem());
+            for (ItemDto item : items) {
                 if (item != null) {
-                    ItemInfo info = itemCountMap.get(item.getId());
+                    ItemInfo info = itemCountMap.get(item.getSlotitemId());
                     if (info != null) {
                         info.getShips().add(ship);
                     }
@@ -412,12 +414,12 @@ public final class CreateReportLogic {
      * @param filter 鍵付きのみ
      * @return 内容
      */
-    public static List<Comparable[]> getShipListBody(boolean specdiff, ShipFilterDto filter) {
+    public static List<Comparable[]> getShipListBody(int specdisp, ShipFilterDto filter) {
         //ApplicationMain.sysPrint("ShipListBody Start");
         Set<Integer> missionSet = GlobalContext.getMissionShipSet();
         List<Comparable[]> body = new ArrayList<Comparable[]>();
         ShipItemListener script = ShipItemProxy.get();
-        script.begin(specdiff, filter);
+        script.begin(specdisp == 0, filter, specdisp);
         for (ShipDto ship : GlobalContext.getShipMap().values()) {
             if ((filter != null) && !shipFilter(ship, filter, missionSet)) {
                 continue;

@@ -41,11 +41,11 @@ function begin(specdiff) {
 		ordermap[ship.ship.getId()] = ship.sortNumber;
 	}
 	missionShips = GlobalContext.getMissionShipSet();
-	ndockShips = GlobalContext.getNDockShipSet();
+	ndockMap = GlobalContext.getNDockCompleteTimeMap();
 }
 
 function getPageNumber(index) {
-	return new IntegerPair((index / 10) + 1, (index % 10) + 1, "-");
+	return new IntegerPair((index / 10) + 1, (index % 10) + 1, "%d-%d");
 }
 
 function getSokuryoku(soku) {
@@ -70,7 +70,7 @@ function body(ship) {
 	if (missionShips.contains(ship.id)) {
 		now = "遠征中";
 	}
-	else if (ndockShips.contains(ship.id)) {
+	else if (ndockMap.containsKey(ship.id)) {
 		now = "入渠中";
 	}
 
@@ -88,7 +88,7 @@ function body(ship) {
 		damage = "小破";
 	}
 
-	var condClearTime = ship.getCondClearTime(GlobalContext.getCondTiming());
+	var condClearTime = ship.getCondClearTime(GlobalContext.getCondTiming(), ndockMap.get(ship.id));
 
 	return toComparable([
 					ship.id,

@@ -418,6 +418,20 @@ public final class GlobalContext {
     }
 
     /**
+     * 入渠中の艦セット
+     * @return 入渠中の艦セット
+     */
+    public static Map<Integer, Date> getNDockCompleteTimeMap() {
+        Map<Integer, Date> map = new HashMap<>();
+        for (NdockDto ndock : ndocks) {
+            if (ndock.getNdockid() != 0) {
+                map.put(ndock.getNdockid(), ndock.getNdocktime());
+            }
+        }
+        return map;
+    }
+
+    /**
      * 艦娘が入渠しているかを調べます
      * @param ship 艦娘
      * @return 入渠している場合true
@@ -1101,7 +1115,7 @@ public final class GlobalContext {
                 }
 
                 updateShipParameter.sortieEnd();
-                state = checkDataState();
+                state = checkDataState(endSortie);
 
                 addUpdateLog("母港情報を更新しました");
             }
@@ -1279,9 +1293,14 @@ public final class GlobalContext {
             addUpdateLog("海戦結果を更新しました");
 
             // ドロップを表示
-            if ((battle != null) && (battle.isDropShip() || battle.isDropItem())) {
+            if (battle != null) {
                 if (AppConfig.get().isPrintDropLog()) {
-                    addConsole(battle.getDropName() + "がドロップしました");
+                    if (battle.isDropShip()) {
+                        addConsole(battle.getDropName() + "がドロップしました");
+                    }
+                    if (battle.isDropItem()) {
+                        addConsole(battle.getDropItemName() + "がドロップしました");
+                    }
                 }
             }
         } catch (Exception e) {
@@ -2006,7 +2025,11 @@ public final class GlobalContext {
     private static void ndockFinished(int shipId) {
         ShipDto ship = shipMap.get(shipId);
         if (ship != null) {
+            // 回復させる
             ship.setNowhp(ship.getMaxhp());
+            if (ship.getCond() < 40) {
+                ship.setCond(40);
+            }
             ship.setDockTime(0);
         }
         // 修理が終わったことにより疲労度が変わっているので
@@ -2054,6 +2077,18 @@ public final class GlobalContext {
 
             if (highspeed) {
                 ndockFinished(id);
+            }
+
+            // 次アップデート
+            ShipDto ship = shipMap.get(id);
+            if (ship != null) {
+                String fleetid = ship.getFleetid();
+                if (fleetid != null) {
+                    DockDto dockdto = dock.get(fleetid);
+                    if (dockdto != null) {
+                        dockdto.setUpdate(true);
+                    }
+                }
             }
 
             // 高速修復出ない場合は直後にndockが送られてくる
@@ -2476,6 +2511,15 @@ public final class GlobalContext {
      * @return　新しいstate
      */
     private static int checkDataState() {
+        return checkDataState(false);
+    }
+
+    /**
+     * 取得した情報に不完全なものがないかチェック
+     * @param ignoreSlotitem 艦娘の装備データチェックをスキップするか
+     * @return　新しいstate
+     */
+    private static int checkDataState(boolean ignoreSlotitem) {
         if (state == 3) {
             // アカウントが変わった場合はチェックするまでもない
             return state;
@@ -2487,11 +2531,13 @@ public final class GlobalContext {
             }
         }
         // 艦娘の装備IDが全てあるか見る
-        for (ShipDto ship : shipMap.values()) {
-            for (int itemId : ship.getItemId()) {
-                if (itemId != -1) {
-                    if (itemMap.containsKey(itemId) == false) {
-                        return 2;
+        if (!ignoreSlotitem) {
+            for (ShipDto ship : shipMap.values()) {
+                for (int itemId : ship.getItemId()) {
+                    if (itemId != -1) {
+                        if (itemMap.containsKey(itemId) == false) {
+                            return 2;
+                        }
                     }
                 }
             }
