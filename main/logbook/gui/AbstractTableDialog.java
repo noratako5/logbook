@@ -55,8 +55,6 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
     /** ロガー */
     private static final LoggerHolder LOG = new LoggerHolder(AbstractTableDialog.class);
 
-    private static int MAX_PRINT_ITEMS = 2000;
-
     private final Shell parent;
 
     /** タイマー */
@@ -433,7 +431,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         TableItemCreator creator = this.getTableItemCreator();
         creator.begin(this.getTableHeader());
         // 表示最大件数を制限する
-        int numPrintItems = Math.min(MAX_PRINT_ITEMS, this.body.size());
+        int numPrintItems = Math.min(AppConfig.get().getMaxPrintItems(), this.body.size());
         for (int i = 0; i < numPrintItems; i++) {
             Comparable[] line = this.body.get(i);
             TableRowHeader rowHeader = (TableRowHeader) line[0];

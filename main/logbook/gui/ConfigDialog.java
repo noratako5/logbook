@@ -406,6 +406,19 @@ public final class ConfigDialog extends Dialog {
         loadMissionLog.setText("遠征報告書を読み込む*");
         loadMissionLog.setSelection(AppConfig.get().isLoadMissionLog());
 
+        Label maxPrintItemsLabel = new Label(compositeReport, SWT.NONE);
+        maxPrintItemsLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        maxPrintItemsLabel.setText("最大表示件数");
+
+        final Spinner maxPrintItemsSpinner = new Spinner(compositeReport, SWT.BORDER);
+        maxPrintItemsSpinner.setMaximum(Short.MAX_VALUE);
+        maxPrintItemsSpinner.setMinimum(1);
+        maxPrintItemsSpinner.setSelection(AppConfig.get().getMaxPrintItems());
+        GridData gdMaxPrintItemsSpinner = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+        gdMaxPrintItemsSpinner.widthHint = 55;
+        maxPrintItemsSpinner.setLayoutData(gdMaxPrintItemsSpinner);
+        new Label(compositeReport, SWT.NONE);
+
         // 艦隊タブ タブ
         compositeFleetTab.setLayout(new GridLayout(2, false));
 
@@ -1092,6 +1105,7 @@ public final class ConfigDialog extends Dialog {
                 AppConfig.get().setLoadCreateItemLog(loadCreateItemLog.getSelection());
                 AppConfig.get().setLoadCreateShipLog(loadCreateShipLog.getSelection());
                 AppConfig.get().setLoadMissionLog(loadMissionLog.getSelection());
+                AppConfig.get().setMaxPrintItems(maxPrintItemsSpinner.getSelection());
                 if (JIntellitypeWrapper.getInstance() != null) {
                     AppConfig.get().setSystemWideHotKey(systemWideShortcutKey.getSelectionIndex());
                 }

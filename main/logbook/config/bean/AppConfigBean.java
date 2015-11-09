@@ -343,6 +343,9 @@ public final class AppConfigBean {
     /** 遠征報告書を読みこむか */
     private boolean loadMissionLog = true;
 
+    /** 最大表示件数 */
+    private int maxPrintItems = 2000;
+
     /** システムワイドホットキー (Windowsのみ対応) 0:なし, 1:Ctrl+Shift+z, 2:Win+Z */
     private int systemWideHotKey = 0;
 
@@ -1810,6 +1813,20 @@ public final class AppConfigBean {
      */
     public void setLoadMissionLog(boolean loadMissionLog) {
         this.loadMissionLog = loadMissionLog;
+    }
+
+    /**
+     * @return maxPrintItems
+     */
+    public int getMaxPrintItems() {
+        return this.maxPrintItems;
+    }
+
+    /**
+     * @param maxPrintItems セットする maxPrintItems
+     */
+    public void setMaxPrintItems(int maxPrintItems) {
+        this.maxPrintItems = maxPrintItems;
     }
 
     /**
