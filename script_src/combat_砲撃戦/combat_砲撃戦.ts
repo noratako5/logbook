@@ -19,9 +19,7 @@ module combat {
     export class HougekiTable {
 
         static header() {
-            var row = DayPhaseRow.header();
-            row.push.apply(row, HougekiRow.header());
-            return row;
+            return HougekiRow.header();
         }
 
         static body(battleExDto: BattleExDto) {
@@ -35,12 +33,10 @@ module combat {
                         if (phaseJson != null) {
                             var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
                             if (phaseApi != null) {
-                                var ships = new Ships(battleExDto);
-                                var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto, phaseApi, 1));
-                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto, phaseApi, 2));
-                                rows.push.apply(rows, HougekiRow.body(battleExDto, ships, phaseDto, phaseApi, 3));
-                                _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
+                                var phaseStatus = new PhaseStatus(battleExDto, phaseDto);
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 1));
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 2));
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 3));
                             }
                         }
                     }
@@ -53,7 +49,8 @@ module combat {
     export class HougekiRow {
 
         static header() {
-            var row = [
+            var row = _.clone(DayPhaseRow.header());
+            row.push.apply(row, [
                 '自艦隊'
                 , '巡目'
                 , '砲撃種別'
@@ -63,36 +60,31 @@ module combat {
                 , 'クリティカル'
                 , 'ダメージ'
                 , 'かばう'
-            ];
+            ]);
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('攻撃艦.' + s)));
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('防御艦.' + s)));
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi, hougekiIndex: number) {
+        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi, hougekiIndex: number) {
             var kindDto = phaseDto.getKind();
             var isHougeki1Second = kindDto.isHougeki1Second();
             var isHougeki2Second = kindDto.isHougeki2Second();
             var isHougeki3Second = kindDto.isHougeki3Second();
             if (hougekiIndex === 1) {
+                var fleetStatusList = phaseStatus.hougeki1FleetsStatusList;
                 var api_hougeki = phaseApi.api_hougeki1;
                 var isSecond = isHougeki1Second;
             }
             else if (hougekiIndex === 2) {
+                var fleetStatusList = phaseStatus.hougeki2FleetsStatusList;
                 var api_hougeki = phaseApi.api_hougeki2;
                 var isSecond = isHougeki2Second;
             }
             else if (hougekiIndex === 3) {
+                var fleetStatusList = phaseStatus.hougeki3FleetsStatusList;
                 var api_hougeki = phaseApi.api_hougeki3;
                 var isSecond = isHougeki3Second;
-            }
-            if (isSecond) {
-                var friendShips = battleExDto.getDockCombined().getShips();
-                var friendShipRows = ships.friendCombinedShipRows;
-            }
-            else {
-                var friendShips = battleExDto.getDock().getShips();
-                var friendShipRows = ships.friendRows;
             }
             if (battleExDto.isCombined()) {
                 if (isSecond) {
@@ -114,6 +106,18 @@ module combat {
             var rows = <any[][]>[];
             if (api_hougeki != null) {
                 for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
+                    var ships = new Ships(battleExDto, phaseStatus, fleetStatusList[i - 1]);
+                    var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                    if (isSecond) {
+                        var friendShips = battleExDto.getDockCombined().getShips();
+                        var friendShipRows = ships.friendCombinedShipRows;
+                    }
+                    else {
+                        var friendShips = battleExDto.getDock().getShips();
+                        var friendShipRows = ships.friendRows;
+                    }
+                    var enemyShips = battleExDto.getEnemy();
+                    var enemyShipRows = ships.enemyRows;
                     var api_at = api_hougeki.api_at_list[i];
                     var api_at_type = api_hougeki.api_at_type[i];
                     var api_df_list = api_hougeki.api_df_list[i];
@@ -138,7 +142,8 @@ module combat {
                     for (var j = 0; j < api_df_list.length; ++j) {
                         var api_df = api_df_list[j];
                         var damage = JavaInteger.valueOf(api_damage[j]);
-                        var row = [
+                        var row = _.clone(phaseRow);
+                        row.push.apply(row, [
                             fleetName
                             , hougekiCount
                             , api_at_type
@@ -148,7 +153,7 @@ module combat {
                             , JavaInteger.valueOf(api_cl_list[j])
                             , damage
                             , damage != api_damage[j] ? 1 : 0
-                        ];
+                        ]);
                         if (api_at < 7) {
                             row.push.apply(row, friendShipRows[api_at - 1]);
                         }

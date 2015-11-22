@@ -19,9 +19,7 @@ module combat {
     export class NightTable {
 
         static header() {
-            var row = NightPhaseRow.header();
-            row.push.apply(row, NightRow.header());
-            return row;
+            return NightRow.header();
         }
 
         static body(battleExDto: BattleExDto) {
@@ -43,14 +41,12 @@ module combat {
                 }
             }
             if (phaseDto != null) {
-                var ships = new Ships(battleExDto);
                 var phaseJson = phaseDto.getJson();
                 if (phaseJson != null) {
                     var phaseApi = <NightPhaseApi>JSON.parse(phaseJson.toString());
                     if (phaseApi != null) {
-                        var phaseRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                        rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto, phaseApi));
-                        _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
+                        var phaseStatus = new PhaseStatus(battleExDto, phaseDto);
+                        rows.push.apply(rows, NightRow.body(battleExDto, phaseStatus, phaseDto, phaseApi));
                     }
                 }
             }
@@ -61,7 +57,8 @@ module combat {
     export class NightRow {
 
         static header() {
-            var row = [
+            var row = _.clone(NightPhaseRow.header());
+            row.push.apply(row, [
                 '自艦隊'
                 , '砲撃種別'
                 , '表示装備1'
@@ -70,21 +67,15 @@ module combat {
                 , 'クリティカル'
                 , 'ダメージ'
                 , 'かばう'
-            ];
+            ]);
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('攻撃艦.' + s)));
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('防御艦.' + s)));
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships, phaseDto: BattleExDto.Phase, phaseApi: NightPhaseApi) {
+        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus, phaseDto: BattleExDto.Phase, phaseApi: NightPhaseApi) {
             var api_hougeki = phaseApi.api_hougeki;
             var isSecond = phaseDto.getKind().isHougekiSecond();
-            if (isSecond) {
-                var friendShipRows = ships.friendCombinedShipRows;
-            }
-            else {
-                var friendShipRows = ships.friendRows;
-            }
             if (battleExDto.isCombined()) {
                 if (isSecond) {
                     var fleetName = '連合第2艦隊';
@@ -99,6 +90,15 @@ module combat {
             var rows = <any[][]>[];
             if (api_hougeki != null) {
                 for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
+                    var ships = new Ships(battleExDto, phaseStatus, phaseStatus.hougekiFleetsStatusList[i - 1]);
+                    var phaseRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                    if (isSecond) {
+                        var friendShipRows = ships.friendCombinedShipRows;
+                    }
+                    else {
+                        var friendShipRows = ships.friendRows;
+                    }
+                    var enemyShipRows = ships.enemyRows;
                     var api_at = api_hougeki.api_at_list[i];
                     var api_sp = api_hougeki.api_sp_list[i];
                     var api_df_list = api_hougeki.api_df_list[i];
@@ -123,7 +123,8 @@ module combat {
                     for (var j = 0; j < api_df_list.length; ++j) {
                         var api_df = api_df_list[j];
                         var damage = JavaInteger.valueOf(api_damage[j]);
-                        var row = [
+                        var row = _.clone(phaseRow);
+                        row.push.apply(row, [
                             fleetName
                             , api_sp
                             , itemNames[0]
@@ -132,18 +133,18 @@ module combat {
                             , JavaInteger.valueOf(api_cl_list[j])
                             , damage
                             , damage != api_damage[j] ? 1 : 0
-                        ];
+                        ]);
                         if (api_at < 7) {
                             row.push.apply(row, friendShipRows[api_at - 1]);
                         }
                         else {
-                            row.push.apply(row, ships.enemyRows[api_at - 7]);
+                            row.push.apply(row, enemyShipRows[api_at - 7]);
                         }
                         if (api_df < 7) {
                             row.push.apply(row, friendShipRows[api_df - 1]);
                         }
                         else {
-                            row.push.apply(row, ships.enemyRows[api_df - 7]);
+                            row.push.apply(row, enemyShipRows[api_df - 7]);
                         }
                         rows.push(row);
                     }

@@ -20,17 +20,13 @@ module combat.DropItem {
     export class Table {
 
         static header() {
-            var row = PhaseRow.header();
-            row.push.apply(row, FleetRow.header());
-            return row;
+            return FleetRow.header();
         }
 
         static body(battleExDto: BattleExDto) {
             var rows = [];
-            var ships = new Ships(battleExDto, ShipRow.body);
-            var phaseRow = PhaseRow.body(battleExDto);
-            rows.push.apply(rows, FleetRow.body(battleExDto, ships));
-            _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
+            var phaseStatus = new PhaseStatus(battleExDto, battleExDto.getLastPhase());
+            rows.push.apply(rows, FleetRow.body(battleExDto, phaseStatus));
             return toComparable(rows);
         }
     }
@@ -178,7 +174,7 @@ module combat.DropItem {
     export class FleetRow {
 
         static header() {
-            var row = [];
+            var row = _.clone(PhaseRow.header());
             _.forEach(['自艦', '敵艦'], (x) => {
                 for (var i = 1; i <= 6; ++i) {
                     var shipRow = [];
@@ -189,7 +185,8 @@ module combat.DropItem {
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships) {
+        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus) {
+            var ships = new Ships(battleExDto, phaseStatus, phaseStatus.lastFleetsStatus);
             var rows = [];
             var row = [];
             var construct = (shipRows: any[][]) => {

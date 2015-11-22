@@ -19,9 +19,7 @@ module combat {
     export class RaigekiTable {
 
         static header() {
-            var row = DayPhaseRow.header();
-            row.push.apply(row, RaigekiRow.header());
-            return row;
+            return RaigekiRow.header();
         }
 
         static body(battleExDto: BattleExDto) {
@@ -35,11 +33,9 @@ module combat {
                         if (phaseJson != null) {
                             var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
                             if (phaseApi != null) {
-                                var ships = new Ships(battleExDto);
-                                var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto, phaseApi, 1));
-                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto, phaseApi, 2));
-                                _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
+                                var phaseStatus = new PhaseStatus(battleExDto, phaseDto);
+                                rows.push.apply(rows, RaigekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 1));
+                                rows.push.apply(rows, RaigekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 2));
                             }
                         }
                     }
@@ -52,32 +48,37 @@ module combat {
     export class RaigekiRow {
 
         static header() {
-            var row = [
+            var row = _.clone(DayPhaseRow.header());
+            row.push.apply(row, [
                 '自艦隊'
                 , 'クリティカル'
                 , 'ダメージ'
                 , 'かばう'
-            ];
+            ]);
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('攻撃艦.' + s)));
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('防御艦.' + s)));
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi, raigekiIndex: number) {
+        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi, raigekiIndex: number) {
             if (raigekiIndex === 1) {
+                var ships = new Ships(battleExDto, phaseStatus, phaseStatus.openingFleetsStatus);
                 var api_raigeki = phaseApi.api_opening_atack;
                 var isSecond = phaseDto.getKind().isOpeningSecond();
             }
             else if (raigekiIndex === 2) {
+                var ships = new Ships(battleExDto, phaseStatus, phaseStatus.raigekiFleetsStatus);
                 var api_raigeki = phaseApi.api_raigeki;
                 var isSecond = phaseDto.getKind().isRaigekiSecond();
             }
+            var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
             if (isSecond) {
                 var friendShipRows = ships.friendCombinedShipRows;
             }
             else {
                 var friendShipRows = ships.friendRows;
             }
+            var enemyShipRows = ships.enemyRows;
             if (battleExDto.isCombined()) {
                 if (isSecond) {
                     var fleetName = '連合第2艦隊';
@@ -94,7 +95,7 @@ module combat {
                 var construct = (atShipRows: any[][], dfShipRows: any[][], api_rai: number[], api_ydam: number[], api_cl: number[]) => {
                     var rows = [];
                     for (var i = 1; i <= 6; ++i) {
-                        var row = [];
+                        var row = _.clone(phaseRow);
                         var cl = JavaInteger.valueOf(api_cl[i]);
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
                         row.push(fleetName);
@@ -107,8 +108,8 @@ module combat {
                     }
                     return rows;
                 };
-                rows.push.apply(rows, construct(friendShipRows, ships.enemyRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl));
-                rows.push.apply(rows, construct(ships.enemyRows, friendShipRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl));
+                rows.push.apply(rows, construct(friendShipRows, enemyShipRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl));
+                rows.push.apply(rows, construct(enemyShipRows, friendShipRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl));
             }
             return rows;
         }

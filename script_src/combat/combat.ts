@@ -15,6 +15,7 @@ module combat {
     import ItemDto = Packages.logbook.dto.ItemDto;
     import ItemInfoDto = Packages.logbook.dto.ItemInfoDto;
     import BattleAtackDto = Packages.logbook.dto.BattleAtackDto;
+    import AirBattleDto = Packages.logbook.dto.AirBattleDto;
 
     type ComparableArray = JavaArray<any>;
     type ComparableArrayArray = JavaArray<ComparableArray>;
@@ -166,21 +167,21 @@ module combat {
         }
     }
 
-    export class Ships {
+    export abstract class ShipsBase {
 
         itemInfos: ItemInfos;
         friendRows: any[][];
         friendCombinedShipRows: any[][];
         enemyRows: any[][];
 
-        constructor(battleExDto: BattleExDto, body: (shipBaseDto: ShipBaseDto) => any[] = ShipRow.body) {
+        constructor(battleExDto: BattleExDto, phaseStatus: PhaseStatus, fleetsStatus: FleetsStatus) {
             this.itemInfos = new ItemInfos();
-            var construct = (shipDtos: JavaList<ShipBaseDto>) => {
+            var construct = (shipDtoList: _.List<ShipBaseDto>, shipHps: number[], shipMaxHps: number[]) => {
                 var shipRows = [];
                 for (var i = 0; i < 6; ++i) {
                     shipDto = null;
-                    if (shipDtos != null && i < shipDtos.length) {
-                        var shipDto = shipDtos[i];
+                    if (shipDtoList != null && i < shipDtoList.length) {
+                        var shipDto = shipDtoList[i];
                         if (shipDto != null) {
                             var itemInfoDtos = shipDto.getItem();
                             if (itemInfoDtos != null) {
@@ -192,19 +193,32 @@ module combat {
                             }
                         }
                     }
-                    shipRows.push(body(shipDto));
+                    shipRows.push(this.createShipRow(shipDto, shipHps[i], shipMaxHps[i]));
                 }
                 return shipRows;
             };
             var dockDto = battleExDto.getDock();
             if (dockDto != null) {
-                this.friendRows = construct(dockDto.getShips());
+                this.friendRows = construct(dockDto.getShips(), fleetsStatus.friendHps, phaseStatus.maxFleetsStatus.friendHps);
             }
             var dockCombinedDto = battleExDto.getDockCombined();
             if (dockCombinedDto != null) {
-                this.friendCombinedShipRows = construct(dockCombinedDto.getShips());
+                this.friendCombinedShipRows = construct(dockCombinedDto.getShips(), fleetsStatus.friendCombinedHps, phaseStatus.maxFleetsStatus.friendCombinedHps);
             }
-            this.enemyRows = construct(battleExDto.getEnemy());
+            this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
+        }
+
+        protected abstract createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number);
+    }
+
+    export class Ships extends ShipsBase {
+
+        constructor(battleExDto: BattleExDto, phaseStatus: PhaseStatus, fleetsStatus: FleetsStatus) {
+            super(battleExDto, phaseStatus, fleetsStatus);
+        }
+
+        protected createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number) {
+            return ShipRow.body(shipBaseDto, hp, maxHp);
         }
     }
 
@@ -216,9 +230,12 @@ module combat {
                 , '名前'
                 , '種別'
                 , '疲労'
-                , '残り燃料'
+                , '残耐久'
+                , '最大耐久'
+                , '損傷'
+                , '残燃料'
                 , '最大燃料'
-                , '残り弾薬'
+                , '残弾薬'
                 , '最大弾薬'
                 , 'Lv'
                 , '速力'
@@ -236,7 +253,7 @@ module combat {
             return row;
         }
 
-        static body(shipBaseDto: ShipBaseDto) {
+        static body(shipBaseDto: ShipBaseDto, hp: number, maxHp: number) {
             if (shipBaseDto != null) {
                 var row = [];
                 var shipInfoDto = shipBaseDto.getShipInfo();
@@ -292,15 +309,35 @@ module combat {
                             break;
                     }
                 }
+                var lv = shipBaseDto.getLv();
+                var hpRate = 4 * hp / maxHp;
+                if (hpRate > 3) {
+                    var hpText = '小破未満';
+                }
+                else if (hpRate > 2) {
+                    var hpText = '小破';
+                }
+                else if (hpRate > 1) {
+                    var hpText = '中破';
+                }
+                else if (hpRate > 0) {
+                    var hpText = '大破';
+                }
+                else {
+                    var hpText = '轟沈';
+                }
                 row.push(shipId);
                 row.push(fullName);
                 row.push(type);
                 row.push(cond);
+                row.push(hp);
+                row.push(maxHp);
+                row.push(hpText);
                 row.push(fuel);
                 row.push(maxFuel);
                 row.push(bull);
                 row.push(maxBull);
-                row.push(shipBaseDto.getLv());
+                row.push(lv);
                 row.push(soku);
                 row.push(houg);
                 row.push(raig);
@@ -384,6 +421,141 @@ module combat {
             }
             return row;
         }
+    }
+
+    export class PhaseStatus {
+
+        public constructor(battleExDto: BattleExDto, phaseDto: BattleExDto.Phase) {
+            this.maxFleetsStatus = new FleetsStatus(
+                battleExDto.getMaxFriendHp()
+                , battleExDto.getMaxFriendHpCombined()
+                , battleExDto.getMaxEnemyHp()
+            );
+            var phase1Dto = battleExDto.getPhase1();
+            var phase2Dto = battleExDto.getPhase2();
+            if (phaseDto === phase1Dto) {
+                var fleetsStatus = new FleetsStatus(
+                    battleExDto.getStartFriendHp()
+                    , battleExDto.getStartFriendHpCombined()
+                    , battleExDto.getStartEnemyHp()
+                );
+            }
+            else if (phaseDto === phase2Dto) {
+                var fleetsStatus = new FleetsStatus(
+                    phase1Dto.getNowFriendHp()
+                    , phase1Dto.getNowFriendHpCombined()
+                    , phase1Dto.getNowEnemyHp()
+                );
+            }
+            this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
+            this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
+            this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
+            this.air2FleetsStatus = fleetsStatus.updateAir(phaseDto.getAir2());
+            this.hougeki1FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki1());
+            if (phaseDto.getKind().isHougeki1Second()) {
+                this.raigekiFleetsStatus = fleetsStatus.update(phaseDto.getRaigeki());
+                this.hougeki2FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki2());
+                this.hougeki3FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki3());
+            }
+            else {
+                this.hougeki2FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki2());
+                this.hougeki3FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki3());
+                this.raigekiFleetsStatus = fleetsStatus.update(phaseDto.getRaigeki());
+            }
+            this.hougekiFleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki());
+            this.lastFleetsStatus = fleetsStatus;
+        }
+
+        public maxFleetsStatus: FleetsStatus;
+        public airFleetsStatus: FleetsStatus;
+        public supportFleetsStatus: FleetsStatus;
+        public openingFleetsStatus: FleetsStatus;
+        public air2FleetsStatus: FleetsStatus;
+        public hougeki1FleetsStatusList: FleetsStatus[];
+        public hougeki2FleetsStatusList: FleetsStatus[];
+        public hougeki3FleetsStatusList: FleetsStatus[];
+        public raigekiFleetsStatus: FleetsStatus;
+        public hougekiFleetsStatusList: FleetsStatus[];
+        public lastFleetsStatus: FleetsStatus;
+    }
+
+    export class FleetsStatus {
+
+        public constructor(friendHps: _.List<number>, friendCombinedHps: _.List<number>, enemyHps: _.List<number>) {
+            if (friendHps != null) {
+                this.friendHps = _.map(friendHps, hp => hp);
+            }
+            else {
+                this.friendHps = [];
+            }
+            if (friendCombinedHps != null) {
+                this.friendCombinedHps = _.map(friendCombinedHps, hp => hp);
+            }
+            else {
+                this.friendCombinedHps = [];
+            }
+            if (enemyHps != null) {
+                this.enemyHps = _.map(enemyHps, hp => hp);
+            }
+            else {
+                this.enemyHps = [];
+            }
+        }
+
+        public clone() {
+            return new FleetsStatus(this.friendHps, this.friendCombinedHps, this.enemyHps);
+        }
+
+        public update(battleAtackDtoList: _.List<BattleAtackDto>) {
+            var previous = this.clone();
+            if (battleAtackDtoList != null) {
+                _.forEach(battleAtackDtoList, battleAtackDto => {
+                    this.updateEach(battleAtackDto);
+                });
+            }
+            return previous;
+        }
+
+        public updateAir(airBattleDto: AirBattleDto) {
+            if (airBattleDto != null) {
+                return this.update(airBattleDto.atacks);
+            }
+            else {
+                return this.update(null);
+            }
+        }
+
+        public updateHougeki(battleAtackDtoList: _.List<BattleAtackDto>) {
+            if (battleAtackDtoList != null) {
+                return _.map(battleAtackDtoList, battleAtackDto => {
+                    var previous = this.clone();
+                    this.updateEach(battleAtackDto);
+                    return previous;
+                });
+            }
+        }
+
+        private updateEach(battleAtackDto: BattleAtackDto) {
+            if (battleAtackDto.friendAtack) {
+                _.forEach(battleAtackDto.target, (t, i) => {
+                    this.enemyHps[t] = Math.max(0, this.enemyHps[t] - battleAtackDto.damage[i]);
+                });
+            }
+            else {
+                _.forEach(battleAtackDto.target, (t, i) => {
+                    if (t < 6) {
+                        this.friendHps[t] = Math.max(0, this.friendHps[t] - battleAtackDto.damage[i]);
+                    }
+                    else {
+                        this.friendCombinedHps[t - 6] = Math.max(0, this.friendCombinedHps[t - 6] - battleAtackDto.damage[i])
+                    }
+                });
+            }
+        }
+
+        public friendHps: number[];
+        public friendCombinedHps: number[];
+        public enemyHps: number[];
     }
 
     // javascriptの配列をそのまま返すと遅いので

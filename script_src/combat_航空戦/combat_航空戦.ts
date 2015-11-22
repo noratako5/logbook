@@ -20,9 +20,7 @@ module combat {
     export class AirTable {
 
         static header() {
-            var row = DayPhaseRow.header();
-            row.push.apply(row, AirRow.header());
-            return row;
+            return AirRow.header();
         }
 
         static body(battleExDto: BattleExDto) {
@@ -36,11 +34,9 @@ module combat {
                         if (phaseJson != null) {
                             var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
                             if (phaseApi != null) {
-                                var ships = new Ships(battleExDto, ShipSummaryRow.body);
-                                var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                rows.push.apply(rows, AirRow.body(battleExDto, ships, phaseDto.getAir(), phaseApi.api_kouku));
-                                rows.push.apply(rows, AirRow.body(battleExDto, ships, phaseDto.getAir2(), phaseApi.api_kouku2));
-                                _.forEach(rows, (row) => (row.unshift.apply(row, phaseRow)));
+                                var phaseStatus = new PhaseStatus(battleExDto, phaseDto);
+                                rows.push.apply(rows, AirRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 1));
+                                rows.push.apply(rows, AirRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 2));
                             }
                         }
                     }
@@ -50,19 +46,31 @@ module combat {
         }
     }
 
+    export class ShipsSummary extends ShipsBase {
+
+        constructor(battleExDto: BattleExDto, phaseStatus: PhaseStatus, fleetsStatus: FleetsStatus) {
+            super(battleExDto, phaseStatus, fleetsStatus);
+        }
+
+        protected createShipRow(shipBaseDto, hp: number) {
+            return ShipSummaryRow.body(shipBaseDto, hp);
+        }
+    }
+
     export class ShipSummaryRow {
 
         static header() {
-            var row = [
+            var row = [];
+            row.push.apply(row, [
                 'ID'
                 , '名前'
                 , 'Lv'
-            ];
+            ]);
             //row.push.apply(row, ItemRow.header());
             return row;
         }
 
-        static body(shipBaseDto: ShipBaseDto) {
+        static body(shipBaseDto: ShipBaseDto, hp: number) {
             var row = [];
             if (shipBaseDto != null) {
                 var shipInfoDto = shipBaseDto.getShipInfo();
@@ -83,7 +91,8 @@ module combat {
     export class AirRow {
 
         static header() {
-            var row = [
+            var row = _.clone(DayPhaseRow.header());
+            row.push.apply(row, [
                 'ステージ1.自艦載機総数'
                 , 'ステージ1.自艦載機喪失数'
                 , 'ステージ1.敵艦載機総数'
@@ -97,7 +106,7 @@ module combat {
                 , '対空カットイン.表示装備1'
                 , '対空カットイン.表示装備2'
                 , '対空カットイン.表示装備3'
-            ];
+            ]);
             _.forEach(['自艦', '敵艦'], (x) => {
                 for (var i = 1; i <= 6; ++i) {
                     var shipRow = [];
@@ -116,10 +125,18 @@ module combat {
             return row;
         }
 
-        static body(battleExDto: BattleExDto, ships: Ships, battleAtackDtoList: AirBattleDto, api_kouku: AirBattleApi) {
+        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi, airIndex: number) {
+            if (airIndex === 1) {
+                var ships = new ShipsSummary(battleExDto, phaseStatus, phaseStatus.airFleetsStatus);
+                var api_kouku = phaseApi.api_kouku;
+            }
+            else if (airIndex === 2) {
+                var ships = new ShipsSummary(battleExDto, phaseStatus, phaseStatus.air2FleetsStatus);
+                var api_kouku = phaseApi.api_kouku2;
+            }
             var rows = [];
             if (api_kouku != null) {
-                var row = [];
+                var row = _.clone(DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos));
                 var api_stage1 = api_kouku.api_stage1;
                 if (api_stage1 != null) {
                     var stage1_f_count = api_stage1.api_f_count;
