@@ -429,8 +429,8 @@ var combat;
                             if (phaseApi != null) {
                                 var ships = new combat.Ships(battleExDto);
                                 var phaseRow = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto.getHougeki1(), phaseApi.api_opening_atack));
-                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto.getHougeki2(), phaseApi.api_raigeki));
+                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto, phaseApi, 1));
+                                rows.push.apply(rows, RaigekiRow.body(battleExDto, ships, phaseDto, phaseApi, 2));
                                 _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
                             }
                         }
@@ -447,6 +447,7 @@ var combat;
         }
         RaigekiRow.header = function () {
             var row = [
+                '自艦隊',
                 'クリティカル',
                 'ダメージ',
                 'かばう'
@@ -455,7 +456,32 @@ var combat;
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
             return row;
         };
-        RaigekiRow.body = function (battleExDto, ships, battleAtackDtoList, api_raigeki) {
+        RaigekiRow.body = function (battleExDto, ships, phaseDto, phaseApi, raigekiIndex) {
+            if (raigekiIndex === 1) {
+                var api_raigeki = phaseApi.api_opening_atack;
+                var isSecond = phaseDto.getKind().isOpeningSecond();
+            }
+            else if (raigekiIndex === 2) {
+                var api_raigeki = phaseApi.api_raigeki;
+                var isSecond = phaseDto.getKind().isRaigekiSecond();
+            }
+            if (isSecond) {
+                var friendShipRows = ships.friendCombinedShipRows;
+            }
+            else {
+                var friendShipRows = ships.friendRows;
+            }
+            if (battleExDto.isCombined()) {
+                if (isSecond) {
+                    var fleetName = '連合第2艦隊';
+                }
+                else {
+                    var fleetName = '連合第1艦隊';
+                }
+            }
+            else {
+                var fleetName = '通常艦隊';
+            }
             var rows = [];
             if (api_raigeki != null) {
                 var construct = function (atShipRows, dfShipRows, api_rai, api_ydam, api_cl) {
@@ -464,6 +490,7 @@ var combat;
                         var row = [];
                         var cl = JavaInteger.valueOf(api_cl[i]);
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
+                        row.push(fleetName);
                         row.push(cl);
                         row.push(ydam);
                         row.push(ydam != api_ydam[i] ? 1 : 0);
@@ -473,8 +500,8 @@ var combat;
                     }
                     return rows;
                 };
-                rows.push.apply(rows, construct(ships.friendRows, ships.enemyRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl));
-                rows.push.apply(rows, construct(ships.enemyRows, ships.friendRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl));
+                rows.push.apply(rows, construct(friendShipRows, ships.enemyRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl));
+                rows.push.apply(rows, construct(ships.enemyRows, friendShipRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl));
             }
             return rows;
         };

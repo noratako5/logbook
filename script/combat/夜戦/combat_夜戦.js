@@ -441,7 +441,7 @@ var combat;
                     var phaseApi = JSON.parse(phaseJson.toString());
                     if (phaseApi != null) {
                         var phaseRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                        rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto.getHougeki(), phaseApi.api_hougeki));
+                        rows.push.apply(rows, NightRow.body(battleExDto, ships, phaseDto, phaseApi));
                         _.forEach(rows, function (row) { return (row.unshift.apply(row, phaseRow)); });
                     }
                 }
@@ -456,6 +456,7 @@ var combat;
         }
         NightRow.header = function () {
             var row = [
+                '自艦隊',
                 '砲撃種別',
                 '表示装備1',
                 '表示装備2',
@@ -468,7 +469,26 @@ var combat;
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
             return row;
         };
-        NightRow.body = function (battleExDto, ships, battleAtackDtoList, api_hougeki) {
+        NightRow.body = function (battleExDto, ships, phaseDto, phaseApi) {
+            var api_hougeki = phaseApi.api_hougeki;
+            var isSecond = phaseDto.getKind().isHougekiSecond();
+            if (isSecond) {
+                var friendShipRows = ships.friendCombinedShipRows;
+            }
+            else {
+                var friendShipRows = ships.friendRows;
+            }
+            if (battleExDto.isCombined()) {
+                if (isSecond) {
+                    var fleetName = '連合第2艦隊';
+                }
+                else {
+                    var fleetName = '連合第1艦隊';
+                }
+            }
+            else {
+                var fleetName = '通常艦隊';
+            }
             var rows = [];
             if (api_hougeki != null) {
                 for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
@@ -497,6 +517,7 @@ var combat;
                         var api_df = api_df_list[j];
                         var damage = JavaInteger.valueOf(api_damage[j]);
                         var row = [
+                            fleetName,
                             api_sp,
                             itemNames[0],
                             itemNames[1],
@@ -506,13 +527,13 @@ var combat;
                             damage != api_damage[j] ? 1 : 0
                         ];
                         if (api_at < 7) {
-                            row.push.apply(row, ships.friendRows[api_at - 1]);
+                            row.push.apply(row, friendShipRows[api_at - 1]);
                         }
                         else {
                             row.push.apply(row, ships.enemyRows[api_at - 7]);
                         }
                         if (api_df < 7) {
-                            row.push.apply(row, ships.friendRows[api_df - 1]);
+                            row.push.apply(row, friendShipRows[api_df - 1]);
                         }
                         else {
                             row.push.apply(row, ships.enemyRows[api_df - 7]);
