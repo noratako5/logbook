@@ -29,8 +29,11 @@ module combat {
                 , '敵索敵'
                 , '制空権'
                 , '会敵'
-                , '自昼触接'
-                , '敵昼触接'
+                , '自触接'
+                , '敵触接'
+                , '自照明弾'
+                , '敵照明弾'
+                , '戦闘種別'
             ]);
             return row;
         }
@@ -60,6 +63,9 @@ module combat {
             }
             row.push(touchPlane0);
             row.push(touchPlane1);
+            row.push(null);
+            row.push(null);
+            row.push('砲撃戦');
             return row;
         }
     }
@@ -69,16 +75,24 @@ module combat {
         static header() {
             var row = PhaseRow.header();
             row.push.apply(row, [
-                '自夜触接'
-                , '敵夜触接'
+                '自索敵'
+                , '敵索敵'
+                , '制空権'
+                , '会敵'
+                , '自触接'
+                , '敵触接'
                 , '自照明弾'
                 , '敵照明弾'
+                , '戦闘種別'
             ]);
             return row;
         }
 
         static body(battleExDto: BattleExDto, phaseDto: BattleExDto.Phase, phaseApi: NightPhaseApi, itemInfos: ItemInfos) {
             var row = PhaseRow.body(battleExDto);
+            row.push(null);
+            row.push(null);
+            row.push(null);
             var touchPlane = phaseDto.getTouchPlane();
             if (touchPlane != null) {
                 var touchPlane0 = itemInfos.getName(touchPlane[0]);
@@ -86,6 +100,10 @@ module combat {
             }
             row.push(touchPlane0);
             row.push(touchPlane1);
+            if (phaseApi.api_formation != null) {
+                var formation = phaseApi.api_formation[2];
+            }
+            row.push(formation);
             var api_flare_pos = phaseApi.api_flare_pos;
             if (api_flare_pos != null) {
                 var api_flare_pos0 = api_flare_pos[0];
@@ -99,6 +117,7 @@ module combat {
             }
             row.push(flarePos0);
             row.push(flarePos1);
+            row.push('夜戦');
             return row;
         }
     }
