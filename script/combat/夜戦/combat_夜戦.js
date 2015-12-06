@@ -8,7 +8,9 @@ var combat;
 (function (combat) {
     load('script/combat/lodash.js');
     var JavaString = Packages.java.lang.String;
+    var JavaInteger = Packages.java.lang.Integer;
     var DateTimeString = Packages.logbook.gui.logic.DateTimeString;
+    var BattleExDto = Packages.logbook.dto.BattleExDto;
     var ShipDto = Packages.logbook.dto.ShipDto;
     var DayPhaseRow = (function () {
         function DayPhaseRow() {
@@ -84,6 +86,10 @@ var combat;
             row.push(null);
             row.push(null);
             row.push(null);
+            if (phaseApi.api_formation != null) {
+                var formation = BattleExDto.toMatch(JavaInteger.valueOf(phaseApi.api_formation[2]));
+            }
+            row.push(formation);
             var touchPlane = phaseDto.getTouchPlane();
             if (touchPlane != null) {
                 var touchPlane0 = itemInfos.getName(touchPlane[0]);
@@ -91,10 +97,6 @@ var combat;
             }
             row.push(touchPlane0);
             row.push(touchPlane1);
-            if (phaseApi.api_formation != null) {
-                var formation = phaseApi.api_formation[2];
-            }
-            row.push(formation);
             var api_flare_pos = phaseApi.api_flare_pos;
             if (api_flare_pos != null) {
                 var api_flare_pos0 = api_flare_pos[0];
@@ -616,6 +618,7 @@ var combat;
             var row = _.clone(combat.NightPhaseRow.header());
             row.push.apply(row, [
                 '自艦隊',
+                '巡目',
                 '砲撃種別',
                 '表示装備1',
                 '表示装備2',
@@ -681,6 +684,7 @@ var combat;
                         var row = _.clone(phaseRow);
                         row.push.apply(row, [
                             fleetName,
+                            null,
                             api_sp,
                             itemNames[0],
                             itemNames[1],

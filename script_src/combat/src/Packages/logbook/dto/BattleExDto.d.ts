@@ -7,6 +7,16 @@ declare module Packages.logbook.dto {
      */
     class BattleExDto {
         
+        static toFormation(f: number): string;
+
+        static fromFormation(f: string): number;
+
+        static toMatch(id: number): string;
+
+        static toSupport(id: number): string;
+
+        static toSearch(id: number): string;
+
         /**
          * 連合艦隊か？
          * @return

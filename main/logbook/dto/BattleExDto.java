@@ -1171,7 +1171,7 @@ public class BattleExDto extends AbstractDto {
             return 1;
     }
 
-    private static String toMatch(int id) {
+    public static String toMatch(int id) {
         switch (id) {
         case 1:
             return "同航戦";
@@ -1186,7 +1186,7 @@ public class BattleExDto extends AbstractDto {
         }
     }
 
-    private static String toSupport(int id) {
+    public static String toSupport(int id) {
         switch (id) {
         case 1:
             return "航空支援";
@@ -1199,7 +1199,7 @@ public class BattleExDto extends AbstractDto {
         }
     }
 
-    private static String toSearch(int id) {
+    public static String toSearch(int id) {
         switch (id) {
         case 1:
             return "発見!";

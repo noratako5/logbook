@@ -60,6 +60,7 @@ module combat {
             var row = _.clone(NightPhaseRow.header());
             row.push.apply(row, [
                 '自艦隊'
+                , '巡目'
                 , '砲撃種別'
                 , '表示装備1'
                 , '表示装備2'
@@ -126,6 +127,7 @@ module combat {
                         var row = _.clone(phaseRow);
                         row.push.apply(row, [
                             fleetName
+                            , null
                             , api_sp
                             , itemNames[0]
                             , itemNames[1]
