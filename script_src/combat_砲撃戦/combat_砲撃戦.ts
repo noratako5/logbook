@@ -51,7 +51,8 @@ module combat {
         static header() {
             var row = _.clone(DayPhaseRow.header());
             row.push.apply(row, [
-                '自艦隊'
+                '戦闘種別'
+                , '自艦隊'
                 , '巡目'
                 , '砲撃種別'
                 , '表示装備1'
@@ -144,7 +145,8 @@ module combat {
                         var damage = JavaInteger.valueOf(api_damage[j]);
                         var row = _.clone(phaseRow);
                         row.push.apply(row, [
-                            fleetName
+                            '砲撃戦'
+                            , fleetName
                             , hougekiCount
                             , api_at_type
                             , itemNames[0]

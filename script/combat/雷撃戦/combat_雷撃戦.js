@@ -25,8 +25,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -57,7 +56,6 @@ var combat;
             row.push(touchPlane1);
             row.push(null);
             row.push(null);
-            row.push('砲撃戦');
             return row;
         };
         return DayPhaseRow;
@@ -76,8 +74,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -110,7 +107,6 @@ var combat;
             }
             row.push(flarePos0);
             row.push(flarePos1);
-            row.push('夜戦');
             return row;
         };
         return NightPhaseRow;
@@ -630,11 +626,14 @@ var combat;
             }
             var phaseRow = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
             if (isSecond) {
+                var friendShips = battleExDto.getDockCombined().getShips();
                 var friendShipRows = ships.friendCombinedShipRows;
             }
             else {
+                var friendShips = battleExDto.getDock().getShips();
                 var friendShipRows = ships.friendRows;
             }
+            var enemyShips = battleExDto.getEnemy();
             var enemyShipRows = ships.enemyRows;
             if (battleExDto.isCombined()) {
                 if (isSecond) {
@@ -655,13 +654,15 @@ var combat;
                         var row = _.clone(phaseRow);
                         var cl = JavaInteger.valueOf(api_cl[i]);
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
-                        row.push(fleetName);
-                        row.push(cl);
-                        row.push(ydam);
-                        row.push(ydam != api_ydam[i] ? 1 : 0);
-                        row.push.apply(row, atShipRows[i - 1]);
-                        row.push.apply(row, dfShipRows[api_rai[i] - 1]);
-                        rows.push(row);
+                        if (cl >= 0) {
+                            row.push(fleetName);
+                            row.push(cl);
+                            row.push(ydam);
+                            row.push(ydam != api_ydam[i] ? 1 : 0);
+                            row.push.apply(row, atShipRows[i - 1]);
+                            row.push.apply(row, dfShipRows[api_rai[i] - 1]);
+                            rows.push(row);
+                        }
                     }
                     return rows;
                 };

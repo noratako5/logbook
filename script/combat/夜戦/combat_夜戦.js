@@ -25,8 +25,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -57,7 +56,6 @@ var combat;
             row.push(touchPlane1);
             row.push(null);
             row.push(null);
-            row.push('砲撃戦');
             return row;
         };
         return DayPhaseRow;
@@ -76,8 +74,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -110,7 +107,6 @@ var combat;
             }
             row.push(flarePos0);
             row.push(flarePos1);
-            row.push('夜戦');
             return row;
         };
         return NightPhaseRow;
@@ -617,6 +613,7 @@ var combat;
         NightRow.header = function () {
             var row = _.clone(combat.NightPhaseRow.header());
             row.push.apply(row, [
+                '戦闘種別',
                 '自艦隊',
                 '巡目',
                 '砲撃種別',
@@ -651,11 +648,14 @@ var combat;
                     var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.hougekiFleetsStatusList[i - 1]);
                     var phaseRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
                     if (isSecond) {
+                        var friendShips = battleExDto.getDockCombined().getShips();
                         var friendShipRows = ships.friendCombinedShipRows;
                     }
                     else {
+                        var friendShips = battleExDto.getDock().getShips();
                         var friendShipRows = ships.friendRows;
                     }
+                    var enemyShips = battleExDto.getEnemy();
                     var enemyShipRows = ships.enemyRows;
                     var api_at = api_hougeki.api_at_list[i];
                     var api_sp = api_hougeki.api_sp_list[i];
@@ -664,10 +664,10 @@ var combat;
                     var api_cl_list = api_hougeki.api_cl_list[i];
                     var api_damage = api_hougeki.api_damage[i];
                     if (api_at < 7) {
-                        var itemInfoDtos = battleExDto.getDock().getShips()[api_at - 1].getItem();
+                        var itemInfoDtos = friendShips[api_at - 1].getItem();
                     }
                     else {
-                        var itemInfoDtos = battleExDto.getEnemy()[api_at - 7].getItem();
+                        var itemInfoDtos = enemyShips[api_at - 7].getItem();
                     }
                     var itemNames = _.map(api_si_list, function (api_si) {
                         var itemDto = _.find(itemInfoDtos, function (itemInfoDto) { return itemInfoDto != null ? itemInfoDto.getId() == api_si : false; });
@@ -680,32 +680,36 @@ var combat;
                     });
                     for (var j = 0; j < api_df_list.length; ++j) {
                         var api_df = api_df_list[j];
-                        var damage = JavaInteger.valueOf(api_damage[j]);
-                        var row = _.clone(phaseRow);
-                        row.push.apply(row, [
-                            fleetName,
-                            null,
-                            api_sp,
-                            itemNames[0],
-                            itemNames[1],
-                            itemNames[2],
-                            JavaInteger.valueOf(api_cl_list[j]),
-                            damage,
-                            damage != api_damage[j] ? 1 : 0
-                        ]);
-                        if (api_at < 7) {
-                            row.push.apply(row, friendShipRows[api_at - 1]);
+                        var cl = JavaInteger.valueOf(api_cl_list[j]);
+                        if (cl >= 0) {
+                            var damage = JavaInteger.valueOf(api_damage[j]);
+                            var row = _.clone(phaseRow);
+                            row.push.apply(row, [
+                                '夜戦',
+                                fleetName,
+                                null,
+                                api_sp,
+                                itemNames[0],
+                                itemNames[1],
+                                itemNames[2],
+                                cl,
+                                damage,
+                                damage != api_damage[j] ? 1 : 0
+                            ]);
+                            if (api_at < 7) {
+                                row.push.apply(row, friendShipRows[api_at - 1]);
+                            }
+                            else {
+                                row.push.apply(row, enemyShipRows[api_at - 7]);
+                            }
+                            if (api_df < 7) {
+                                row.push.apply(row, friendShipRows[api_df - 1]);
+                            }
+                            else {
+                                row.push.apply(row, enemyShipRows[api_df - 7]);
+                            }
+                            rows.push(row);
                         }
-                        else {
-                            row.push.apply(row, enemyShipRows[api_at - 7]);
-                        }
-                        if (api_df < 7) {
-                            row.push.apply(row, friendShipRows[api_df - 1]);
-                        }
-                        else {
-                            row.push.apply(row, enemyShipRows[api_df - 7]);
-                        }
-                        rows.push(row);
                     }
                 }
             }

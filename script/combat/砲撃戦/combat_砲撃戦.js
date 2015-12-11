@@ -25,8 +25,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -57,7 +56,6 @@ var combat;
             row.push(touchPlane1);
             row.push(null);
             row.push(null);
-            row.push('砲撃戦');
             return row;
         };
         return DayPhaseRow;
@@ -76,8 +74,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -110,7 +107,6 @@ var combat;
             }
             row.push(flarePos0);
             row.push(flarePos1);
-            row.push('夜戦');
             return row;
         };
         return NightPhaseRow;
@@ -609,6 +605,7 @@ var combat;
         HougekiRow.header = function () {
             var row = _.clone(combat.DayPhaseRow.header());
             row.push.apply(row, [
+                '戦闘種別',
                 '自艦隊',
                 '巡目',
                 '砲撃種別',
@@ -701,6 +698,7 @@ var combat;
                         var damage = JavaInteger.valueOf(api_damage[j]);
                         var row = _.clone(phaseRow);
                         row.push.apply(row, [
+                            '砲撃戦',
                             fleetName,
                             hougekiCount,
                             api_at_type,

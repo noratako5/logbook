@@ -880,7 +880,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
                     this.comparator.setOrder(sortKeys[i].order);
                     try {
                         Collections.sort(this.body, this.comparator);
-                    } catch (ClassCastException e) {
+                    } catch (Exception e) {
                         MessageBox box = new MessageBox(this.shell, SWT.OK | SWT.ICON_ERROR);
                         box.setText("テーブルレコードをソート中にエラー");
                         box.setMessage(this.getTitleMain() + "のレコードをソート中に型変換エラーが発生しました\n" +
@@ -1001,21 +1001,31 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
         @Override
         public final int compare(Comparable[] o1, Comparable[] o2) {
-            Comparable o1c = o1[this.index];
-            Comparable o2c = o2[this.index];
-            if (o1c == null) {
-                if (o2c == null) {
-                    return 0;
+            try {
+                Comparable o1c = null;
+                if (this.index < o1.length) {
+                    o1c = o1[this.index];
                 }
-                else {
-                    return 1;
+                Comparable o2c = null;
+                if (this.index < o2.length) {
+                    o2c = o2[this.index];
                 }
+                if (o1c == null) {
+                    if (o2c == null) {
+                        return 0;
+                    }
+                    else {
+                        return 1;
+                    }
+                }
+                else if (o2c == null) {
+                    return -1;
+                }
+                int ret = o1[this.index].compareTo(o2[this.index]);
+                return this.order ? ret : -ret;
+            } catch (Exception e) {
+                throw e;
             }
-            else if (o2c == null) {
-                return -1;
-            }
-            int ret = o1[this.index].compareTo(o2[this.index]);
-            return this.order ? ret : -ret;
         }
 
         /**

@@ -25,8 +25,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -57,7 +56,6 @@ var combat;
             row.push(touchPlane1);
             row.push(null);
             row.push(null);
-            row.push('砲撃戦');
             return row;
         };
         return DayPhaseRow;
@@ -76,8 +74,7 @@ var combat;
                 '自触接',
                 '敵触接',
                 '自照明弾',
-                '敵照明弾',
-                '戦闘種別'
+                '敵照明弾'
             ]);
             return row;
         };
@@ -110,7 +107,6 @@ var combat;
             }
             row.push(flarePos0);
             row.push(flarePos1);
-            row.push('夜戦');
             return row;
         };
         return NightPhaseRow;

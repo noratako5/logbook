@@ -73,11 +73,14 @@ module combat {
             }
             var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
             if (isSecond) {
+                var friendShips = battleExDto.getDockCombined().getShips();
                 var friendShipRows = ships.friendCombinedShipRows;
             }
             else {
+                var friendShips = battleExDto.getDock().getShips();
                 var friendShipRows = ships.friendRows;
             }
+            var enemyShips = battleExDto.getEnemy();
             var enemyShipRows = ships.enemyRows;
             if (battleExDto.isCombined()) {
                 if (isSecond) {
@@ -98,13 +101,15 @@ module combat {
                         var row = _.clone(phaseRow);
                         var cl = JavaInteger.valueOf(api_cl[i]);
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
-                        row.push(fleetName);
-                        row.push(cl);
-                        row.push(ydam);
-                        row.push(ydam != api_ydam[i] ? 1 : 0);
-                        row.push.apply(row, atShipRows[i - 1]);
-                        row.push.apply(row, dfShipRows[api_rai[i] - 1]);
-                        rows.push(row);
+                        if (cl >= 0) {
+                            row.push(fleetName);
+                            row.push(cl);
+                            row.push(ydam);
+                            row.push(ydam != api_ydam[i] ? 1 : 0);
+                            row.push.apply(row, atShipRows[i - 1]);
+                            row.push.apply(row, dfShipRows[api_rai[i] - 1]);
+                            rows.push(row);
+                        }
                     }
                     return rows;
                 };

@@ -33,7 +33,6 @@ module combat {
                 , '敵触接'
                 , '自照明弾'
                 , '敵照明弾'
-                , '戦闘種別'
             ]);
             return row;
         }
@@ -65,7 +64,6 @@ module combat {
             row.push(touchPlane1);
             row.push(null);
             row.push(null);
-            row.push('砲撃戦');
             return row;
         }
     }
@@ -83,7 +81,6 @@ module combat {
                 , '敵触接'
                 , '自照明弾'
                 , '敵照明弾'
-                , '戦闘種別'
             ]);
             return row;
         }
@@ -117,7 +114,6 @@ module combat {
             }
             row.push(flarePos0);
             row.push(flarePos1);
-            row.push('夜戦');
             return row;
         }
     }
