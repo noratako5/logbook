@@ -199,7 +199,7 @@ var combat;
                             }
                         }
                     }
-                    shipRows.push(_this.createShipRow(shipDto, shipHps[i], shipMaxHps[i]));
+                    shipRows.push(_this.createShipRow(shipDto, shipHps[i], shipMaxHps[i], i + 1));
                 }
                 return shipRows;
             };
@@ -221,8 +221,8 @@ var combat;
         function Ships(battleExDto, phaseStatus, fleetsStatus) {
             _super.call(this, battleExDto, phaseStatus, fleetsStatus);
         }
-        Ships.prototype.createShipRow = function (shipBaseDto, hp, maxHp) {
-            return ShipRow.body(shipBaseDto, hp, maxHp);
+        Ships.prototype.createShipRow = function (shipBaseDto, hp, maxHp, index) {
+            return ShipRow.body(shipBaseDto, hp, maxHp, index);
         };
         return Ships;
     })(ShipsBase);
@@ -232,6 +232,7 @@ var combat;
         }
         ShipRow.header = function () {
             var row = [
+                '編成順',
                 'ID',
                 '名前',
                 '種別',
@@ -258,7 +259,7 @@ var combat;
             row.push.apply(row, ItemRow.header());
             return row;
         };
-        ShipRow.body = function (shipBaseDto, hp, maxHp) {
+        ShipRow.body = function (shipBaseDto, hp, maxHp, index) {
             if (shipBaseDto != null) {
                 var row = [];
                 var shipInfoDto = shipBaseDto.getShipInfo();
@@ -331,6 +332,7 @@ var combat;
                 else {
                     var hpText = '轟沈';
                 }
+                row.push(JavaInteger.valueOf(index));
                 row.push(shipId);
                 row.push(fullName);
                 row.push(type);

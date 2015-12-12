@@ -208,7 +208,7 @@ module combat {
                             }
                         }
                     }
-                    shipRows.push(this.createShipRow(shipDto, shipHps[i], shipMaxHps[i]));
+                    shipRows.push(this.createShipRow(shipDto, shipHps[i], shipMaxHps[i], i + 1));
                 }
                 return shipRows;
             };
@@ -223,7 +223,7 @@ module combat {
             this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
         }
 
-        protected abstract createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number);
+        protected abstract createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number, index: number);
     }
 
     export class Ships extends ShipsBase {
@@ -232,8 +232,8 @@ module combat {
             super(battleExDto, phaseStatus, fleetsStatus);
         }
 
-        protected createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number) {
-            return ShipRow.body(shipBaseDto, hp, maxHp);
+        protected createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number, index: number) {
+            return ShipRow.body(shipBaseDto, hp, maxHp, index);
         }
     }
 
@@ -241,7 +241,8 @@ module combat {
 
         static header() {
             var row = [
-                'ID'
+                '編成順'
+                , 'ID'
                 , '名前'
                 , '種別'
                 , '疲労'
@@ -268,7 +269,7 @@ module combat {
             return row;
         }
 
-        static body(shipBaseDto: ShipBaseDto, hp: number, maxHp: number) {
+        static body(shipBaseDto: ShipBaseDto, hp: number, maxHp: number, index: number) {
             if (shipBaseDto != null) {
                 var row = [];
                 var shipInfoDto = shipBaseDto.getShipInfo();
@@ -341,6 +342,7 @@ module combat {
                 else {
                     var hpText = '轟沈';
                 }
+                row.push(JavaInteger.valueOf(index));
                 row.push(shipId);
                 row.push(fullName);
                 row.push(type);
