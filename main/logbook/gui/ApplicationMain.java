@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import logbook.config.AppConfig;
 import logbook.config.ShipGroupConfig;
@@ -26,6 +28,7 @@ import logbook.config.bean.AppConfigBean;
 import logbook.constants.AppConstants;
 import logbook.data.context.GlobalContext;
 import logbook.dto.BattleExDto;
+import logbook.dto.BattleResultDto;
 import logbook.dto.DockDto;
 import logbook.dto.MapCellDto;
 import logbook.dto.PracticeUserDetailDto;
@@ -37,6 +40,7 @@ import logbook.gui.listener.MainShellAdapter;
 import logbook.gui.listener.TrayItemMenuListener;
 import logbook.gui.listener.TraySelectionListener;
 import logbook.gui.logic.ColorManager;
+import logbook.gui.logic.CreateReportLogic;
 import logbook.gui.logic.LayoutLogic;
 import logbook.gui.logic.PushNotify;
 import logbook.gui.logic.Sound;
@@ -48,6 +52,7 @@ import logbook.internal.LoggerHolder;
 import logbook.internal.MasterData;
 import logbook.internal.Ship;
 import logbook.internal.ShipParameterRecord;
+import logbook.scripting.CombatLogProxy;
 import logbook.scripting.ScriptData;
 import logbook.server.proxy.DatabaseClient;
 import logbook.server.proxy.ProxyServer;
@@ -526,6 +531,7 @@ public final class ApplicationMain extends WindowBase {
         Menu cmdcombat = new Menu(cmdcombatroot);
         Path scriptDirPath = AppConstants.SCRIPT_DIR.toPath();
         File combatRootDir = scriptDirPath.resolve(AppConstants.COMBATTABLE_PREFIX).toFile();
+        Map<String, String> combatTitleAll = new TreeMap<String, String>();
         if (combatRootDir.isDirectory()) {
             for (File combatDir : combatRootDir.listFiles()) {
                 if (combatDir.isDirectory()) {
@@ -542,6 +548,7 @@ public final class ApplicationMain extends WindowBase {
                                 cmdcombatItem.setText(title);
                                 this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem,
                                         prefix, title));
+                                combatTitleAll.put(prefix, title);
                                 break;
                             }
                         }
@@ -549,6 +556,38 @@ public final class ApplicationMain extends WindowBase {
                 }
             }
         }
+        BattleResultServer.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File dir = new File("戦闘報告書");
+                    if (!dir.exists()) {
+                        dir.mkdir();
+                    }
+                    Map<String, String[]> headerAll = CombatLogProxy.headerAll();
+                    Map<String, List<Comparable[]>> bodyAll = new TreeMap<String, List<Comparable[]>>();
+                    for (Map.Entry<String, String[]> entry : headerAll.entrySet()) {
+                        bodyAll.put(entry.getKey(), new ArrayList<Comparable[]>());
+                    }
+                    for (BattleResultDto dto : BattleResultServer.get().getList()) {
+                        for (Map.Entry<String, Comparable[][]> entry : dto.getAllCombatExtData().entrySet()) {
+                            List<Comparable[]> body = bodyAll.get(entry.getKey());
+                            for (Comparable[] raw : entry.getValue()) {
+                                body.add(raw);
+                            }
+                        }
+                    }
+                    for (Map.Entry<String, String> entry : combatTitleAll.entrySet()) {
+                        CreateReportLogic.writeCsv(dir.toPath().resolve(entry.getValue() + ".csv").toFile(),
+                                headerAll.get(entry.getKey()), bodyAll.get(entry.getKey()), false);
+                    }
+                    SwtUtils.messageDialog("以下のフォルダ内に書き込みました\n" + dir.getAbsolutePath().toString(),
+                            ApplicationMain.this.shell);
+                } catch (IOException e1) {
+                    logPrint("書き込み失敗: " + e1.getMessage());
+                }
+            }
+        });
         cmdcombatroot.setMenu(cmdcombat);
         // コマンド-建造報告書
         MenuItem cmdcreateship = new MenuItem(cmdmenu, SWT.CHECK);

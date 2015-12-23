@@ -6,7 +6,7 @@
 		<!-- ビルドしたjarの出力先 -->
 		<property name="build.dir" value="dest" />
 		<!-- ビルドしたjarの名前 -->
-		<property name="dest.name" value="logbook.jar" />
+		<property name="dest.name" value="logbook_aka.jar" />
 		<!-- ライブラリのディレクトリ名 -->
 		<property name="destlib.dir.name" value="logbook_lib" />
 		<!-- ライブラリの出力先 -->

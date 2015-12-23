@@ -231,4 +231,8 @@ public class BattleResultDto extends AbstractDto {
     public Comparable[][] getCombatExtData(String name) {
         return this.allCombatExtData.get(name);
     }
+
+    public Map<String, Comparable[][]> getAllCombatExtData() {
+        return this.allCombatExtData;
+    }
 }

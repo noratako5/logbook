@@ -61,6 +61,14 @@ public class CombatLogProxy {
         return instance.values();
     }
 
+    public static Map<String, String[]> headerAll() {
+        Map<String, String[]> headerAll = new TreeMap<String, String[]>();
+        for (Map.Entry<String, CombatLogProxy> entry : instance.entrySet()) {
+            headerAll.put(entry.getKey(), entry.getValue().header());
+        }
+        return headerAll;
+    }
+
     public static Map<String, Comparable[][]> bodyAll(BattleExDto battle) {
         Map<String, Comparable[][]> bodyAll = new TreeMap<String, Comparable[][]>();
         for (Map.Entry<String, CombatLogProxy> entry : instance.entrySet()) {
