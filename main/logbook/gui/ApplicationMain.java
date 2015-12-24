@@ -581,8 +581,6 @@ public final class ApplicationMain extends WindowBase {
                         CreateReportLogic.writeCsv(dir.toPath().resolve(entry.getValue() + ".csv").toFile(),
                                 headerAll.get(entry.getKey()), bodyAll.get(entry.getKey()), false);
                     }
-                    SwtUtils.messageDialog("以下のフォルダ内に書き込みました\n" + dir.getAbsolutePath().toString(),
-                            ApplicationMain.this.shell);
                 } catch (IOException e1) {
                     logPrint("書き込み失敗: " + e1.getMessage());
                 }
