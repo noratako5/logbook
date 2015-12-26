@@ -51,6 +51,7 @@ module combat {
             var row = _.clone(DayPhaseRow.header());
             row.push.apply(row, [
                 '自艦隊'
+                , '開幕/閉幕'
                 , 'クリティカル'
                 , 'ダメージ'
                 , 'かばう'
@@ -65,11 +66,13 @@ module combat {
                 var ships = new Ships(battleExDto, phaseStatus, phaseStatus.openingFleetsStatus);
                 var api_raigeki = phaseApi.api_opening_atack;
                 var isSecond = phaseDto.getKind().isOpeningSecond();
+                var stage = '開幕';
             }
             else if (raigekiIndex === 2) {
                 var ships = new Ships(battleExDto, phaseStatus, phaseStatus.raigekiFleetsStatus);
                 var api_raigeki = phaseApi.api_raigeki;
                 var isSecond = phaseDto.getKind().isRaigekiSecond();
+                var stage = '閉幕';
             }
             var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
             if (isSecond) {
@@ -103,6 +106,7 @@ module combat {
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
                         if (cl >= 0) {
                             row.push(fleetName);
+                            row.push(stage);
                             row.push(cl);
                             row.push(ydam);
                             row.push(ydam != api_ydam[i] ? 1 : 0);
