@@ -2,7 +2,7 @@
 declare module combat {
 
     /** 戦闘 */
-    interface DayPhaseApi {
+    interface PhaseApi {
 
         /** こちらの出撃艦隊ID */
         api_dock_id: number | string;
@@ -94,5 +94,14 @@ declare module combat {
 
         /** 雷撃戦　開幕雷撃戦と同じ */
         api_raigeki: RaigekiBattleApi;
+
+        /** 夜間触接装備ID[0] = 味方, [1] = 敵 */
+        api_touch_plane: number[];
+
+        /** 照明弾発射艦[0] = 味方, [1] = 敵 */
+        api_flare_pos: number[];
+
+        /** 夜間砲撃戦 */
+        api_hougeki: NightHougekiBattleApi;
     }
 }

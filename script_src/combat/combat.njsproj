@@ -13,7 +13,8 @@
     <ProjectGuid>{84160115-3ab6-4e3b-8879-13e90044fa3d}</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>combat.ts</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <StartWebBrowser>False</StartWebBrowser>
     <SearchPath>
     </SearchPath>
@@ -35,98 +36,117 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="package.json" />
+    <Content Include="tsd.json" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="combat.ts" />
-    <TypeScriptCompile Include="logbook.d.ts" />
-    <TypeScriptCompile Include="src\Global.d.ts" />
-    <TypeScriptCompile Include="src\Java.d.ts" />
-    <TypeScriptCompile Include="src\combat\AirBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\AirSupportBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\BasicInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\BattleResultApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\DayPhaseApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\DockApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\HougekiBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\HouraiSupportBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\ItemApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\ItemInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\MapCellApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\NightHougekiBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\NightPhaseApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\RaigekiBattleApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\ShipApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\ShipInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\combat\SupportInfoApi.d.ts" />
-    <TypeScriptCompile Include="src\lodash.d.ts" />
-    <TypeScriptCompile Include="src\Packages\javax\json\JsonObject.d.ts" />
-    <TypeScriptCompile Include="src\JavaArray.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\lang\Double.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\lang\Integer.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\lang\Long.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\lang\Object.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\lang\String.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\util\Collection.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\util\Date.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\util\List.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\util\Map.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\util\Map.Entry.d.ts" />
-    <TypeScriptCompile Include="src\Packages\java\util\Set.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\data\DataType.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\AirBattleDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\AtackKind.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\BattleAtackDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\BattleExDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\BattleExDto.Phase.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\BattlePhaseKind.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\DockDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\EnemyShipDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ItemDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ItemInfoDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\MapCellDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ResultRank.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ShipBaseDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ShipDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ShipInfoDto.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\dto\ShipParameters.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\gui\logic\DateTimeString.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\internal\CondTiming.d.ts" />
-    <TypeScriptCompile Include="src\Packages\logbook\internal\EnemyData.d.ts" />
+    <TypeScriptCompile Include="src\Battle.ts" />
+    <TypeScriptCompile Include="src\combat_砲撃戦.ts" />
+    <TypeScriptCompile Include="src\FleetsStatus.ts" />
+    <TypeScriptCompile Include="src\HougekiRow.ts" />
+    <TypeScriptCompile Include="src\HougekiTable.ts" />
+    <TypeScriptCompile Include="src\ItemInfos.ts" />
+    <TypeScriptCompile Include="src\ItemRow.ts" />
+    <TypeScriptCompile Include="src\PhaseRow.ts" />
+    <TypeScriptCompile Include="src\PhaseStatus.ts" />
+    <TypeScriptCompile Include="src\ShipRow.ts" />
+    <TypeScriptCompile Include="src\Ships.ts" />
+    <TypeScriptCompile Include="src\typings\combat\PhaseApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\Global.d.ts" />
+    <TypeScriptCompile Include="src\typings\Java.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\AirBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\AirSupportBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\BasicInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\BattleResultApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\DockApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\HougekiBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\HouraiSupportBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\ItemApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\ItemInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\MapCellApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\NightHougekiBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\RaigekiBattleApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\ShipApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\ShipInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\combat\SupportInfoApi.d.ts" />
+    <TypeScriptCompile Include="src\typings\JavaArray.d.ts" />
+    <TypeScriptCompile Include="src\toComparable.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\javax\json\JsonObject.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\Double.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\Double.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\Integer.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\Integer.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\Long.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\Object.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\lang\String.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\util\Collection.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\util\Date.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\util\List.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\util\Map.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\util\Map.Entry.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\java\util\Set.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\data\DataType.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\AirBattleDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\AtackKind.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\BattleAtackDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\BattleExDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\BattleExDto.Phase.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\BattlePhaseKind.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\DockDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\EnemyShipDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ItemDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ItemInfoDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\MapCellDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ResultRank.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ShipBaseDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ShipDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ShipInfoDto.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\dto\ShipParameters.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\gui\logic\DateTimeString.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\internal\CondTiming.d.ts" />
+    <TypeScriptCompile Include="src\typings\Packages\logbook\internal\EnemyData.d.ts" />
+    <TypeScriptCompile Include="src\typings\tsd.d.ts" />
+    <TypeScriptCompile Include="typings\lodash\lodash.d.ts" />
+    <TypeScriptCompile Include="typings\tsd.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\" />
-    <Folder Include="src\combat\" />
-    <Folder Include="src\Packages\" />
-    <Folder Include="src\Packages\javax\" />
-    <Folder Include="src\Packages\javax\json\" />
-    <Folder Include="src\Packages\java\" />
-    <Folder Include="src\Packages\java\lang\" />
-    <Folder Include="src\Packages\java\util\" />
-    <Folder Include="src\Packages\logbook\" />
-    <Folder Include="src\Packages\logbook\data\" />
-    <Folder Include="src\Packages\logbook\dto\" />
-    <Folder Include="src\Packages\logbook\gui\" />
-    <Folder Include="src\Packages\logbook\gui\logic\" />
-    <Folder Include="src\Packages\logbook\internal\" />
+    <Folder Include="src\typings\combat\" />
+    <Folder Include="src\typings\" />
+    <Folder Include="src\typings\Packages\" />
+    <Folder Include="src\typings\Packages\javax\" />
+    <Folder Include="src\typings\Packages\javax\json\" />
+    <Folder Include="src\typings\Packages\java\" />
+    <Folder Include="src\typings\Packages\java\lang\" />
+    <Folder Include="src\typings\Packages\java\util\" />
+    <Folder Include="src\typings\Packages\logbook\" />
+    <Folder Include="src\typings\Packages\logbook\data\" />
+    <Folder Include="src\typings\Packages\logbook\dto\" />
+    <Folder Include="src\typings\Packages\logbook\gui\" />
+    <Folder Include="src\typings\Packages\logbook\gui\logic\" />
+    <Folder Include="src\typings\Packages\logbook\internal\" />
+    <Folder Include="typings\" />
+    <Folder Include="typings\lodash\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="lodash.js" />
+    <Compile Include="tsconfig.json" />
+    <Compile Include="webpack.config.js" />
   </ItemGroup>
   <!-- Do not delete the following Import Project.  While this appears to do nothing it is a marker for setting TypeScript properties before our import that depends on them. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <TypeScriptNoImplicitAny>False</TypeScriptNoImplicitAny>
+    <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
     <TypeScriptOutFile>
     </TypeScriptOutFile>
     <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
     <TypeScriptTarget>ES5</TypeScriptTarget>
     <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
     <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
-    <TypeScriptOutDir>
-    </TypeScriptOutDir>
-    <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
+    <TypeScriptOutDir>.\obj</TypeScriptOutDir>
+    <TypeScriptNoEmitOnError>False</TypeScriptNoEmitOnError>
     <TypeScriptMapRoot />
     <TypeScriptSourceRoot />
     <TypeScriptSourceMap>False</TypeScriptSourceMap>
+    <TypeScriptJSXEmit>None</TypeScriptJSXEmit>
+    <TypeScriptModuleKind>CommonJS</TypeScriptModuleKind>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
