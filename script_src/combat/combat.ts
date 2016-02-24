@@ -90,10 +90,7 @@ module combat {
             row.push(null);
             row.push(null);
             row.push(null);
-            if (phaseApi.api_formation != null) {
-                var formation = BattleExDto.toMatch(JavaInteger.valueOf(phaseApi.api_formation[2]));
-            }
-            row.push(formation);
+            row.push(battleExDto.getFormationMatch());
             var touchPlane = phaseDto.getTouchPlane();
             if (touchPlane != null) {
                 var touchPlane0 = itemInfos.getName(touchPlane[0]);

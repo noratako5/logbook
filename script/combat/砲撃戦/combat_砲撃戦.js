@@ -10,7 +10,6 @@ var combat;
     var JavaString = Packages.java.lang.String;
     var JavaInteger = Packages.java.lang.Integer;
     var DateTimeString = Packages.logbook.gui.logic.DateTimeString;
-    var BattleExDto = Packages.logbook.dto.BattleExDto;
     var ShipDto = Packages.logbook.dto.ShipDto;
     var DayPhaseRow = (function () {
         function DayPhaseRow() {
@@ -83,10 +82,7 @@ var combat;
             row.push(null);
             row.push(null);
             row.push(null);
-            if (phaseApi.api_formation != null) {
-                var formation = BattleExDto.toMatch(JavaInteger.valueOf(phaseApi.api_formation[2]));
-            }
-            row.push(formation);
+            row.push(battleExDto.getFormationMatch());
             var touchPlane = phaseDto.getTouchPlane();
             if (touchPlane != null) {
                 var touchPlane0 = itemInfos.getName(touchPlane[0]);
@@ -610,6 +606,7 @@ var combat;
                 '戦闘種別',
                 '自艦隊',
                 '巡目',
+                '攻撃艦',
                 '砲撃種別',
                 '表示装備1',
                 '表示装備2',
@@ -682,9 +679,11 @@ var combat;
                     var api_damage = api_hougeki.api_damage[i];
                     if (api_at < 7) {
                         var itemInfoDtos = friendShips[api_at - 1].getItem();
+                        var atackFleetName = '自軍';
                     }
                     else {
                         var itemInfoDtos = battleExDto.getEnemy()[api_at - 7].getItem();
+                        var atackFleetName = '敵軍';
                     }
                     var itemNames = _.map(api_si_list, function (api_si) {
                         var itemDto = _.find(itemInfoDtos, function (itemInfoDto) { return itemInfoDto != null ? itemInfoDto.getId() == api_si : false; });
@@ -703,6 +702,7 @@ var combat;
                             '砲撃戦',
                             fleetName,
                             hougekiCount,
+                            atackFleetName,
                             api_at_type,
                             itemNames[0],
                             itemNames[1],

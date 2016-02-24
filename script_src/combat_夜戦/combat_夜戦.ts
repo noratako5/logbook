@@ -12,6 +12,7 @@ module combat {
     import ItemDto = Packages.logbook.dto.ItemDto;
     import ItemInfoDto = Packages.logbook.dto.ItemInfoDto;
     import BattleAtackDto = Packages.logbook.dto.BattleAtackDto;
+    import BattlePhaseKind = Packages.logbook.dto.BattlePhaseKind;
 
     type ComparableArray = JavaArray<any>;
     type ComparableArrayArray = JavaArray<ComparableArray>;
@@ -61,7 +62,8 @@ module combat {
             row.push.apply(row, [
                 '戦闘種別'
                 , '自艦隊'
-                , '巡目'
+                , '開始'
+                , '攻撃艦'
                 , '砲撃種別'
                 , '表示装備1'
                 , '表示装備2'
@@ -112,9 +114,11 @@ module combat {
                     var api_damage = api_hougeki.api_damage[i];
                     if (api_at < 7) {
                         var itemInfoDtos = friendShips[api_at - 1].getItem();
+                        var atackFleetName = '自軍';
                     }
                     else {
                         var itemInfoDtos = enemyShips[api_at - 7].getItem();
+                        var atackFleetName = '敵軍';
                     }
                     var itemNames = _.map(api_si_list, (api_si) => {
                         var itemDto = _.find(itemInfoDtos, (itemInfoDto) => itemInfoDto != null ? itemInfoDto.getId() == api_si : false);
@@ -134,7 +138,8 @@ module combat {
                             row.push.apply(row, [
                                 '夜戦'
                                 , fleetName
-                                , null
+                                , phaseDto.getKind() == BattlePhaseKind.SP_MIDNIGHT ? '夜戦開始' : '昼戦開始'
+                                , atackFleetName
                                 , api_sp
                                 , itemNames[0]
                                 , itemNames[1]

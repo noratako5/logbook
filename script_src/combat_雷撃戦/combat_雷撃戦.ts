@@ -50,8 +50,14 @@ module combat {
         static header() {
             var row = _.clone(DayPhaseRow.header());
             row.push.apply(row, [
-                '自艦隊'
+                '戦闘種別'
+                , '自艦隊'
                 , '開幕/閉幕'
+                , '攻撃艦'
+                , '種別'
+                , '表示装備1'
+                , '表示装備2'
+                , '表示装備3'
                 , 'クリティカル'
                 , 'ダメージ'
                 , 'かばう'
@@ -98,15 +104,21 @@ module combat {
             }
             var rows = [];
             if (api_raigeki != null) {
-                var construct = (atShipRows: any[][], dfShipRows: any[][], api_rai: number[], api_ydam: number[], api_cl: number[]) => {
+                var construct = (atShipRows: any[][], dfShipRows: any[][], api_rai: number[], api_ydam: number[], api_cl: number[], atackFleetName: string) => {
                     var rows = [];
                     for (var i = 1; i <= 6; ++i) {
                         var row = _.clone(phaseRow);
                         var cl = JavaInteger.valueOf(api_cl[i]);
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
                         if (cl >= 0) {
+                            row.push('雷撃戦');
                             row.push(fleetName);
                             row.push(stage);
+                            row.push(atackFleetName);
+                            row.push(null);
+                            row.push(null);
+                            row.push(null);
+                            row.push(null);
                             row.push(cl);
                             row.push(ydam);
                             row.push(ydam != api_ydam[i] ? 1 : 0);
@@ -117,8 +129,8 @@ module combat {
                     }
                     return rows;
                 };
-                rows.push.apply(rows, construct(friendShipRows, enemyShipRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl));
-                rows.push.apply(rows, construct(enemyShipRows, friendShipRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl));
+                rows.push.apply(rows, construct(friendShipRows, enemyShipRows, api_raigeki.api_frai, api_raigeki.api_fydam, api_raigeki.api_fcl, '自軍'));
+                rows.push.apply(rows, construct(enemyShipRows, friendShipRows, api_raigeki.api_erai, api_raigeki.api_eydam, api_raigeki.api_ecl, '敵軍'));
             }
             return rows;
         }
