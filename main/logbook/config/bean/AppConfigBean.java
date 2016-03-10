@@ -343,6 +343,9 @@ public final class AppConfigBean {
     /** 遠征報告書を読みこむか */
     private boolean loadMissionLog = true;
 
+    /** 戦闘報告書を読みこむか */
+    private boolean loadCombatLog = true;
+    
     /** 最大表示件数 */
     private int maxPrintItems = 2000;
 
@@ -1815,6 +1818,19 @@ public final class AppConfigBean {
         this.loadMissionLog = loadMissionLog;
     }
 
+    /**
+     * @return loadCombatLog
+     */
+    public boolean isLoadCombatLog() {
+        return this.loadCombatLog;
+    }
+
+    /**
+     * @param loadCombatLog セットする loadCombatLog
+     */
+    public void setLoadCombatLog(boolean loadCombatLog) {
+        this.loadCombatLog = loadCombatLog;
+    }
     /**
      * @return maxPrintItems
      */

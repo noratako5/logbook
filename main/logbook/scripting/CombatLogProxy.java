@@ -29,6 +29,7 @@ public class CombatLogProxy {
     }
 
     private final String prefix;
+    private final String title;
     private final AnyBodiesMethod anyBodiesMethod = new AnyBodiesMethod();
 
     private final MethodInvoke beginMethod = new MethodInvoke() {
@@ -47,14 +48,17 @@ public class CombatLogProxy {
     };
 
     private static final Map<String, CombatLogProxy> instance = new TreeMap<String, CombatLogProxy>();
-
-    public static CombatLogProxy get(String prefix) {
+    
+    public static void set(String prefix, String title) {
         CombatLogProxy value = instance.get(prefix);
         if (value == null) {
-            value = new CombatLogProxy(prefix);
+            value = new CombatLogProxy(prefix, title);
             instance.put(prefix, value);
         }
-        return value;
+    }
+
+    public static CombatLogProxy get(String prefix) {
+        return instance.get(prefix);
     }
 
     public static Collection<CombatLogProxy> getAll() {
@@ -91,8 +95,9 @@ public class CombatLogProxy {
         }
     }
 
-    private CombatLogProxy(String prefix) {
+    private CombatLogProxy(String prefix, String title) {
         this.prefix = prefix;
+        this.title = title;
     }
 
     private TableScriptCollection getScript() {
@@ -101,6 +106,10 @@ public class CombatLogProxy {
 
     public String getPrefix() {
         return this.prefix;
+    }
+    
+    public String getTitle() {
+        return this.title;
     }
 
     public String[] header() {

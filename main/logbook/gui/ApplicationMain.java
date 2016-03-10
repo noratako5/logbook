@@ -77,6 +77,7 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
@@ -134,6 +135,8 @@ public final class ApplicationMain extends WindowBase {
     public static ApplicationMain main;
     public static boolean disableUpdate;
     private static ApplicationLock applicationLock = new ApplicationLock();
+    
+    private static String[] args;
 
     private static final class ApplicationLock {
         private FileOutputStream fos;
@@ -351,6 +354,7 @@ public final class ApplicationMain extends WindowBase {
      */
     public static void main(String[] args) {
         try {
+            ApplicationMain.args = args;
             // グループ化のためのアプリケーションID (Windows 7以降)
             Display.setAppName(AppConstants.NAME);
             sysPrint("起動");
@@ -526,12 +530,46 @@ public final class ApplicationMain extends WindowBase {
         cmddrop.setAccelerator(SWT.CTRL + 'D');
         this.dropReportWindow = new DropReportTable(this.dummyHolder, cmddrop);
         // コマンド-戦闘報告書
+        boolean isLoadCombatLog = AppConfig.get().isLoadCombatLog();
         MenuItem cmdcombatroot = new MenuItem(cmdmenu, SWT.CASCADE);
         cmdcombatroot.setText("戦闘報告書");
         Menu cmdcombat = new Menu(cmdcombatroot);
+        MenuItem cmdcombatwritecsv = new MenuItem(cmdcombat, SWT.NONE);
+        cmdcombatwritecsv.setText("CSVファイルに保存");
+        cmdcombatwritecsv.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                BattleResultServer battleResultServer = BattleResultServer.get();
+                if (battleResultServer != null && battleResultServer.isLoaded()) {
+                    DirectoryDialog dialog = new DirectoryDialog(shell);
+                    dialog.setMessage("保存先を指定して下さい");
+                    String path = dialog.open();
+                    if (path != null) {
+                        (new Thread() {
+                            @Override
+                            public void run() {
+                                if (isLoadCombatLog) {
+                                    if (battleResultServer != null && battleResultServer.isLoaded()) {
+                                        battleResultServer.writeCsv(path);
+                                        ApplicationMain.logPrint("CSVファイルを保存しました");
+                                    }
+                                }
+                                else {
+                                    ApplicationMain.logPrint("出撃ログ読み込み開始");
+                                    BattleResultServer.writeCsv(new String[] { AppConfig.get().getBattleLogPath() }, path);
+                                    ApplicationMain.logPrint("CSVファイルを保存しました");
+                                }
+                            }
+                        }).start();
+                    }
+                }
+            }
+        });
+        if (isLoadCombatLog) {
+            new MenuItem(cmdcombat, SWT.SEPARATOR);
+        }
         Path scriptDirPath = AppConstants.SCRIPT_DIR.toPath();
         File combatRootDir = scriptDirPath.resolve(AppConstants.COMBATTABLE_PREFIX).toFile();
-        Map<String, String> combatTitleAll = new TreeMap<String, String>();
         if (combatRootDir.isDirectory()) {
             for (File combatDir : combatRootDir.listFiles()) {
                 if (combatDir.isDirectory()) {
@@ -544,11 +582,15 @@ public final class ApplicationMain extends WindowBase {
                                 String prefix = scriptDirPath.relativize(
                                         combatDirPath.resolve(AppConstants.COMBATTABLE_PREFIX)).toString();
                                 String title = combatDirPath.getFileName().toString();
-                                MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
-                                cmdcombatItem.setText(title);
-                                this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem,
-                                        prefix, title));
-                                combatTitleAll.put(prefix, title);
+                                if (isLoadCombatLog) {
+                                    MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
+                                    cmdcombatItem.setText(title);
+                                    this.allCombatReportWindows.add(new CombatReportTable(this.dummyHolder, cmdcombatItem,
+                                            prefix, title));
+                                }
+                                else {
+                                    CombatLogProxy.set(prefix, title);
+                                }
                                 break;
                             }
                         }
@@ -556,36 +598,6 @@ public final class ApplicationMain extends WindowBase {
                 }
             }
         }
-        BattleResultServer.addListener(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File dir = new File("戦闘報告書");
-                    if (!dir.exists()) {
-                        dir.mkdir();
-                    }
-                    Map<String, String[]> headerAll = CombatLogProxy.headerAll();
-                    Map<String, List<Comparable[]>> bodyAll = new TreeMap<String, List<Comparable[]>>();
-                    for (Map.Entry<String, String[]> entry : headerAll.entrySet()) {
-                        bodyAll.put(entry.getKey(), new ArrayList<Comparable[]>());
-                    }
-                    for (BattleResultDto dto : BattleResultServer.get().getList()) {
-                        for (Map.Entry<String, Comparable[][]> entry : dto.getAllCombatExtData().entrySet()) {
-                            List<Comparable[]> body = bodyAll.get(entry.getKey());
-                            for (Comparable[] raw : entry.getValue()) {
-                                body.add(raw);
-                            }
-                        }
-                    }
-                    for (Map.Entry<String, String> entry : combatTitleAll.entrySet()) {
-                        CreateReportLogic.writeCsv(dir.toPath().resolve(entry.getValue() + ".csv").toFile(),
-                                headerAll.get(entry.getKey()), bodyAll.get(entry.getKey()), false);
-                    }
-                } catch (IOException e1) {
-                    logPrint("書き込み失敗: " + e1.getMessage());
-                }
-            }
-        });
         cmdcombatroot.setMenu(cmdcombat);
         // コマンド-建造報告書
         MenuItem cmdcreateship = new MenuItem(cmdmenu, SWT.CHECK);
@@ -1383,34 +1395,39 @@ public final class ApplicationMain extends WindowBase {
     }
 
     public WindowBase[] getWindowList() {
-        return (WindowBase[]) ArrayUtils.addAll(new WindowBase[] {
-                this.captureWindow,
-                this.dropReportWindow,
-                this.createShipReportWindow,
-                this.createItemReportWindow,
-                this.missionResultWindow,
-                this.missionTableWindow,
-                this.itemTableWindow,
-                this.shipTableWindows[0],
-                this.shipTableWindows[1],
-                this.shipTableWindows[2],
-                this.shipTableWindows[3],
-                this.bathwaterTablwWindow,
-                this.questTableWindow,
-                this.battleWindowLarge,
-                this.battleWindowSmall,
-                this.battleShipWindow,
-                this.calcExpWindow,
-                this.calcPracticeExpWindow,
-                this.shipFilterGroupWindow,
-                this.resourceChartWindow,
-                this.battleCounterWindow,
-                this.fleetWindows[0],
-                this.fleetWindows[1],
-                this.fleetWindows[2],
-                this.fleetWindows[3],
-                this.launcherWindow
-        }, this.allCombatReportWindows.toArray());
+        return (WindowBase[]) ArrayUtils.addAll(
+                (WindowBase[]) ArrayUtils.addAll(
+                        new WindowBase[] {
+                                this.captureWindow,
+                                this.dropReportWindow,
+                                this.createShipReportWindow,
+                                this.createItemReportWindow,
+                                this.missionResultWindow,
+                                this.missionTableWindow,
+                                this.itemTableWindow,
+                                this.shipTableWindows[0],
+                                this.shipTableWindows[1],
+                                this.shipTableWindows[2],
+                                this.shipTableWindows[3],
+                                this.bathwaterTablwWindow,
+                                this.questTableWindow,
+                                this.battleWindowLarge,
+                                this.battleWindowSmall,
+                                this.battleShipWindow,
+                                this.calcExpWindow,
+                                this.calcPracticeExpWindow,
+                                this.shipFilterGroupWindow,
+                                this.resourceChartWindow,
+                                this.battleCounterWindow
+                        },
+                        this.allCombatReportWindows.toArray()),
+                new WindowBase[] {
+                        this.fleetWindows[0],
+                        this.fleetWindows[1],
+                        this.fleetWindows[2],
+                        this.fleetWindows[3],
+                        this.launcherWindow
+                });
     }
 
     /**

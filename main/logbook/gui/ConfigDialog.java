@@ -406,6 +406,11 @@ public final class ConfigDialog extends Dialog {
         loadMissionLog.setText("遠征報告書を読み込む*");
         loadMissionLog.setSelection(AppConfig.get().isLoadMissionLog());
 
+        final Button loadCombatLog = new Button(compositeReport, SWT.CHECK);
+        loadCombatLog.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+        loadCombatLog.setText("戦闘報告書を読み込む*");
+        loadCombatLog.setSelection(AppConfig.get().isLoadCombatLog());
+        
         Label maxPrintItemsLabel = new Label(compositeReport, SWT.NONE);
         maxPrintItemsLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         maxPrintItemsLabel.setText("最大表示件数");
@@ -1105,6 +1110,7 @@ public final class ConfigDialog extends Dialog {
                 AppConfig.get().setLoadCreateItemLog(loadCreateItemLog.getSelection());
                 AppConfig.get().setLoadCreateShipLog(loadCreateShipLog.getSelection());
                 AppConfig.get().setLoadMissionLog(loadMissionLog.getSelection());
+                AppConfig.get().setLoadCombatLog(loadCombatLog.getSelection());
                 AppConfig.get().setMaxPrintItems(maxPrintItemsSpinner.getSelection());
                 if (JIntellitypeWrapper.getInstance() != null) {
                     AppConfig.get().setSystemWideHotKey(systemWideShortcutKey.getSelectionIndex());
@@ -1296,15 +1302,12 @@ public final class ConfigDialog extends Dialog {
 
         final WindowBase[] winList = LauncherWindow.getWindowList();
         Map<String, Integer> winKeyMap = LauncherWindow.getWindowKeyMap();
-        List<String> toolButtons = AppConfig.get().getToolButtons();
-        if ((toolButtons == null) || (toolButtons.size() == 0)) {
-            // 初期化
-            toolButtons = new ArrayList<String>();
-            for (WindowBase win : winList) {
-                toolButtons.add(win.getWindowId());
-            }
-            AppConfig.get().setToolButtons(toolButtons);
+        // 初期化
+        List<String> toolButtons = new ArrayList<String>();
+        for (WindowBase win : winList) {
+            toolButtons.add(win.getWindowId());
         }
+        AppConfig.get().setToolButtons(toolButtons);
 
         Set<String> enabledSet = new HashSet<>();
         for (String key : toolButtons) {

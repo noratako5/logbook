@@ -25,6 +25,7 @@ public final class CombatReportTable extends DropReportTable {
      */
     public CombatReportTable(Shell parent, MenuItem menuItem, String prefix, String defaultTitleMain) {
         super(parent, menuItem);
+        CombatLogProxy.set(prefix, defaultTitleMain);
         this.logProxy = CombatLogProxy.get(prefix);
         this.tableItemCreatorProxy = TableItemCreatorProxy.get(prefix);
         this.defaultTitleMain = defaultTitleMain;
