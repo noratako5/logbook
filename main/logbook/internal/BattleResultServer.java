@@ -636,7 +636,7 @@ public class BattleResultServer {
                         allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++n, item) }, body));
                     }
                 }
-                CreateReportLogic.writeCsv(new File(targetPath).toPath().resolve(proxy.getTitle() + ".csv").toFile(), proxy.header(), allBodies, append);
+                CreateReportLogic.writeCsv(new File(targetPath).toPath().resolve(proxy.getTitle() + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, proxy.header()), allBodies, append);
             }
         } catch (IOException e) {
             LOG.get().warn("出撃ログの書き込みに失敗しました", e);
