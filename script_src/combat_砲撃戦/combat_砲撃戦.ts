@@ -23,7 +23,7 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
-            var rows = [];
+            var rows: any[][] = [];
             var phaseDto = battleExDto.getPhase1();
             if (phaseDto != null) {
                 var phaseKindDto = phaseDto.getKind();

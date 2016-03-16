@@ -405,7 +405,7 @@ var combat;
             }
             for (var i = 0; i < 5; ++i) {
                 if (i === 4 && itemExDto != null && itemInfoExDto != null) {
-                    var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
+                    var itemRow = construct(itemExDto, itemInfoExDto, null);
                 }
                 else if (itemInfoDtos != null && i < itemInfoDtos.length) {
                     if (onSlots != null && i < onSlots.length) {
@@ -673,7 +673,7 @@ var combat;
                 }
                 for (var i = 0; i < 5; ++i) {
                     if (i === 4 && itemExDto != null && itemInfoExDto != null) {
-                        var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
+                        var itemRow = construct(itemExDto, itemInfoExDto, null);
                     }
                     else if (itemInfoDtos != null && i < itemInfoDtos.length) {
                         if (onSlots != null && i < onSlots.length) {

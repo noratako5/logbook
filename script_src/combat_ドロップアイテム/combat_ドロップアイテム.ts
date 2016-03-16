@@ -24,7 +24,7 @@ module combat.DropItem {
         }
 
         static body(battleExDto: BattleExDto) {
-            var rows = [];
+            var rows: any[][] = [];
             var phaseStatus = new PhaseStatus(battleExDto, battleExDto.getLastPhase());
             rows.push.apply(rows, FleetRow.body(battleExDto, phaseStatus));
             return toComparable(rows);
@@ -48,7 +48,7 @@ module combat.DropItem {
         }
 
         static body(battleExDto: BattleExDto) {
-            var row = [];
+            var row: any[] = [];
             var battleDate = battleExDto.getBattleDate();
             if (battleDate != null) {
                 var battleDateTimeString = new DateTimeString(battleDate);
@@ -58,7 +58,7 @@ module combat.DropItem {
             var mapCellDto = battleExDto.getMapCellDto();
             if (mapCellDto != null) {
                 var reportString = mapCellDto.getReportString();
-                var bossTexts = [];
+                var bossTexts: string[] = [];
                 if (mapCellDto.isStart()) {
                     bossTexts.push('出撃');
                 }
@@ -86,7 +86,7 @@ module combat.DropItem {
     export class ItemRow {
 
         static header() {
-            var row = [];
+            var row: string[] = [];
             for (var i = 1; i <= 5; ++i) {
                 row.push.apply(row, _.map([
                     '名前'
@@ -104,7 +104,7 @@ module combat.DropItem {
                     name
                 ];
             }
-            var row = [];
+            var row: any[] = [];
             if (shipBaseDto != null) {
                 if (shipBaseDto instanceof ShipDto) {
                     var shipDto = <ShipDto>(shipBaseDto);
@@ -119,7 +119,7 @@ module combat.DropItem {
             }
             for (var i = 0; i < 5; ++i) {
                 if (i === 4 && itemExDto != null && itemInfoExDto != null) {
-                    var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
+                    var itemRow = construct(itemExDto, itemInfoExDto, null);
                 }
                 else if (itemInfoDtos != null && i < itemInfoDtos.length) {
                     if (onSlots != null && i < onSlots.length) {
@@ -154,7 +154,7 @@ module combat.DropItem {
         }
 
         static body(shipBaseDto: ShipBaseDto) {
-            var row = [];
+            var row: any[] = [];
             if (shipBaseDto != null) {
                 var shipInfoDto = shipBaseDto.getShipInfo();
                 if (shipInfoDto != null) {
@@ -177,7 +177,7 @@ module combat.DropItem {
             var row = _.clone(PhaseRow.header());
             _.forEach(['自艦', '敵艦'], (x) => {
                 for (var i = 1; i <= 6; ++i) {
-                    var shipRow = [];
+                    var shipRow: any[] = [];
                     shipRow.push.apply(shipRow, ShipRow.header());
                     row.push.apply(row, _.map(shipRow, (y) => (x + i + '.' + y)));
                 }
@@ -187,10 +187,10 @@ module combat.DropItem {
 
         static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus) {
             var ships = new Ships(battleExDto, phaseStatus, phaseStatus.lastFleetsStatus);
-            var rows = [];
-            var row = [];
+            var rows: any[][] = [];
+            var row: any[] = [];
             var construct = (shipRows: any[][]) => {
-                var row = [];
+                var row: any[] = [];
                 for (var i = 1; i <= 6; ++i) {
                     row.push.apply(row, shipRows[i - 1]);
                 }

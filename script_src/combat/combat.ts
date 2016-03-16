@@ -132,7 +132,7 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
-            var row = [];
+            var row: any[] = [];
             var battleDate = battleExDto.getBattleDate();
             if (battleDate != null) {
                 var battleDateTimeString = new DateTimeString(battleDate);
@@ -142,7 +142,7 @@ module combat {
             var mapCellDto = battleExDto.getMapCellDto();
             if (mapCellDto != null) {
                 var reportString = mapCellDto.getReportString();
-                var bossTexts = [];
+                var bossTexts: string[] = [];
                 if (mapCellDto.isStart()) {
                     bossTexts.push('出撃');
                 }
@@ -189,7 +189,7 @@ module combat {
         constructor(battleExDto: BattleExDto, phaseStatus: PhaseStatus, fleetsStatus: FleetsStatus) {
             this.itemInfos = new ItemInfos();
             var construct = (shipDtoList: _.List<ShipBaseDto>, shipHps: number[], shipMaxHps: number[]) => {
-                var shipRows = [];
+                var shipRows: any[][] = [];
                 for (var i = 0; i < 6; ++i) {
                     shipDto = null;
                     if (shipDtoList != null && i < shipDtoList.length) {
@@ -220,7 +220,7 @@ module combat {
             this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
         }
 
-        protected abstract createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number, index: number);
+        protected abstract createShipRow(shipBaseDto: ShipBaseDto, hp: number, maxHp: number, index: number): any[];
     }
 
     export class Ships extends ShipsBase {
@@ -268,7 +268,7 @@ module combat {
 
         static body(shipBaseDto: ShipBaseDto, hp: number, maxHp: number, index: number) {
             if (shipBaseDto != null) {
-                var row = [];
+                var row: any[] = [];
                 var shipInfoDto = shipBaseDto.getShipInfo();
                 if (shipInfoDto != null) {
                     var shipId = shipInfoDto.getShipId();
@@ -374,7 +374,7 @@ module combat {
     export class ItemRow {
 
         static header() {
-            var row = [];
+            var row: string[] = [];
             for (var i = 1; i <= 5; ++i) {
                 row.push.apply(row, _.map([
                     '名前'
@@ -400,7 +400,7 @@ module combat {
                     , onSlot
                 ];
             }
-            var row = [];
+            var row: any[] = [];
             if (shipBaseDto != null) {
                 if (shipBaseDto instanceof ShipDto) {
                     var shipDto = <ShipDto>(shipBaseDto);
@@ -415,7 +415,7 @@ module combat {
             }
             for (var i = 0; i < 5; ++i) {
                 if (i === 4 && itemExDto != null && itemInfoExDto != null) {
-                    var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
+                    var itemRow = construct(itemExDto, itemInfoExDto, null);
                 }
                 else if (itemInfoDtos != null && i < itemInfoDtos.length) {
                     if (onSlots != null && i < onSlots.length) {
