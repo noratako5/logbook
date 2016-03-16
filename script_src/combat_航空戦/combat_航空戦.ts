@@ -224,7 +224,7 @@ module combat {
                         innerRow.push(d);
                         innerRow.push(protects);
                         innerRow.push(...([] as any[]).concat(...atShipRows));
-                        for (var i = 1; i <= 6; ++i) {
+                        for (var i = 0; i < 6; ++i) {
                             rows.push(innerRow.concat(dfShipRows[i]));
                         }
                     }

@@ -775,7 +775,7 @@ var combat;
                         innerRow.push(d);
                         innerRow.push(protects);
                         innerRow.push.apply(innerRow, (_a = []).concat.apply(_a, atShipRows));
-                        for (var i = 1; i <= 6; ++i) {
+                        for (var i = 0; i < 6; ++i) {
                             rows.push(innerRow.concat(dfShipRows[i]));
                         }
                     }
