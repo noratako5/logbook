@@ -658,11 +658,10 @@ var combat;
                 '対空カットイン.表示装備1',
                 '対空カットイン.表示装備2',
                 '対空カットイン.表示装備3',
-                '発艦',
-                '被雷撃',
-                '被爆撃',
-                '被クリティカル',
-                '被ダメージ',
+                '雷撃',
+                '爆撃',
+                'クリティカル',
+                'ダメージ',
                 'かばう'
             ]);
             for (var i = 1; i <= 6; ++i) {
@@ -752,10 +751,6 @@ var combat;
                     var rows = [];
                     for (var i = 1; i <= 6; ++i) {
                         var innerRow = _.clone(row);
-                        if (plane_from != null) {
-                            var pf = plane_from[i];
-                        }
-                        innerRow.push(pf);
                         if (rai_flag != null) {
                             var rai = JavaInteger.valueOf(rai_flag[i]);
                         }
@@ -782,8 +777,8 @@ var combat;
                     return rows;
                     var _a;
                 };
-                rows.push.apply(rows, construct(row, shipsSummary.friendRows, ships.enemyRows, f_plane_from, frai_flag, fbak_flag, fcl_flag, fdam));
-                rows.push.apply(rows, construct(row, shipsSummary.enemyRows, ships.friendRows, e_plane_from, erai_flag, ebak_flag, ecl_flag, edam));
+                rows.push.apply(rows, construct(row, shipsSummary.friendRows, ships.enemyRows, e_plane_from, erai_flag, ebak_flag, ecl_flag, edam));
+                rows.push.apply(rows, construct(row, shipsSummary.enemyRows, ships.friendRows, f_plane_from, frai_flag, fbak_flag, fcl_flag, fdam));
             }
             return rows;
         };
