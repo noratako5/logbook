@@ -461,6 +461,7 @@ module combat {
                     , phase1Dto.getNowEnemyHp()
                 );
             }
+            this.firstFleetsStatus = fleetsStatus;
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
@@ -481,6 +482,7 @@ module combat {
         }
 
         public maxFleetsStatus: FleetsStatus;
+        public firstFleetsStatus: FleetsStatus;
         public airFleetsStatus: FleetsStatus;
         public supportFleetsStatus: FleetsStatus;
         public openingFleetsStatus: FleetsStatus;

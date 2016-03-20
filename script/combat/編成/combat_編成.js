@@ -439,6 +439,7 @@ var combat;
             else if (phaseDto === phase2Dto) {
                 var fleetsStatus = new FleetsStatus(phase1Dto.getNowFriendHp(), phase1Dto.getNowFriendHpCombined(), phase1Dto.getNowEnemyHp());
             }
+            this.firstFleetsStatus = fleetsStatus;
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
@@ -599,15 +600,20 @@ var combat;
         }
         HenseiRow.header = function () {
             var row = _.clone(combat.DayPhaseRow.header());
+            for (var i = 1; i <= 6; ++i) {
+                row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return '自軍' + i + '.' + s; }));
+            }
+            //for (var i = 1; i <= 6; ++i) {
+            //    row.push(..._.map(ShipRow.header(), s => '敵軍' + i + '.' + s));
+            //}
             return row;
         };
         HenseiRow.body = function (battleExDto, phaseStatus, phaseDto, phaseApi) {
-            var rows = [];
-            var fleetStatus = phaseStatus.lastFleetsStatus;
-            var ships = new combat.Ships(battleExDto, phaseStatus, fleetStatus);
-            var phaseRow = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-            rows.push(phaseRow);
-            return rows;
+            var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.firstFleetsStatus);
+            var row = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+            row = row.concat.apply(row, ships.friendRows);
+            //row = row.concat(...ships.enemyRows);
+            return [row];
         };
         return HenseiRow;
     })();

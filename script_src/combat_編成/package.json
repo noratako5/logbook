@@ -1,0 +1,10 @@
+﻿{
+  "name": "script.combat.---",
+  "version": "0.0.0",
+  "description": "script.combat.砲撃戦",
+  "main": "app.js",
+  "author": {
+    "name": "Master",
+    "email": ""
+  }
+}

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat", "combat\combat.njsproj", "{84160115-3AB6-4E3B-8879-13E90044FA3D}"
 EndProject
@@ -14,6 +14,11 @@ EndProject
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_航空戦", "combat_航空戦\combat_航空戦.njsproj", "{9E2D5ECB-69A2-4C03-B4DC-79D00123611D}"
 EndProject
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_ドロップアイテム", "combat_ドロップアイテム\combat_ドロップアイテム.njsproj", "{8ADA4E03-61FB-4EEA-94DF-2A1BC7E8B1F4}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_編成", "combat_編成\combat_編成.njsproj", "{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}"
+	ProjectSection(ProjectDependencies) = postProject
+		{84160115-3AB6-4E3B-8879-13E90044FA3D} = {84160115-3AB6-4E3B-8879-13E90044FA3D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +50,10 @@ Global
 		{8ADA4E03-61FB-4EEA-94DF-2A1BC7E8B1F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8ADA4E03-61FB-4EEA-94DF-2A1BC7E8B1F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8ADA4E03-61FB-4EEA-94DF-2A1BC7E8B1F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
