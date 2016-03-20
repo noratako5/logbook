@@ -1289,12 +1289,14 @@ public final class ConfigDialog extends Dialog {
     private void createToolButtonTableItems(Table table, List<String> keys, Map<String, Integer> keyMap) {
         for (String key : keys) {
             int i = keyMap.get(key);
-            String shortName = AppConstants.SHORT_WINDOW_NAME_LIST[i];
-            String name = AppConstants.WINDOW_NAME_LIST[i];
+            if (0 <= i && i < AppConstants.SHORT_WINDOW_NAME_LIST.length) {
+                String shortName = AppConstants.SHORT_WINDOW_NAME_LIST[i];
+                String name = AppConstants.WINDOW_NAME_LIST[i];
 
-            TableItem item = new TableItem(table, SWT.NONE);
-            item.setText(shortName + " (" + name + ")");
-            item.setData(key);
+                TableItem item = new TableItem(table, SWT.NONE);
+                item.setText(shortName + " (" + name + ")");
+                item.setData(key);
+            }
         }
     }
 
