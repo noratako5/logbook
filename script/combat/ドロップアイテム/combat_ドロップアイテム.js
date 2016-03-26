@@ -439,6 +439,7 @@ var combat;
             else if (phaseDto === phase2Dto) {
                 var fleetsStatus = new FleetsStatus(phase1Dto.getNowFriendHp(), phase1Dto.getNowFriendHpCombined(), phase1Dto.getNowEnemyHp());
             }
+            this.firstFleetsStatus = fleetsStatus;
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());

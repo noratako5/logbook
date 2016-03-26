@@ -23,7 +23,7 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
-            var rows = [];
+            var rows: any[][] = [];
             var phaseDto = battleExDto.getPhase1();
             if (phaseDto != null) {
                 var phaseKindDto = phaseDto.getKind();
@@ -102,10 +102,10 @@ module combat {
             else {
                 var fleetName = '通常艦隊';
             }
-            var rows = [];
+            var rows: any[][] = [];
             if (api_raigeki != null) {
                 var construct = (atShipRows: any[][], dfShipRows: any[][], api_rai: number[], api_ydam: number[], api_cl: number[], atackFleetName: string) => {
-                    var rows = [];
+                    var rows: any[][] = [];
                     for (var i = 1; i <= 6; ++i) {
                         var row = _.clone(phaseRow);
                         var cl = JavaInteger.valueOf(api_cl[i]);

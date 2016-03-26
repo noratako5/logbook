@@ -405,7 +405,7 @@ var combat;
             }
             for (var i = 0; i < 5; ++i) {
                 if (i === 4 && itemExDto != null && itemInfoExDto != null) {
-                    var itemRow = construct(itemExDto[i], itemInfoExDto[i], null);
+                    var itemRow = construct(itemExDto, itemInfoExDto, null);
                 }
                 else if (itemInfoDtos != null && i < itemInfoDtos.length) {
                     if (onSlots != null && i < onSlots.length) {
@@ -439,6 +439,7 @@ var combat;
             else if (phaseDto === phase2Dto) {
                 var fleetsStatus = new FleetsStatus(phase1Dto.getNowFriendHp(), phase1Dto.getNowFriendHpCombined(), phase1Dto.getNowEnemyHp());
             }
+            this.firstFleetsStatus = fleetsStatus;
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
