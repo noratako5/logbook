@@ -23,23 +23,22 @@ module combat {
         }
 
         static body(battleExDto: BattleExDto) {
-            var rows: any[][] = [];
-            var phaseDto = battleExDto.getPhase1();
-            if (phaseDto != null) {
-                var phaseKindDto = phaseDto.getKind();
-                if (phaseKindDto != null) {
-                    if (!phaseKindDto.isNight()) {
-                        var phaseJson = phaseDto.getJson();
-                        if (phaseJson != null) {
-                            var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
-                            if (phaseApi != null) {
-                                var phaseStatus = new PhaseStatus(battleExDto, phaseDto);
-                                rows.push.apply(rows, HenseiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi));
-                            }
+            let rows = [] as any[][];
+            _.forEach(battleExDto.getPhaseList(), phaseDto => {
+                if (phaseDto != null) {
+                    let phaseJson = phaseDto.getJson();
+                    if (phaseJson != null) {
+                        if (phaseDto.isNight()) {
+                            let phaseApi = JSON.parse(phaseJson.toString()) as NightPhaseApi;
+                            rows.push(...HenseiRow.body(battleExDto, new PhaseStatus(battleExDto, phaseDto), phaseDto, phaseApi));
+                        }
+                        else {
+                            let phaseApi = JSON.parse(phaseJson.toString()) as DayPhaseApi;
+                            rows.push(...HenseiRow.body(battleExDto, new PhaseStatus(battleExDto, phaseDto), phaseDto, phaseApi));
                         }
                     }
                 }
-            }
+            });
             return toComparable(rows);
         }
     }
@@ -47,7 +46,8 @@ module combat {
     export class HenseiRow {
 
         static header() {
-            var row = _.clone(DayPhaseRow.header());
+            let row = _.clone(DayPhaseRow.header());
+            row.push('昼戦|夜戦');
             for (var i = 1; i <= 6; ++i) {
                 row.push(..._.map(ShipRow.header(), s => '自軍' + i + '.' + s));
             }
@@ -57,9 +57,17 @@ module combat {
             return row;
         }
 
-        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi) {
-            var ships = new Ships(battleExDto, phaseStatus, phaseStatus.firstFleetsStatus);
-            var row = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+        static body(battleExDto: BattleExDto, phaseStatus: PhaseStatus, phaseDto: BattleExDto.Phase, phaseApi: DayPhaseApi | NightPhaseApi) {
+            let row: any[];
+            let ships = new Ships(battleExDto, phaseStatus, phaseStatus.firstFleetsStatus);
+            if (phaseDto.isNight()) {
+                row = NightPhaseRow.body(battleExDto, phaseDto, phaseApi as NightPhaseApi, ships.itemInfos);
+                row.push('夜戦');
+            }
+            else {
+                row = DayPhaseRow.body(battleExDto, phaseDto, phaseApi as DayPhaseApi, ships.itemInfos);
+                row.push('昼戦');
+            }
             row = row.concat(...ships.friendRows);
             //row = row.concat(...ships.enemyRows);
             return [ row ];

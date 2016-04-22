@@ -616,7 +616,7 @@ public class BattleResultServer {
                 }
             }
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
         } finally {
             return resultList;

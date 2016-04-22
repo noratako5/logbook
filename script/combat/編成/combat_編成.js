@@ -574,22 +574,21 @@ var combat;
         };
         HenseiTable.body = function (battleExDto) {
             var rows = [];
-            var phaseDto = battleExDto.getPhase1();
-            if (phaseDto != null) {
-                var phaseKindDto = phaseDto.getKind();
-                if (phaseKindDto != null) {
-                    if (!phaseKindDto.isNight()) {
-                        var phaseJson = phaseDto.getJson();
-                        if (phaseJson != null) {
+            _.forEach(battleExDto.getPhaseList(), function (phaseDto) {
+                if (phaseDto != null) {
+                    var phaseJson = phaseDto.getJson();
+                    if (phaseJson != null) {
+                        if (phaseDto.isNight()) {
                             var phaseApi = JSON.parse(phaseJson.toString());
-                            if (phaseApi != null) {
-                                var phaseStatus = new combat.PhaseStatus(battleExDto, phaseDto);
-                                rows.push.apply(rows, HenseiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi));
-                            }
+                            rows.push.apply(rows, HenseiRow.body(battleExDto, new combat.PhaseStatus(battleExDto, phaseDto), phaseDto, phaseApi));
+                        }
+                        else {
+                            var phaseApi = JSON.parse(phaseJson.toString());
+                            rows.push.apply(rows, HenseiRow.body(battleExDto, new combat.PhaseStatus(battleExDto, phaseDto), phaseDto, phaseApi));
                         }
                     }
                 }
-            }
+            });
             return combat.toComparable(rows);
         };
         return HenseiTable;
@@ -600,6 +599,7 @@ var combat;
         }
         HenseiRow.header = function () {
             var row = _.clone(combat.DayPhaseRow.header());
+            row.push('昼戦|夜戦');
             for (var i = 1; i <= 6; ++i) {
                 row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return '自軍' + i + '.' + s; }));
             }
@@ -609,8 +609,16 @@ var combat;
             return row;
         };
         HenseiRow.body = function (battleExDto, phaseStatus, phaseDto, phaseApi) {
+            var row;
             var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.firstFleetsStatus);
-            var row = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+            if (phaseDto.isNight()) {
+                row = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                row.push('夜戦');
+            }
+            else {
+                row = combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                row.push('昼戦');
+            }
             row = row.concat.apply(row, ships.friendRows);
             //row = row.concat(...ships.enemyRows);
             return [row];
