@@ -490,7 +490,19 @@ var combat;
             var previous = this.clone();
             if (battleAtackDtoList != null) {
                 _.forEach(battleAtackDtoList, function (battleAtackDto) {
-                    _this.updateEach(battleAtackDto);
+                    _.forEach(battleAtackDto.target, function (t, i) {
+                        if (battleAtackDto.friendAtack) {
+                            _this.enemyHps[t] = Math.max(0, _this.enemyHps[t] - battleAtackDto.damage[i]);
+                        }
+                        else {
+                            if (t < 6) {
+                                _this.friendHps[t] = Math.max(0, _this.friendHps[t] - battleAtackDto.damage[i]);
+                            }
+                            else {
+                                _this.friendCombinedHps[t - 6] = Math.max(0, _this.friendCombinedHps[t - 6] - battleAtackDto.damage[i]);
+                            }
+                        }
+                    });
                 });
             }
             return previous;
@@ -507,27 +519,21 @@ var combat;
             var _this = this;
             if (battleAtackDtoList != null) {
                 return _.map(battleAtackDtoList, function (battleAtackDto) {
-                    var previous = _this.clone();
-                    _this.updateEach(battleAtackDto);
-                    return previous;
-                });
-            }
-        };
-        FleetsStatus.prototype.updateEach = function (battleAtackDto) {
-            var _this = this;
-            if (battleAtackDto.friendAtack) {
-                _.forEach(battleAtackDto.target, function (t, i) {
-                    _this.enemyHps[t] = Math.max(0, _this.enemyHps[t] - battleAtackDto.damage[i]);
-                });
-            }
-            else {
-                _.forEach(battleAtackDto.target, function (t, i) {
-                    if (t < 6) {
-                        _this.friendHps[t] = Math.max(0, _this.friendHps[t] - battleAtackDto.damage[i]);
-                    }
-                    else {
-                        _this.friendCombinedHps[t - 6] = Math.max(0, _this.friendCombinedHps[t - 6] - battleAtackDto.damage[i]);
-                    }
+                    return _.map(battleAtackDto.target, function (t, i) {
+                        var previous = _this.clone();
+                        if (battleAtackDto.friendAtack) {
+                            _this.enemyHps[t] = Math.max(0, _this.enemyHps[t] - battleAtackDto.damage[i]);
+                        }
+                        else {
+                            if (t < 6) {
+                                _this.friendHps[t] = Math.max(0, _this.friendHps[t] - battleAtackDto.damage[i]);
+                            }
+                            else {
+                                _this.friendCombinedHps[t - 6] = Math.max(0, _this.friendCombinedHps[t - 6] - battleAtackDto.damage[i]);
+                            }
+                        }
+                        return previous;
+                    });
                 });
             }
         };

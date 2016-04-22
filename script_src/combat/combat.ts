@@ -487,11 +487,11 @@ module combat {
         public supportFleetsStatus: FleetsStatus;
         public openingFleetsStatus: FleetsStatus;
         public air2FleetsStatus: FleetsStatus;
-        public hougeki1FleetsStatusList: FleetsStatus[];
-        public hougeki2FleetsStatusList: FleetsStatus[];
-        public hougeki3FleetsStatusList: FleetsStatus[];
+        public hougeki1FleetsStatusList: FleetsStatus[][];
+        public hougeki2FleetsStatusList: FleetsStatus[][];
+        public hougeki3FleetsStatusList: FleetsStatus[][];
         public raigekiFleetsStatus: FleetsStatus;
-        public hougekiFleetsStatusList: FleetsStatus[];
+        public hougekiFleetsStatusList: FleetsStatus[][];
         public lastFleetsStatus: FleetsStatus;
     }
 
@@ -526,7 +526,19 @@ module combat {
             var previous = this.clone();
             if (battleAtackDtoList != null) {
                 _.forEach(battleAtackDtoList, battleAtackDto => {
-                    this.updateEach(battleAtackDto);
+                    _.forEach(battleAtackDto.target, (t, i) => {
+                        if (battleAtackDto.friendAtack) {
+                            this.enemyHps[t] = Math.max(0, this.enemyHps[t] - battleAtackDto.damage[i]);
+                        }
+                        else {
+                            if (t < 6) {
+                                this.friendHps[t] = Math.max(0, this.friendHps[t] - battleAtackDto.damage[i]);
+                            }
+                            else {
+                                this.friendCombinedHps[t - 6] = Math.max(0, this.friendCombinedHps[t - 6] - battleAtackDto.damage[i])
+                            }
+                        }
+                    });
                 });
             }
             return previous;
@@ -544,27 +556,21 @@ module combat {
         public updateHougeki(battleAtackDtoList: _.List<BattleAtackDto>) {
             if (battleAtackDtoList != null) {
                 return _.map(battleAtackDtoList, battleAtackDto => {
-                    var previous = this.clone();
-                    this.updateEach(battleAtackDto);
-                    return previous;
-                });
-            }
-        }
-
-        private updateEach(battleAtackDto: BattleAtackDto) {
-            if (battleAtackDto.friendAtack) {
-                _.forEach(battleAtackDto.target, (t, i) => {
-                    this.enemyHps[t] = Math.max(0, this.enemyHps[t] - battleAtackDto.damage[i]);
-                });
-            }
-            else {
-                _.forEach(battleAtackDto.target, (t, i) => {
-                    if (t < 6) {
-                        this.friendHps[t] = Math.max(0, this.friendHps[t] - battleAtackDto.damage[i]);
-                    }
-                    else {
-                        this.friendCombinedHps[t - 6] = Math.max(0, this.friendCombinedHps[t - 6] - battleAtackDto.damage[i])
-                    }
+                    return _.map(battleAtackDto.target, (t, i) => {
+                        var previous = this.clone();
+                        if (battleAtackDto.friendAtack) {
+                            this.enemyHps[t] = Math.max(0, this.enemyHps[t] - battleAtackDto.damage[i]);
+                        }
+                        else {
+                            if (t < 6) {
+                                this.friendHps[t] = Math.max(0, this.friendHps[t] - battleAtackDto.damage[i]);
+                            }
+                            else {
+                                this.friendCombinedHps[t - 6] = Math.max(0, this.friendCombinedHps[t - 6] - battleAtackDto.damage[i])
+                            }
+                        }
+                        return previous;
+                    });
                 });
             }
         }

@@ -108,42 +108,42 @@ module combat {
             var rows = <any[][]>[];
             if (api_hougeki != null) {
                 for (var i = 1; i < api_hougeki.api_at_list.length; ++i) {
-                    var ships = new Ships(battleExDto, phaseStatus, fleetStatusList[i - 1]);
-                    var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                    if (isSecond) {
-                        var friendShips = battleExDto.getDockCombined().getShips();
-                        var friendShipRows = ships.friendCombinedShipRows;
-                    }
-                    else {
-                        var friendShips = battleExDto.getDock().getShips();
-                        var friendShipRows = ships.friendRows;
-                    }
-                    var enemyShips = battleExDto.getEnemy();
-                    var enemyShipRows = ships.enemyRows;
                     var api_at = api_hougeki.api_at_list[i];
                     var api_at_type = api_hougeki.api_at_type[i];
                     var api_df_list = api_hougeki.api_df_list[i];
                     var api_si_list = api_hougeki.api_si_list[i];
                     var api_cl_list = api_hougeki.api_cl_list[i];
                     var api_damage = api_hougeki.api_damage[i];
-                    if (api_at < 7) {
-                        var itemInfoDtos = friendShips[api_at - 1].getItem();
-                        var atackFleetName = '自軍';
-                    }
-                    else {
-                        var itemInfoDtos = battleExDto.getEnemy()[api_at - 7].getItem();
-                        var atackFleetName = '敵軍';
-                    }
-                    var itemNames = _.map(api_si_list, (api_si) => {
-                        var itemDto = _.find(itemInfoDtos, (itemInfoDto) => itemInfoDto != null ? itemInfoDto.getId() == api_si : false);
-                        if (itemDto != null) {
-                            return itemDto.getName();
+                    for (var j = 0; j < api_df_list.length; ++j) {
+                        var ships = new Ships(battleExDto, phaseStatus, fleetStatusList[i - 1][j]);
+                        var phaseRow = DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                        if (isSecond) {
+                            var friendShips = battleExDto.getDockCombined().getShips();
+                            var friendShipRows = ships.friendCombinedShipRows;
                         }
                         else {
-                            return null;
+                            var friendShips = battleExDto.getDock().getShips();
+                            var friendShipRows = ships.friendRows;
                         }
-                    });
-                    for (var j = 0; j < api_df_list.length; ++j) {
+                        var enemyShips = battleExDto.getEnemy();
+                        var enemyShipRows = ships.enemyRows;
+                        if (api_at < 7) {
+                            var itemInfoDtos = friendShips[api_at - 1].getItem();
+                            var atackFleetName = '自軍';
+                        }
+                        else {
+                            var itemInfoDtos = battleExDto.getEnemy()[api_at - 7].getItem();
+                            var atackFleetName = '敵軍';
+                        }
+                        var itemNames = _.map(api_si_list, (api_si) => {
+                            var itemDto = _.find(itemInfoDtos, (itemInfoDto) => itemInfoDto != null ? itemInfoDto.getId() == api_si : false);
+                            if (itemDto != null) {
+                                return itemDto.getName();
+                            }
+                            else {
+                                return null;
+                            }
+                        });
                         var api_df = api_df_list[j];
                         var damage = JavaInteger.valueOf(api_damage[j]);
                         var row = _.clone(phaseRow);
