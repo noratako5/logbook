@@ -34,6 +34,7 @@
 /// <reference path="src/Packages/logbook/gui/logic/DateTimeString.d.ts" />
 /// <reference path="src/Packages/logbook/internal/CondTiming.d.ts" />
 /// <reference path="src/Packages/logbook/internal/EnemyData.d.ts" />
+/// <reference path="src/combat/AirBaseAttackApi.d.ts" />
 /// <reference path="src/combat/AirBattleApi.d.ts" />
 /// <reference path="src/combat/AirSupportBattleApi.d.ts" />
 /// <reference path="src/combat/BasicInfoApi.d.ts" />

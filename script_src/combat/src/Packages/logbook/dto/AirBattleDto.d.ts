@@ -36,5 +36,11 @@ declare module Packages.logbook.dto {
          * @return
          */
         getTouchPlane(): JavaArray<string>;
+
+        /**
+         * Šî’nŠÍÚ‹@•\¦‚ğ¶¬
+         * @return String
+         */
+        getBasePlane(mst_id:number): JavaArray<string>;
     }
 }

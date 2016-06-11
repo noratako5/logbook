@@ -18,7 +18,7 @@ import org.eclipse.swt.graphics.RGB;
 public class AppConstants {
 
     /**　アプリケーション名 */
-    public static final String NAME = "【赤】航海日誌";
+    public static final String NAME = "【赤仮】航海日誌";
 
     /** 派生版の名前 */
     public static final String SUFFIX = "拡張版";

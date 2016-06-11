@@ -232,4 +232,17 @@ public class AirBattleDto {
     public String[] getTouchPlane() {
         return toTouchPlaneString(this.touchPlane);
     }
+    
+    /**
+     * 基地艦載機表示を生成
+     * @return String
+     */
+    public String getBasePlane(int mst_id) {
+        ItemInfoDto item = Item.get(mst_id);
+        if(item != null){
+            return item.getName();
+        }else{
+            return null;
+        }
+    }
 }

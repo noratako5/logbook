@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat", "combat\combat.njsproj", "{84160115-3AB6-4E3B-8879-13E90044FA3D}"
 EndProject
@@ -19,6 +19,8 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_編成", "combat_編
 	ProjectSection(ProjectDependencies) = postProject
 		{84160115-3AB6-4E3B-8879-13E90044FA3D} = {84160115-3AB6-4E3B-8879-13E90044FA3D}
 	EndProjectSection
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "combat_基地航空戦", "combat_基地航空戦\combat_基地航空戦.njsproj", "{C1FF3E81-6D1B-4911-843D-75EBA42343B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,6 +56,10 @@ Global
 		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BCD3401-58A8-4ABB-87B4-EEA9F83F5E78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1FF3E81-6D1B-4911-843D-75EBA42343B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1FF3E81-6D1B-4911-843D-75EBA42343B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1FF3E81-6D1B-4911-843D-75EBA42343B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1FF3E81-6D1B-4911-843D-75EBA42343B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

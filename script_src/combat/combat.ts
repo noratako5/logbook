@@ -172,10 +172,14 @@ module combat {
         dtos: { [id: number]: ItemInfoDto } = {};
 
         getName(id: number) {
+            if (id == -1) {
+                return null;
+            }
             var dto = this.dtos[id];
             if (dto != null) {
                 return dto.getName();
             }
+            return String(id);
         }
     }
 
@@ -462,6 +466,13 @@ module combat {
                 );
             }
             this.firstFleetsStatus = fleetsStatus;
+            this.baseAirStatus = []
+            var airBase = phaseDto.getAirBase();
+            if (airBase != null) {
+                for (var i = 0; i < airBase.length; i++) {
+                    this.baseAirStatus.push(fleetsStatus.updateAir(airBase[i]));
+                }
+            }
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
@@ -483,6 +494,7 @@ module combat {
 
         public maxFleetsStatus: FleetsStatus;
         public firstFleetsStatus: FleetsStatus;
+        public baseAirStatus: FleetsStatus[];
         public airFleetsStatus: FleetsStatus;
         public supportFleetsStatus: FleetsStatus;
         public openingFleetsStatus: FleetsStatus;

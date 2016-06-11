@@ -39,6 +39,7 @@
   <ItemGroup>
     <TypeScriptCompile Include="combat.ts" />
     <TypeScriptCompile Include="logbook.d.ts" />
+    <TypeScriptCompile Include="src\combat\AirBaseAttackApi.d.ts" />
     <TypeScriptCompile Include="src\Global.d.ts" />
     <TypeScriptCompile Include="src\Java.d.ts" />
     <TypeScriptCompile Include="src\combat\AirBattleApi.d.ts" />

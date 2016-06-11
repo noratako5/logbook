@@ -161,5 +161,10 @@ declare module Packages.logbook.dto.BattleExDto {
          * @return hougeki3
          */
         getHougeki3(): Packages.java.util.List<BattleAtackDto>;
+
+        /**
+         * @return airBase
+         */
+        getAirBase(): Packages.java.util.List<AirBattleDto>;
     }
 }

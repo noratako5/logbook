@@ -59,6 +59,9 @@ declare module combat {
         /** 航空戦フラグ？ */
         api_stage_flag: number[];
 
+        /**基地航空隊攻撃　概ね航空戦データに準じる　[発動した回数]*/
+        api_air_base_attack: AirBaseAttackApi[];
+
         /** 航空戦情報 */
         api_kouku: AirBattleApi;
 
