@@ -58,7 +58,7 @@ var combat;
             return row;
         };
         return DayPhaseRow;
-    })();
+    }());
     combat.DayPhaseRow = DayPhaseRow;
     var NightPhaseRow = (function () {
         function NightPhaseRow() {
@@ -106,7 +106,7 @@ var combat;
             return row;
         };
         return NightPhaseRow;
-    })();
+    }());
     combat.NightPhaseRow = NightPhaseRow;
     var PhaseRow = (function () {
         function PhaseRow() {
@@ -159,20 +159,24 @@ var combat;
             return row;
         };
         return PhaseRow;
-    })();
+    }());
     combat.PhaseRow = PhaseRow;
     var ItemInfos = (function () {
         function ItemInfos() {
             this.dtos = {};
         }
         ItemInfos.prototype.getName = function (id) {
+            if (id == -1) {
+                return null;
+            }
             var dto = this.dtos[id];
             if (dto != null) {
                 return dto.getName();
             }
+            return String(id);
         };
         return ItemInfos;
-    })();
+    }());
     combat.ItemInfos = ItemInfos;
     var ShipsBase = (function () {
         function ShipsBase(battleExDto, phaseStatus, fleetsStatus) {
@@ -210,7 +214,7 @@ var combat;
             this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
         }
         return ShipsBase;
-    })();
+    }());
     combat.ShipsBase = ShipsBase;
     var Ships = (function (_super) {
         __extends(Ships, _super);
@@ -221,7 +225,7 @@ var combat;
             return ShipRow.body(shipBaseDto, hp, maxHp, index);
         };
         return Ships;
-    })(ShipsBase);
+    }(ShipsBase));
     combat.Ships = Ships;
     var ShipRow = (function () {
         function ShipRow() {
@@ -359,7 +363,7 @@ var combat;
             }
         };
         return ShipRow;
-    })();
+    }());
     combat.ShipRow = ShipRow;
     var ItemRow = (function () {
         function ItemRow() {
@@ -426,7 +430,7 @@ var combat;
             return row;
         };
         return ItemRow;
-    })();
+    }());
     combat.ItemRow = ItemRow;
     var PhaseStatus = (function () {
         function PhaseStatus(battleExDto, phaseDto) {
@@ -440,6 +444,13 @@ var combat;
                 var fleetsStatus = new FleetsStatus(phase1Dto.getNowFriendHp(), phase1Dto.getNowFriendHpCombined(), phase1Dto.getNowEnemyHp());
             }
             this.firstFleetsStatus = fleetsStatus;
+            this.baseAirStatus = [];
+            var airBase = phaseDto.getAirBase();
+            if (airBase != null) {
+                for (var i = 0; i < airBase.length; i++) {
+                    this.baseAirStatus.push(fleetsStatus.updateAir(airBase[i]));
+                }
+            }
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
@@ -459,7 +470,7 @@ var combat;
             this.lastFleetsStatus = fleetsStatus;
         }
         return PhaseStatus;
-    })();
+    }());
     combat.PhaseStatus = PhaseStatus;
     var FleetsStatus = (function () {
         function FleetsStatus(friendHps, friendCombinedHps, enemyHps) {
@@ -538,7 +549,7 @@ var combat;
             }
         };
         return FleetsStatus;
-    })();
+    }());
     combat.FleetsStatus = FleetsStatus;
     // javascriptの配列をそのまま返すと遅いので
     // Comparable[]に変換しておく
@@ -611,7 +622,7 @@ var combat;
             return combat.toComparable(rows);
         };
         return NightTable;
-    })();
+    }());
     combat.NightTable = NightTable;
     var NightRow = (function () {
         function NightRow() {
@@ -659,38 +670,38 @@ var combat;
                     var api_cl_list = api_hougeki.api_cl_list[i];
                     var api_damage = api_hougeki.api_damage[i];
                     for (var j = 0; j < api_df_list.length; ++j) {
-                        var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.hougekiFleetsStatusList[i - 1][j]);
-                        var phaseRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                        if (isSecond) {
-                            var friendShips = battleExDto.getDockCombined().getShips();
-                            var friendShipRows = ships.friendCombinedShipRows;
-                        }
-                        else {
-                            var friendShips = battleExDto.getDock().getShips();
-                            var friendShipRows = ships.friendRows;
-                        }
-                        var enemyShips = battleExDto.getEnemy();
-                        var enemyShipRows = ships.enemyRows;
-                        if (api_at < 7) {
-                            var itemInfoDtos = friendShips[api_at - 1].getItem();
-                            var atackFleetName = '自軍';
-                        }
-                        else {
-                            var itemInfoDtos = enemyShips[api_at - 7].getItem();
-                            var atackFleetName = '敵軍';
-                        }
-                        var itemNames = _.map(api_si_list, function (api_si) {
-                            var itemDto = _.find(itemInfoDtos, function (itemInfoDto) { return itemInfoDto != null ? itemInfoDto.getId() == api_si : false; });
-                            if (itemDto != null) {
-                                return itemDto.getName();
-                            }
-                            else {
-                                return null;
-                            }
-                        });
                         var api_df = api_df_list[j];
                         var cl = JavaInteger.valueOf(api_cl_list[j]);
                         if (cl >= 0) {
+                            var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.hougekiFleetsStatusList[i - 1][j]);
+                            var phaseRow = combat.NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                            if (isSecond) {
+                                var friendShips = battleExDto.getDockCombined().getShips();
+                                var friendShipRows = ships.friendCombinedShipRows;
+                            }
+                            else {
+                                var friendShips = battleExDto.getDock().getShips();
+                                var friendShipRows = ships.friendRows;
+                            }
+                            var enemyShips = battleExDto.getEnemy();
+                            var enemyShipRows = ships.enemyRows;
+                            if (api_at < 7) {
+                                var itemInfoDtos = friendShips[api_at - 1].getItem();
+                                var atackFleetName = '自軍';
+                            }
+                            else {
+                                var itemInfoDtos = enemyShips[api_at - 7].getItem();
+                                var atackFleetName = '敵軍';
+                            }
+                            var itemNames = _.map(api_si_list, function (api_si) {
+                                var itemDto = _.find(itemInfoDtos, function (itemInfoDto) { return itemInfoDto != null ? itemInfoDto.getId() == api_si : false; });
+                                if (itemDto != null) {
+                                    return itemDto.getName();
+                                }
+                                else {
+                                    return null;
+                                }
+                            });
                             var damage = JavaInteger.valueOf(api_damage[j]);
                             var row = _.clone(phaseRow);
                             row.push.apply(row, [
@@ -726,7 +737,7 @@ var combat;
             return rows;
         };
         return NightRow;
-    })();
+    }());
     combat.NightRow = NightRow;
 })(combat || (combat = {}));
 function begin() {

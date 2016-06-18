@@ -101,38 +101,38 @@ module combat {
                     var api_cl_list = api_hougeki.api_cl_list[i];
                     var api_damage = api_hougeki.api_damage[i];
                     for (var j = 0; j < api_df_list.length; ++j) {
-                        var ships = new Ships(battleExDto, phaseStatus, phaseStatus.hougekiFleetsStatusList[i - 1][j]);
-                        var phaseRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
-                        if (isSecond) {
-                            var friendShips = battleExDto.getDockCombined().getShips();
-                            var friendShipRows = ships.friendCombinedShipRows;
-                        }
-                        else {
-                            var friendShips = battleExDto.getDock().getShips();
-                            var friendShipRows = ships.friendRows;
-                        }
-                        var enemyShips = battleExDto.getEnemy();
-                        var enemyShipRows = ships.enemyRows;
-                        if (api_at < 7) {
-                            var itemInfoDtos = friendShips[api_at - 1].getItem();
-                            var atackFleetName = '自軍';
-                        }
-                        else {
-                            var itemInfoDtos = enemyShips[api_at - 7].getItem();
-                            var atackFleetName = '敵軍';
-                        }
-                        var itemNames = _.map(api_si_list, (api_si) => {
-                            var itemDto = _.find(itemInfoDtos, (itemInfoDto) => itemInfoDto != null ? itemInfoDto.getId() == api_si : false);
-                            if (itemDto != null) {
-                                return itemDto.getName();
-                            }
-                            else {
-                                return null;
-                            }
-                        });
                         var api_df = api_df_list[j];
                         var cl = JavaInteger.valueOf(api_cl_list[j]);
                         if (cl >= 0) {
+                            var ships = new Ships(battleExDto, phaseStatus, phaseStatus.hougekiFleetsStatusList[i - 1][j]);
+                            var phaseRow = NightPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos);
+                            if (isSecond) {
+                                var friendShips = battleExDto.getDockCombined().getShips();
+                                var friendShipRows = ships.friendCombinedShipRows;
+                            }
+                            else {
+                                var friendShips = battleExDto.getDock().getShips();
+                                var friendShipRows = ships.friendRows;
+                            }
+                            var enemyShips = battleExDto.getEnemy();
+                            var enemyShipRows = ships.enemyRows;
+                            if (api_at < 7) {
+                                var itemInfoDtos = friendShips[api_at - 1].getItem();
+                                var atackFleetName = '自軍';
+                            }
+                            else {
+                                var itemInfoDtos = enemyShips[api_at - 7].getItem();
+                                var atackFleetName = '敵軍';
+                            }
+                            var itemNames = _.map(api_si_list, (api_si) => {
+                                var itemDto = _.find(itemInfoDtos, (itemInfoDto) => itemInfoDto != null ? itemInfoDto.getId() == api_si : false);
+                                if (itemDto != null) {
+                                    return itemDto.getName();
+                                }
+                                else {
+                                    return null;
+                                }
+                            });
                             var damage = JavaInteger.valueOf(api_damage[j]);
                             var row = _.clone(phaseRow);
                             row.push.apply(row, [
