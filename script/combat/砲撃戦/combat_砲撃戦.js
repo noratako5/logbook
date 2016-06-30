@@ -676,7 +676,7 @@ var combat;
                 var fleetName = '通常艦隊';
             }
             if (hougekiIndex === 0) {
-                var hougekiCount = "開幕対潜";
+                var hougekiCount = "先制対潜";
             }
             else if (isSecond === isHougeki1Second) {
                 var hougekiCount = String(hougekiIndex);

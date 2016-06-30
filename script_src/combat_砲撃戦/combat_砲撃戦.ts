@@ -34,6 +34,7 @@ module combat {
                             var phaseApi = <DayPhaseApi>JSON.parse(phaseJson.toString());
                             if (phaseApi != null) {
                                 var phaseStatus = new PhaseStatus(battleExDto, phaseDto);
+                                rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 0));
                                 rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 1));
                                 rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 2));
                                 rows.push.apply(rows, HougekiRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 3));
@@ -73,6 +74,11 @@ module combat {
             var isHougeki1Second = kindDto.isHougeki1Second();
             var isHougeki2Second = kindDto.isHougeki2Second();
             var isHougeki3Second = kindDto.isHougeki3Second();
+            if (hougekiIndex === 0) {
+                var fleetStatusList = phaseStatus.openingTaisenStatus;
+                var api_hougeki = phaseApi.api_opening_taisen;
+                var isSecond = false;//連合は第一艦隊と第二艦隊どっちも対潜してくれる可能性がなくもないのでイベント待ち
+            }
             if (hougekiIndex === 1) {
                 var fleetStatusList = phaseStatus.hougeki1FleetsStatusList;
                 var api_hougeki = phaseApi.api_hougeki1;
@@ -99,11 +105,14 @@ module combat {
             else {
                 var fleetName = '通常艦隊';
             }
-            if (isSecond === isHougeki1Second) {
-                var hougekiCount = hougekiIndex;
+            if (hougekiIndex === 0) {
+                var hougekiCount = "先制対潜";
+            }
+            else if (isSecond === isHougeki1Second) {
+                var hougekiCount = String(hougekiIndex);
             }
             else {
-                var hougekiCount = hougekiIndex - 1;
+                var hougekiCount = String(hougekiIndex - 1);
             }
             var rows = <any[][]>[];
             if (api_hougeki != null) {
