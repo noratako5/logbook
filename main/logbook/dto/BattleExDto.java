@@ -13,14 +13,14 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.dyuproject.protostuff.Tag;
+
 import logbook.data.context.GlobalContext;
 import logbook.internal.EnemyData;
 import logbook.internal.UseItem;
 import logbook.util.JsonUtils;
-
-import org.apache.commons.lang3.StringUtils;
-
-import com.dyuproject.protostuff.Tag;
 
 /**
  * １回の会敵情報
@@ -631,6 +631,7 @@ public class BattleExDto extends AbstractDto {
          * 攻撃の全シーケンスを取得
          * [ 基地航空隊航空戦, 航空戦1, 支援艦隊の攻撃, 航空戦2, 開幕, 夜戦, 砲撃戦1, 雷撃, 砲撃戦2, 砲撃戦3 ]
          * 各戦闘がない場合はnullになる
+         * どこで使われてるか把握してないので開幕対潜はこっちにはまだ入れない
          * @return
          */
         public BattleAtackDto[][] getAtackSequence() {
@@ -823,7 +824,15 @@ public class BattleExDto extends AbstractDto {
         public List<BattleAtackDto> getSupport() {
             return this.support;
         }
-
+        
+        /**
+         * 開幕対潜
+         * @return openingTaisen
+         */
+        public List<BattleAtackDto> getOpeningTaisen() {
+            return BattleAtackDto.makeHougeki(this.getJson().get("api_opening_taisen"), false);
+        }
+        
         /**
          * 開幕
          * @return opening

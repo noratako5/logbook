@@ -77,6 +77,11 @@ declare module combat {
         /** 第二次航空戦情報　api_koukuと同じ */
         api_kouku2: AirBattleApi;
 
+        /**  開幕対潜フラグ*/
+        api_opening_taisen_flag: number;
+        /** 開幕対潜砲撃*/
+        api_opening_taisen: HougekiBattleApi;
+
         /** 開幕雷撃フラグ */
         api_opening_flag: number;
 

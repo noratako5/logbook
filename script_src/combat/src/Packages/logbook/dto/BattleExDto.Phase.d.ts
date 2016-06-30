@@ -143,7 +143,13 @@ declare module Packages.logbook.dto.BattleExDto {
          * @return hougeki
          */
         getHougeki(): Packages.java.util.List<BattleAtackDto>;
-        
+
+        /**
+         * 開幕対潜
+         * @return openingTaisen
+         */
+        getOpeningTaisen(): Packages.java.util.List<BattleAtackDto>;
+
         /**
          * 砲撃戦1
          * @return hougeki1

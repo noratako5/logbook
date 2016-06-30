@@ -1,9 +1,9 @@
-/// <reference path="logbook.d.ts" />
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+/// <reference path="logbook.d.ts" />
 var combat;
 (function (combat) {
     load('script/combat/lodash.js');
@@ -453,6 +453,7 @@ var combat;
             }
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
+            this.openingTaisenStatus = fleetsStatus.updateHougeki(phaseDto.getOpeningTaisen());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
             this.air2FleetsStatus = fleetsStatus.updateAir(phaseDto.getAir2());
             this.hougeki1FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki1());
@@ -750,3 +751,4 @@ function header() {
 function body(battleExDto) {
     return combat.NightTable.body(battleExDto);
 }
+//# sourceMappingURL=combat_夜戦.js.map

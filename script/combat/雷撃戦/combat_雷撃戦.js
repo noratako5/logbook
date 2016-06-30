@@ -1,9 +1,9 @@
-/// <reference path="logbook.d.ts" />
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+/// <reference path="logbook.d.ts" />
 var combat;
 (function (combat) {
     load('script/combat/lodash.js');
@@ -58,7 +58,7 @@ var combat;
             return row;
         };
         return DayPhaseRow;
-    })();
+    }());
     combat.DayPhaseRow = DayPhaseRow;
     var NightPhaseRow = (function () {
         function NightPhaseRow() {
@@ -106,7 +106,7 @@ var combat;
             return row;
         };
         return NightPhaseRow;
-    })();
+    }());
     combat.NightPhaseRow = NightPhaseRow;
     var PhaseRow = (function () {
         function PhaseRow() {
@@ -159,20 +159,24 @@ var combat;
             return row;
         };
         return PhaseRow;
-    })();
+    }());
     combat.PhaseRow = PhaseRow;
     var ItemInfos = (function () {
         function ItemInfos() {
             this.dtos = {};
         }
         ItemInfos.prototype.getName = function (id) {
+            if (id == -1) {
+                return null;
+            }
             var dto = this.dtos[id];
             if (dto != null) {
                 return dto.getName();
             }
+            return String(id);
         };
         return ItemInfos;
-    })();
+    }());
     combat.ItemInfos = ItemInfos;
     var ShipsBase = (function () {
         function ShipsBase(battleExDto, phaseStatus, fleetsStatus) {
@@ -210,7 +214,7 @@ var combat;
             this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
         }
         return ShipsBase;
-    })();
+    }());
     combat.ShipsBase = ShipsBase;
     var Ships = (function (_super) {
         __extends(Ships, _super);
@@ -221,7 +225,7 @@ var combat;
             return ShipRow.body(shipBaseDto, hp, maxHp, index);
         };
         return Ships;
-    })(ShipsBase);
+    }(ShipsBase));
     combat.Ships = Ships;
     var ShipRow = (function () {
         function ShipRow() {
@@ -359,7 +363,7 @@ var combat;
             }
         };
         return ShipRow;
-    })();
+    }());
     combat.ShipRow = ShipRow;
     var ItemRow = (function () {
         function ItemRow() {
@@ -426,7 +430,7 @@ var combat;
             return row;
         };
         return ItemRow;
-    })();
+    }());
     combat.ItemRow = ItemRow;
     var PhaseStatus = (function () {
         function PhaseStatus(battleExDto, phaseDto) {
@@ -440,8 +444,16 @@ var combat;
                 var fleetsStatus = new FleetsStatus(phase1Dto.getNowFriendHp(), phase1Dto.getNowFriendHpCombined(), phase1Dto.getNowEnemyHp());
             }
             this.firstFleetsStatus = fleetsStatus;
+            this.baseAirStatus = [];
+            var airBase = phaseDto.getAirBase();
+            if (airBase != null) {
+                for (var i = 0; i < airBase.length; i++) {
+                    this.baseAirStatus.push(fleetsStatus.updateAir(airBase[i]));
+                }
+            }
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
+            this.openingTaisenStatus = fleetsStatus.updateHougeki(phaseDto.getOpeningTaisen());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
             this.air2FleetsStatus = fleetsStatus.updateAir(phaseDto.getAir2());
             this.hougeki1FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki1());
@@ -459,7 +471,7 @@ var combat;
             this.lastFleetsStatus = fleetsStatus;
         }
         return PhaseStatus;
-    })();
+    }());
     combat.PhaseStatus = PhaseStatus;
     var FleetsStatus = (function () {
         function FleetsStatus(friendHps, friendCombinedHps, enemyHps) {
@@ -538,7 +550,7 @@ var combat;
             }
         };
         return FleetsStatus;
-    })();
+    }());
     combat.FleetsStatus = FleetsStatus;
     // javascriptの配列をそのまま返すと遅いので
     // Comparable[]に変換しておく
@@ -601,7 +613,7 @@ var combat;
             return combat.toComparable(rows);
         };
         return RaigekiTable;
-    })();
+    }());
     combat.RaigekiTable = RaigekiTable;
     var RaigekiRow = (function () {
         function RaigekiRow() {
@@ -693,7 +705,7 @@ var combat;
             return rows;
         };
         return RaigekiRow;
-    })();
+    }());
     combat.RaigekiRow = RaigekiRow;
 })(combat || (combat = {}));
 function begin() {
@@ -706,3 +718,4 @@ function header() {
 function body(battleExDto) {
     return combat.RaigekiTable.body(battleExDto);
 }
+//# sourceMappingURL=combat_雷撃戦.js.map

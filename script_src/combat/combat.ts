@@ -475,6 +475,7 @@ module combat {
             }
             this.airFleetsStatus = fleetsStatus.updateAir(phaseDto.getAir());
             this.supportFleetsStatus = fleetsStatus.update(phaseDto.getSupport());
+            this.openingTaisenStatus = fleetsStatus.updateHougeki(phaseDto.getOpeningTaisen());
             this.openingFleetsStatus = fleetsStatus.update(phaseDto.getOpening());
             this.air2FleetsStatus = fleetsStatus.updateAir(phaseDto.getAir2());
             this.hougeki1FleetsStatusList = fleetsStatus.updateHougeki(phaseDto.getHougeki1());
@@ -497,6 +498,7 @@ module combat {
         public baseAirStatus: FleetsStatus[];
         public airFleetsStatus: FleetsStatus;
         public supportFleetsStatus: FleetsStatus;
+        public openingTaisenStatus: FleetsStatus[][];
         public openingFleetsStatus: FleetsStatus;
         public air2FleetsStatus: FleetsStatus;
         public hougeki1FleetsStatusList: FleetsStatus[][];
