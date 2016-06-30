@@ -302,7 +302,7 @@ module combat {
                     }
                     var houg = shipParamDto.getHoug();
                     var raig = shipParamDto.getRaig();
-                    var taik = shipParamDto.getTaik();
+                    var taik = shipParamDto.getTyku();
                     var souk = shipParamDto.getSouk();
                     var kaih = shipParamDto.getKaih();
                     var tais = shipParamDto.getTais();
