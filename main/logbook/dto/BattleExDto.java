@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.dto;
 
@@ -137,7 +137,7 @@ public class BattleExDto extends AbstractDto {
     @Tag(27)
     private int hqLv;
 
-    /** 
+    /**
      * BattleExDtoのバージョン
      * exVersion == 0 : Tag 34以降がない
      * exVersion == 1 : Tag 36まである
@@ -229,6 +229,8 @@ public class BattleExDto extends AbstractDto {
         private AirBattleDto air2 = null;
         @Tag(13)
         private List<BattleAtackDto> support = null;
+        @Tag(50)
+        private List<BattleAtackDto> openingTaisen = null;
         @Tag(14)
         private List<BattleAtackDto> opening = null;
         @Tag(15)
@@ -325,6 +327,9 @@ public class BattleExDto extends AbstractDto {
             if (kouku2 != null)
                 this.air2 = new AirBattleDto(kouku2, isCombined, false);
 
+            // 開幕対潜
+            this.openingTaisen = BattleAtackDto.makeHougeki(object.get("api_opening_taisen"), kind.isOpeningSecond());
+
             // 開幕
             this.opening = BattleAtackDto.makeRaigeki(object.get("api_opening_atack"), kind.isOpeningSecond());
 
@@ -347,6 +352,7 @@ public class BattleExDto extends AbstractDto {
             this.doAtack(this.support);
             if (this.air2 != null)
                 this.doAtack(this.air2.atacks);
+            this.doAtack(this.openingTaisen);
             this.doAtack(this.opening);
             this.doAtack(this.hougeki);
             this.doAtack(this.hougeki1);
@@ -631,7 +637,6 @@ public class BattleExDto extends AbstractDto {
          * 攻撃の全シーケンスを取得
          * [ 基地航空隊航空戦, 航空戦1, 支援艦隊の攻撃, 航空戦2, 開幕, 夜戦, 砲撃戦1, 雷撃, 砲撃戦2, 砲撃戦3 ]
          * 各戦闘がない場合はnullになる
-         * どこで使われてるか把握してないので開幕対潜はこっちにはまだ入れない
          * @return
          */
         public BattleAtackDto[][] getAtackSequence() {
@@ -642,6 +647,7 @@ public class BattleExDto extends AbstractDto {
                     this.support == null ? null : this.toArray(this.support),
                     ((this.air2 == null) || (this.air2.atacks == null)) ? null :
                             this.toArray(this.air2.atacks),
+                    this.openingTaisen == null ? null : this.toArray(this.openingTaisen),
                     this.opening == null ? null : this.toArray(this.opening),
                     this.hougeki == null ? null : this.toArray(this.hougeki),
                     this.hougeki1 == null ? null : this.toArray(this.hougeki1),
@@ -824,15 +830,16 @@ public class BattleExDto extends AbstractDto {
         public List<BattleAtackDto> getSupport() {
             return this.support;
         }
-        
+
+
         /**
          * 開幕対潜
          * @return openingTaisen
          */
         public List<BattleAtackDto> getOpeningTaisen() {
-            return BattleAtackDto.makeHougeki(this.getJson().get("api_opening_taisen"), false);
+            return this.openingTaisen;
         }
-        
+
         /**
          * 開幕
          * @return opening
@@ -1495,7 +1502,7 @@ public class BattleExDto extends AbstractDto {
     }
 
     /**
-     * 陣形 [味方, 敵] 
+     * 陣形 [味方, 敵]
      * @return formation
      */
     public String[] getFormation() {
@@ -1624,7 +1631,7 @@ public class BattleExDto extends AbstractDto {
         return this.hqLv;
     }
 
-    /*** 
+    /***
      * BattleExDtoのバージョン
      * exVersion == 0 : Tag 34以降がない
      * exVersion == 1 : Tag 36まである
