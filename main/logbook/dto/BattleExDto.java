@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.dyuproject.protostuff.Tag;
 
+import logbook.data.DataType;
 import logbook.data.context.GlobalContext;
 import logbook.internal.EnemyData;
 import logbook.internal.UseItem;
@@ -1702,5 +1703,171 @@ public class BattleExDto extends AbstractDto {
      */
     public int getDropShipId() {
         return this.dropShipId;
+    }
+
+    /**
+     * 連合艦隊フラグ 連合の種類が特定できなかった場合は-1
+     * @return combinedFlag
+     */
+    public int getCombinedFlag(){
+        if(this.isCombined() == false){
+            return 0;
+        }
+
+        if(this.phaseList.isEmpty()){
+            return -1;
+        }
+        Phase phase = this.phaseList.get(0);
+        if(phase.isNight()){
+            return -1;
+        }
+        else if(phase.getApi().equals(DataType.COMBINED_BATTLE_WATER.getApiName())){
+            return 2;
+        }
+        else if(phase.getApi().equals(DataType.COMBINED_BATTLE.getApiName())){
+            //輸送と機動の区別は編成条件によるゴリ押し消去法しかない?
+            //空き枠は轟沈考慮
+            if(this.getDock() == null || this.getDockCombined() == null){
+                return -1;
+            }
+            {
+                int type1[];
+                {
+                    List<ShipDto> ships1 = this.getDock().getShips();
+                    type1 =  new int[ships1.size()];
+                    for(int i=0;i<type1.length;i++){
+                        type1[i] = ships1.get(i).getStype();
+                    }
+                }
+                int aki = 6-type1.length;
+                {
+                    int kuubo = 0;
+                    int senkan = 0;
+                    for(int type:type1){
+                        switch(type){
+                            case 7:
+                            case 11:
+                            case 18:
+                                kuubo++;break;
+                            case 8:
+                            case 9:
+                            case 10:
+                                senkan++;break;
+                        }
+                    }
+                    if(kuubo + aki < 2 || 4 < kuubo || 2 < senkan){
+                        return 3;
+                    }
+                }
+                {
+                    int kuchiku = 0;
+                    int keijunRenjun = 0;
+                    int koujun = 0;
+                    int kousen = 0;
+                    int suibo = 0;
+                    int youriku = 0;
+                    int senbo = 0;
+                    int hokyu = 0;
+                    int sonota = 0;
+                    for(int type:type1){
+                        switch(type){
+                            case 2:
+                                kuchiku++;break;
+                            case 3:
+                            case 21:
+                                keijunRenjun++;break;
+                            case 6:
+                                koujun++;break;
+                            case 10:
+                                kousen++;break;
+                            case 16:
+                                suibo++; break;
+                            case 17:
+                                youriku++;break;
+                            case 20:
+                                senbo++;break;
+                            case 22:
+                                hokyu++;break;
+                            default:
+                                sonota++;break;
+                        }
+                    }
+                    if(kuchiku + aki < 4 || 2 < keijunRenjun || 2 < koujun || 2 < kousen || 2 < suibo || 1 < youriku || 1 < senbo || 1 < hokyu || 0 < sonota ){
+                        return 1;
+                    }
+                }
+            }
+            {
+                int type2[];
+                {
+                    List<ShipDto> ships2 = this.getDockCombined().getShips();
+                    type2 =  new int[ships2.size()];
+                    for(int i=0;i<type2.length;i++){
+                        type2[i] = ships2.get(i).getStype();
+                    }
+                }
+                int aki = 6-type2.length;
+                {
+                    int keijun = 0;
+                    int kuchiku = 0;
+                    int jujunKoujun = 0;
+                    int keikuubo = 0;
+                    int suibo = 0;
+                    int kousokuSenkan = 0;
+                    int teisokuSenkanKousenSeikikuubo = 0;
+                    for(int type:type2){
+                        switch(type){
+                            case 3:
+                                keijun++;break;
+                            case 2:
+                                kuchiku++;break;
+                            case 5:
+                            case 6:
+                                jujunKoujun++;break;
+                            case 7:
+                                keikuubo++;break;
+                            case 16:
+                                suibo++;break;
+                            case 8:
+                                kousokuSenkan++;break;
+                            case 9:
+                            case 10:
+                            case 11:
+                                teisokuSenkanKousenSeikikuubo++;break;
+                        }
+                    }
+                    if( keijun + aki < 1 || kuchiku + aki < 2 || 1 < keijun || 2 < jujunKoujun || 1 < keikuubo || 1 < suibo || 2 < kousokuSenkan || 0 < teisokuSenkanKousenSeikikuubo ){
+                        return 3;
+                    }
+                }
+                {
+                    int keijunRenjun = 0;
+                    int kuchiku = 0;
+                    int jujunKoujun = 0;
+                    int sonota = 0;
+                    for(int type:type2){
+                        switch(type){
+                            case 3:
+                            case 21:
+                                keijunRenjun++;break;
+                            case 2:
+                                kuchiku++;break;
+                            case 5:
+                            case 6:
+                                jujunKoujun++;break;
+                            default:
+                                sonota++;break;
+                        }
+                    }
+                    if( keijunRenjun + aki < 1 || kuchiku + aki < 3 || 2 < keijunRenjun || 2 < jujunKoujun || 0 < sonota ){
+                        return 1;
+                    }
+                }
+            }
+            return -1;
+        }
+        else{
+            return -1;
+        }
     }
 }

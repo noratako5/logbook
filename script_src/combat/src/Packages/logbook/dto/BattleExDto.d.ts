@@ -311,5 +311,11 @@ declare module Packages.logbook.dto {
          * @return shipId
          */
         getDropShipId(): number;
+
+        /**
+        * 連合艦隊フラグ 連合の種類が特定できなかった場合は-1
+        * @return combinedFlag
+        */
+        getCombinedFlag(): number;
     }
 }

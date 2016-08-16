@@ -64,6 +64,7 @@ module combat {
             ]);
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('攻撃艦.' + s)));
             row.push.apply(row, _.map(ShipRow.header(), (s) => ('防御艦.' + s)));
+            row.push.apply(row, ['艦隊種類']);
             return row;
         }
 
@@ -102,6 +103,22 @@ module combat {
             else {
                 var fleetName = '通常艦隊';
             }
+            var combinedFlag = battleExDto.getCombinedFlag();
+            if (combinedFlag === 0) {
+                var combinedFlagString = '通常艦隊';
+            }
+            else if (combinedFlag === 1) {
+                var combinedFlagString = '機動部隊';
+            }
+            else if (combinedFlag === 2) {
+                var combinedFlagString = '水上部隊';
+            }
+            else if (combinedFlag === 3) {
+                var combinedFlagString = '輸送部隊';
+            }
+            else {
+                var combinedFlagString = '不明';
+            }
             var rows: any[][] = [];
             if (api_raigeki != null) {
                 var construct = (atShipRows: any[][], dfShipRows: any[][], api_rai: number[], api_ydam: number[], api_cl: number[], atackFleetName: string) => {
@@ -124,6 +141,7 @@ module combat {
                             row.push(ydam != api_ydam[i] ? 1 : 0);
                             row.push.apply(row, atShipRows[i - 1]);
                             row.push.apply(row, dfShipRows[api_rai[i] - 1]);
+                            row.push.apply(row, [combinedFlagString]);
                             rows.push(row);
                         }
                     }

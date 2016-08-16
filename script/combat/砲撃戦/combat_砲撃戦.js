@@ -1,9 +1,9 @@
+/// <reference path="logbook.d.ts" />
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-/// <reference path="logbook.d.ts" />
 var combat;
 (function (combat) {
     load('script/combat/lodash.js');
@@ -637,6 +637,7 @@ var combat;
             ]);
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('攻撃艦.' + s); }));
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
+            row.push.apply(row, ['艦隊種類']);
             return row;
         };
         HougekiRow.body = function (battleExDto, phaseStatus, phaseDto, phaseApi, hougekiIndex) {
@@ -647,7 +648,7 @@ var combat;
             if (hougekiIndex === 0) {
                 var fleetStatusList = phaseStatus.openingTaisenStatus;
                 var api_hougeki = phaseApi.api_opening_taisen;
-                var isSecond = false; //連合は第一艦隊と第二艦隊どっちも対潜してくれる可能性がなくもないのでイベント待ち
+                var isSecond = battleExDto.isCombined();
             }
             if (hougekiIndex === 1) {
                 var fleetStatusList = phaseStatus.hougeki1FleetsStatusList;
@@ -683,6 +684,22 @@ var combat;
             }
             else {
                 var hougekiCount = String(hougekiIndex - 1);
+            }
+            var combinedFlag = battleExDto.getCombinedFlag();
+            if (combinedFlag === 0) {
+                var combinedFlagString = '通常艦隊';
+            }
+            else if (combinedFlag === 1) {
+                var combinedFlagString = '機動部隊';
+            }
+            else if (combinedFlag === 2) {
+                var combinedFlagString = '水上部隊';
+            }
+            else if (combinedFlag === 3) {
+                var combinedFlagString = '輸送部隊';
+            }
+            else {
+                var combinedFlagString = '不明';
             }
             var rows = [];
             if (api_hougeki != null) {
@@ -751,6 +768,7 @@ var combat;
                         else {
                             row.push.apply(row, ships.enemyRows[api_df - 7]);
                         }
+                        row.push.apply(row, [combinedFlagString]);
                         rows.push(row);
                     }
                 }

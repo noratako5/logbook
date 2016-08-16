@@ -1,9 +1,9 @@
+/// <reference path="logbook.d.ts" />
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-/// <reference path="logbook.d.ts" />
 var combat;
 (function (combat) {
     load('script/combat/lodash.js');
@@ -645,6 +645,7 @@ var combat;
             ]);
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('攻撃艦.' + s); }));
             row.push.apply(row, _.map(combat.ShipRow.header(), function (s) { return ('防御艦.' + s); }));
+            row.push.apply(row, ['艦隊種類']);
             return row;
         };
         NightRow.body = function (battleExDto, phaseStatus, phaseDto, phaseApi) {
@@ -660,6 +661,22 @@ var combat;
             }
             else {
                 var fleetName = '通常艦隊';
+            }
+            var combinedFlag = battleExDto.getCombinedFlag();
+            if (combinedFlag === 0) {
+                var combinedFlagString = '通常艦隊';
+            }
+            else if (combinedFlag === 1) {
+                var combinedFlagString = '機動部隊';
+            }
+            else if (combinedFlag === 2) {
+                var combinedFlagString = '水上部隊';
+            }
+            else if (combinedFlag === 3) {
+                var combinedFlagString = '輸送部隊';
+            }
+            else {
+                var combinedFlagString = '不明';
             }
             var rows = [];
             if (api_hougeki != null) {
@@ -730,6 +747,7 @@ var combat;
                             else {
                                 row.push.apply(row, enemyShipRows[api_df - 7]);
                             }
+                            row.push.apply(row, [combinedFlagString]);
                             rows.push(row);
                         }
                     }
@@ -751,4 +769,3 @@ function header() {
 function body(battleExDto) {
     return combat.NightTable.body(battleExDto);
 }
-//# sourceMappingURL=combat_夜戦.js.map
