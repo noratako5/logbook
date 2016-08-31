@@ -127,7 +127,7 @@ module combat {
                         var row = _.clone(phaseRow);
                         var cl = JavaInteger.valueOf(api_cl[i]);
                         var ydam = JavaInteger.valueOf(api_ydam[i]);
-                        if (cl >= 0) {
+                        if (cl >= 0 && api_rai[i] > 0) {
                             row.push('雷撃戦');
                             row.push(fleetName);
                             row.push(stage);

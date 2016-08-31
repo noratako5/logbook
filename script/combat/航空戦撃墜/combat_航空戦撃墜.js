@@ -598,14 +598,13 @@ var combat;
 /// <reference path="../combat/combat.ts" />
 var combat;
 (function (combat) {
-    var JavaInteger = Packages.java.lang.Integer;
-    var BaseAirTable = (function () {
-        function BaseAirTable() {
+    var AirTable = (function () {
+        function AirTable() {
         }
-        BaseAirTable.header = function () {
-            return BaseAirRow.header();
+        AirTable.header = function () {
+            return AirRow.header();
         };
-        BaseAirTable.body = function (battleExDto) {
+        AirTable.body = function (battleExDto) {
             var rows = [];
             var phaseDto = battleExDto.getPhase1();
             if (phaseDto != null) {
@@ -617,11 +616,8 @@ var combat;
                             var phaseApi = JSON.parse(phaseJson.toString());
                             if (phaseApi != null) {
                                 var phaseStatus = new combat.PhaseStatus(battleExDto, phaseDto);
-                                if (phaseApi.api_air_base_attack != null) {
-                                    for (var i = 0; i < phaseApi.api_air_base_attack.length; i += 1) {
-                                        rows.push.apply(rows, BaseAirRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, i));
-                                    }
-                                }
+                                rows.push.apply(rows, AirRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 1));
+                                rows.push.apply(rows, AirRow.body(battleExDto, phaseStatus, phaseDto, phaseApi, 2));
                             }
                         }
                     }
@@ -629,61 +625,14 @@ var combat;
             }
             return combat.toComparable(rows);
         };
-        return BaseAirTable;
+        return AirTable;
     }());
-    combat.BaseAirTable = BaseAirTable;
-    var BaseShipsSummary = (function (_super) {
-        __extends(BaseShipsSummary, _super);
-        function BaseShipsSummary(battleExDto, phaseStatus, fleetsStatus) {
-            _super.call(this, battleExDto, phaseStatus, fleetsStatus);
+    combat.AirTable = AirTable;
+    var AirRow = (function () {
+        function AirRow() {
         }
-        BaseShipsSummary.prototype.createShipRow = function (shipBaseDto, hp) {
-            return BaseShipSummaryRow.body(shipBaseDto, hp);
-        };
-        return BaseShipsSummary;
-    }(combat.ShipsBase));
-    combat.BaseShipsSummary = BaseShipsSummary;
-    var BaseShipSummaryRow = (function () {
-        function BaseShipSummaryRow() {
-        }
-        BaseShipSummaryRow.header = function () {
-            var row = [];
-            row.push.apply(row, [
-                'ID',
-                '名前',
-                'Lv'
-            ]);
-            //row.push.apply(row, ItemRow.header());
-            return row;
-        };
-        BaseShipSummaryRow.body = function (shipBaseDto, hp) {
-            var row = [];
-            if (shipBaseDto != null) {
-                var shipInfoDto = shipBaseDto.getShipInfo();
-                if (shipInfoDto != null) {
-                    var shipId = shipInfoDto.getShipId();
-                    var fullName = shipInfoDto.getFullName();
-                }
-                var lv = shipBaseDto.getLv();
-            }
-            row.push(shipId);
-            row.push(fullName);
-            row.push(lv);
-            //row.push.apply(row, ItemRow.body(shipBaseDto));
-            return row;
-        };
-        return BaseShipSummaryRow;
-    }());
-    combat.BaseShipSummaryRow = BaseShipSummaryRow;
-    var BaseAirRow = (function () {
-        function BaseAirRow() {
-        }
-        BaseAirRow.header = function () {
+        AirRow.header = function () {
             var row = _.clone(combat.DayPhaseRow.header());
-            row.push.apply(row, ['航空隊', '攻撃順', '基地自触接', '基地敵触接']);
-            for (var i = 1; i <= 4; ++i) {
-                row.push.apply(row, ['第' + i + '中隊', '第' + i + '機数']);
-            }
             row.push.apply(row, [
                 'ステージ1.自艦載機総数',
                 'ステージ1.自艦載機喪失数',
@@ -692,62 +641,81 @@ var combat;
                 'ステージ2.自艦載機総数',
                 'ステージ2.自艦載機喪失数',
                 'ステージ2.敵艦載機総数',
-                'ステージ2.敵艦載機喪失数'
+                'ステージ2.敵艦載機喪失数',
+                '対空カットイン.発動艦',
+                '対空カットイン.種別',
+                '対空カットイン.表示装備1',
+                '対空カットイン.表示装備2',
+                '対空カットイン.表示装備3',
+                '味方雷撃被タゲ数',
+                '味方爆撃被タゲ数',
+                '敵雷撃被タゲ数',
+                '敵爆撃被タゲ数'
             ]);
             for (var i = 1; i <= 6; ++i) {
-                var shipRow = [];
-                shipRow.push.apply(shipRow, BaseShipSummaryRow.header());
-                row.push.apply(row, _.map(shipRow, function (y) { return ('攻撃艦' + i + '.' + y); }));
+                row.push.apply(row, _.map(combat.ShipRow.header(), function (y) { return ('敵艦' + i + '.' + y); }));
             }
-            row.push.apply(row, [
-                '雷撃',
-                '爆撃',
-                'クリティカル',
-                'ダメージ',
-                'かばう'
-            ]);
-            row.push.apply(row, _.map(combat.ShipRow.header(), function (y) { return ('防御艦.' + y); }));
+            for (var i = 1; i <= 6; ++i) {
+                row.push.apply(row, _.map(combat.ShipRow.header(), function (y) { return ('味方艦' + i + '.' + y); }));
+            }
+            for (var i = 1; i <= 6; ++i) {
+                row.push.apply(row, _.map(combat.ShipRow.header(), function (y) { return ('連合第二艦隊艦' + i + '.' + y); }));
+            }
+            row.push.apply(row, ['艦隊種類']);
             return row;
         };
-        BaseAirRow.body = function (battleExDto, phaseStatus, phaseDto, phaseApi, airIndex) {
+        AirRow.body = function (battleExDto, phaseStatus, phaseDto, phaseApi, airIndex) {
             var rows = [];
-            var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.baseAirStatus[airIndex]);
-            var shipsSummary = new BaseShipsSummary(battleExDto, phaseStatus, phaseStatus.baseAirStatus[airIndex]);
-            var api_kouku = phaseApi.api_air_base_attack[airIndex];
-            if (api_kouku != null && api_kouku.api_stage3 != null) {
+            if (airIndex === 1) {
+                var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.airFleetsStatus);
+                var api_kouku = phaseApi.api_kouku;
+            }
+            else if (airIndex === 2) {
+                var ships = new combat.Ships(battleExDto, phaseStatus, phaseStatus.air2FleetsStatus);
+                var api_kouku = phaseApi.api_kouku2;
+            }
+            if (api_kouku != null) {
+                var combinedFlag = battleExDto.getCombinedFlag();
+                if (combinedFlag === 0) {
+                    var combinedFlagString = '通常艦隊';
+                }
+                else if (combinedFlag === 1) {
+                    var combinedFlagString = '機動部隊';
+                }
+                else if (combinedFlag === 2) {
+                    var combinedFlagString = '水上部隊';
+                }
+                else if (combinedFlag === 3) {
+                    var combinedFlagString = '輸送部隊';
+                }
+                else {
+                    var combinedFlagString = '不明';
+                }
                 var api_plane_from = api_kouku.api_plane_from;
                 if (api_plane_from != null) {
                     var f_plane_from = _.map(_.range(0, 6), function () { return 0; });
-                    var e_plane_from = _.map(_.range(0, 6), function () { return 0; });
                     _.forEach(api_plane_from[0], function (i) {
+                        if (i >= 1) {
+                            f_plane_from[i - 1] = 1;
+                        }
+                    });
+                    var e_plane_from = _.map(_.range(0, 6), function () { return 0; });
+                    _.forEach(api_plane_from[1], function (i) {
                         if (i >= 1) {
                             e_plane_from[i - 1] = 1;
                         }
                     });
                 }
-                var row = _.clone(combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, shipsSummary.itemInfos));
-                row.push(api_kouku.api_base_id);
-                var index = ([1, 2, 3, 4, 5, 6, 7, 8])[airIndex]; //なぜかこうしないと浮動小数になってしまう
-                row.push(index);
-                row.push(shipsSummary.itemInfos.getName(api_kouku.api_stage1.api_touch_plane[0]));
-                row.push(shipsSummary.itemInfos.getName(api_kouku.api_stage1.api_touch_plane[1]));
-                for (var i = 0; i < 4; ++i) {
-                    if (api_kouku.api_squadron_plane != null && i < api_kouku.api_squadron_plane.length) {
-                        var baseAir = phaseDto.getAirBase()[airIndex];
-                        row.push(baseAir.getBasePlane(api_kouku.api_squadron_plane[i].api_mst_id));
-                        row.push(api_kouku.api_squadron_plane[i].api_count);
-                    }
-                    else {
-                        row.push(null);
-                        row.push(null);
-                    }
-                }
+                var row = _.clone(combat.DayPhaseRow.body(battleExDto, phaseDto, phaseApi, ships.itemInfos));
                 var api_stage1 = api_kouku.api_stage1;
                 if (api_stage1 != null) {
                     var stage1_f_count = api_stage1.api_f_count;
                     var stage1_f_lostcount = api_stage1.api_f_lostcount;
                     var stage1_e_count = api_stage1.api_e_count;
                     var stage1_e_lostcount = api_stage1.api_e_lostcount;
+                    if (stage1_f_count == 0 && stage1_e_count == 0) {
+                        return rows;
+                    }
                 }
                 row.push(stage1_f_count);
                 row.push(stage1_f_lostcount);
@@ -759,62 +727,107 @@ var combat;
                     var stage2_f_lostcount = api_stage2.api_f_lostcount;
                     var stage2_e_count = api_stage2.api_e_count;
                     var stage2_e_lostcount = api_stage2.api_e_lostcount;
+                    var api_air_fire = api_kouku.api_stage2.api_air_fire;
+                    if (api_air_fire != null) {
+                        var idx = 1 + api_air_fire.api_idx;
+                        var kind = api_air_fire.api_kind;
+                        var use_item0 = ships.itemInfos.getName(api_air_fire.api_use_items[0]);
+                        var use_item1 = ships.itemInfos.getName(api_air_fire.api_use_items[1]);
+                        var use_item2 = ships.itemInfos.getName(api_air_fire.api_use_items[2]);
+                    }
                 }
                 row.push(stage2_f_count);
                 row.push(stage2_f_lostcount);
                 row.push(stage2_e_count);
                 row.push(stage2_e_lostcount);
+                row.push(idx);
+                row.push(kind);
+                row.push(use_item0);
+                row.push(use_item1);
+                row.push(use_item2);
                 var api_stage3 = api_kouku.api_stage3;
-                var frai_flag = [-1, 0, 0, 0, 0, 0, 0];
-                var erai_flag = api_stage3.api_erai_flag;
-                var fbak_flag = [-1, 0, 0, 0, 0, 0, 0];
-                var ebak_flag = api_stage3.api_ebak_flag;
-                var fcl_flag = [-1, 0, 0, 0, 0, 0, 0];
-                var ecl_flag = api_stage3.api_ecl_flag;
-                var fdam = [-1, 0, 0, 0, 0, 0, 0];
-                var edam = api_stage3.api_edam;
-                var construct = function (row, atShipRows, dfShipRows, plane_from, rai_flag, bak_flag, cl_flag, dam) {
-                    var rows = [];
-                    row = row.concat.apply(row, atShipRows);
-                    for (var i = 0; i < 6; ++i) {
-                        var innerRow = _.clone(row);
-                        if (rai_flag != null) {
-                            var rai = JavaInteger.valueOf(rai_flag[i + 1]);
+                var frai_count = 0;
+                var erai_count = 0;
+                var fbak_count = 0;
+                var ebak_count = 0;
+                if (api_stage3 != null) {
+                    var frai_flag = api_stage3.api_frai_flag;
+                    var erai_flag = api_stage3.api_erai_flag;
+                    var fbak_flag = api_stage3.api_fbak_flag;
+                    var ebak_flag = api_stage3.api_ebak_flag;
+                    if (frai_flag != null) {
+                        for (var i = 0; i < frai_flag.length; ++i) {
+                            if (frai_flag[i] == 1) {
+                                ++frai_count;
+                            }
                         }
-                        innerRow.push(rai);
-                        if (bak_flag != null) {
-                            var bak = JavaInteger.valueOf(bak_flag[i + 1]);
-                        }
-                        innerRow.push(bak);
-                        if (cl_flag != null) {
-                            var cl = JavaInteger.valueOf(cl_flag[i + 1]);
-                        }
-                        innerRow.push(cl);
-                        if (dam != null) {
-                            var d = JavaInteger.valueOf(dam[i + 1]);
-                            var protects = d != dam[i + 1] ? 1 : 0;
-                        }
-                        innerRow.push(d);
-                        innerRow.push(protects);
-                        rows.push(innerRow.concat(dfShipRows[i]));
                     }
-                    return rows;
-                };
-                rows.push.apply(rows, construct(row, shipsSummary.friendRows, ships.enemyRows, f_plane_from, erai_flag, ebak_flag, ecl_flag, edam));
+                    if (erai_flag != null) {
+                        for (var i = 0; i < erai_flag.length; ++i) {
+                            if (erai_flag[i] == 1) {
+                                ++erai_count;
+                            }
+                        }
+                    }
+                    if (fbak_flag != null) {
+                        for (var i = 0; i < fbak_flag.length; ++i) {
+                            if (fbak_flag[i] == 1) {
+                                ++fbak_count;
+                            }
+                        }
+                    }
+                    if (ebak_flag != null) {
+                        for (var i = 0; i < ebak_flag.length; ++i) {
+                            if (ebak_flag[i] == 1) {
+                                ++ebak_count;
+                            }
+                        }
+                    }
+                }
+                var api_stage3_combined = api_kouku.api_stage3_combined;
+                if (api_stage3_combined != null) {
+                    var frai_flag = api_stage3_combined.api_frai_flag;
+                    var fbak_flag = api_stage3_combined.api_fbak_flag;
+                    for (var i = 0; i < frai_flag.length; ++i) {
+                        if (frai_flag[i] == 1) {
+                            ++frai_count;
+                        }
+                    }
+                    for (var i = 0; i < fbak_flag.length; ++i) {
+                        if (fbak_flag[i] == 1) {
+                            ++fbak_count;
+                        }
+                    }
+                }
+                row.push(frai_count);
+                row.push(fbak_count);
+                row.push(erai_count);
+                row.push(ebak_count);
+                for (var i = 0; i < 6; ++i) {
+                    row.push.apply(row, ships.enemyRows[i]);
+                }
+                for (var i = 0; i < 6; ++i) {
+                    row.push.apply(row, ships.friendRows[i]);
+                }
+                for (var i = 0; i < 6; ++i) {
+                    row.push.apply(row, ships.friendCombinedShipRows[i]);
+                }
+                row.push.apply(row, [combinedFlagString]);
+                rows.push(row);
             }
             return rows;
         };
-        return BaseAirRow;
+        return AirRow;
     }());
-    combat.BaseAirRow = BaseAirRow;
+    combat.AirRow = AirRow;
 })(combat || (combat = {}));
 function begin() {
 }
 function end() {
 }
 function header() {
-    return combat.BaseAirTable.header();
+    return combat.AirTable.header();
 }
 function body(battleExDto) {
-    return combat.BaseAirTable.body(battleExDto);
+    return combat.AirTable.body(battleExDto);
 }

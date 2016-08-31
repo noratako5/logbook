@@ -207,9 +207,23 @@ var combat;
             if (dockDto != null) {
                 this.friendRows = construct(dockDto.getShips(), fleetsStatus.friendHps, phaseStatus.maxFleetsStatus.friendHps);
             }
+            else {
+                var shipRows = [];
+                for (var i = 0; i < 6; ++i) {
+                    shipRows.push(this.createShipRow(null, 0, 0, i + 1));
+                }
+                this.friendRows = shipRows;
+            }
             var dockCombinedDto = battleExDto.getDockCombined();
             if (dockCombinedDto != null) {
                 this.friendCombinedShipRows = construct(dockCombinedDto.getShips(), fleetsStatus.friendCombinedHps, phaseStatus.maxFleetsStatus.friendCombinedHps);
+            }
+            else {
+                var shipRows = [];
+                for (var i = 0; i < 6; ++i) {
+                    shipRows.push(this.createShipRow(null, 0, 0, i + 1));
+                }
+                this.friendCombinedShipRows = shipRows;
             }
             this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
         }
@@ -705,7 +719,7 @@ var combat;
                 var shipsSummary = new ShipsSummary(battleExDto, phaseStatus, phaseStatus.air2FleetsStatus);
                 var api_kouku = phaseApi.api_kouku2;
             }
-            if (api_kouku != null && api_kouku.api_stage3 != null) {
+            if (api_kouku != null && (api_kouku.api_stage3 != null || api_kouku.api_stage3_combined != null)) {
                 var api_plane_from = api_kouku.api_plane_from;
                 if (api_plane_from != null) {
                     var f_plane_from = _.map(_.range(0, 6), function () { return 0; });
@@ -757,15 +771,6 @@ var combat;
                 row.push(use_item0);
                 row.push(use_item1);
                 row.push(use_item2);
-                var api_stage3 = api_kouku.api_stage3;
-                var frai_flag = api_stage3.api_frai_flag;
-                var erai_flag = api_stage3.api_erai_flag;
-                var fbak_flag = api_stage3.api_fbak_flag;
-                var ebak_flag = api_stage3.api_ebak_flag;
-                var fcl_flag = api_stage3.api_fcl_flag;
-                var ecl_flag = api_stage3.api_ecl_flag;
-                var fdam = api_stage3.api_fdam;
-                var edam = api_stage3.api_edam;
                 var construct = function (row, atShipRows, dfShipRows, plane_from, rai_flag, bak_flag, cl_flag, dam) {
                     var rows = [];
                     row = row.concat.apply(row, atShipRows);
@@ -793,8 +798,27 @@ var combat;
                     }
                     return rows;
                 };
-                rows.push.apply(rows, construct(row, shipsSummary.friendRows, ships.enemyRows, f_plane_from, erai_flag, ebak_flag, ecl_flag, edam));
-                rows.push.apply(rows, construct(row, shipsSummary.enemyRows, ships.friendRows, e_plane_from, frai_flag, fbak_flag, fcl_flag, fdam));
+                var api_stage3 = api_kouku.api_stage3;
+                if (api_stage3 != null) {
+                    var frai_flag = api_stage3.api_frai_flag;
+                    var erai_flag = api_stage3.api_erai_flag;
+                    var fbak_flag = api_stage3.api_fbak_flag;
+                    var ebak_flag = api_stage3.api_ebak_flag;
+                    var fcl_flag = api_stage3.api_fcl_flag;
+                    var ecl_flag = api_stage3.api_ecl_flag;
+                    var fdam = api_stage3.api_fdam;
+                    var edam = api_stage3.api_edam;
+                    rows.push.apply(rows, construct(row, shipsSummary.friendRows, ships.enemyRows, f_plane_from, erai_flag, ebak_flag, ecl_flag, edam));
+                    rows.push.apply(rows, construct(row, shipsSummary.enemyRows, ships.friendRows, e_plane_from, frai_flag, fbak_flag, fcl_flag, fdam));
+                }
+                var api_stage3_combined = api_kouku.api_stage3_combined;
+                if (api_stage3_combined != null) {
+                    var frai_flag = api_stage3_combined.api_frai_flag;
+                    var fbak_flag = api_stage3_combined.api_fbak_flag;
+                    var fcl_flag = api_stage3_combined.api_fcl_flag;
+                    var fdam = api_stage3_combined.api_fdam;
+                    rows.push.apply(rows, construct(row, shipsSummary.enemyRows, ships.friendCombinedShipRows, e_plane_from, frai_flag, fbak_flag, fcl_flag, fdam));
+                }
             }
             return rows;
         };

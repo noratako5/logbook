@@ -207,9 +207,23 @@ var combat;
             if (dockDto != null) {
                 this.friendRows = construct(dockDto.getShips(), fleetsStatus.friendHps, phaseStatus.maxFleetsStatus.friendHps);
             }
+            else {
+                var shipRows = [];
+                for (var i = 0; i < 6; ++i) {
+                    shipRows.push(this.createShipRow(null, 0, 0, i + 1));
+                }
+                this.friendRows = shipRows;
+            }
             var dockCombinedDto = battleExDto.getDockCombined();
             if (dockCombinedDto != null) {
                 this.friendCombinedShipRows = construct(dockCombinedDto.getShips(), fleetsStatus.friendCombinedHps, phaseStatus.maxFleetsStatus.friendCombinedHps);
+            }
+            else {
+                var shipRows = [];
+                for (var i = 0; i < 6; ++i) {
+                    shipRows.push(this.createShipRow(null, 0, 0, i + 1));
+                }
+                this.friendCombinedShipRows = shipRows;
             }
             this.enemyRows = construct(battleExDto.getEnemy(), fleetsStatus.enemyHps, phaseStatus.maxFleetsStatus.enemyHps);
         }
