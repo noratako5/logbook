@@ -24,6 +24,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import au.com.bytecode.opencsv.CSVReader;
 import logbook.config.AppConfig;
 import logbook.constants.AppConstants;
 import logbook.data.context.GlobalContext;
@@ -59,14 +66,6 @@ import logbook.scripting.ShipItemListener;
 import logbook.scripting.ShipItemProxy;
 import logbook.util.ReportUtils;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import au.com.bytecode.opencsv.CSVReader;
-
 /**
  * 各種報告書を作成します
  *
@@ -78,7 +77,7 @@ public final class CreateReportLogic {
 
     /**
      * ドロップ報告書のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getBattleResultHeader() {
@@ -116,7 +115,7 @@ public final class CreateReportLogic {
 
     /**
      * ドロップ報告書のヘッダー(保存用)
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getBattleResultStoreHeader() {
@@ -138,7 +137,7 @@ public final class CreateReportLogic {
     /**
      * ドロップ報告書の内容(保存用)
      * @param results ドロップ報告書
-     * 
+     *
      * @return 内容
      */
     public static List<Comparable[]> getBattleResultStoreBody(List<BattleExDto> results) {
@@ -200,7 +199,7 @@ public final class CreateReportLogic {
 
     /**
      * 戦闘報告書のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getCombatResultHeader(CombatLogProxy proxy) {
@@ -215,19 +214,61 @@ public final class CreateReportLogic {
     public static List<Comparable[]> getCombatResultBody(CombatLogProxy proxy, BattleResultFilter filter) {
         List<BattleResultDto> results = BattleResultServer.get().getFilteredList(filter);
         List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
-
+        int limit = AppConfig.get().getMaxPrintItems();
         int i = 0;
         for (BattleResultDto item : results) {
-            for (Comparable[] body : item.getCombatExtData(proxy.getPrefix())) {
-                allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++i, item) }, body));
+            if(i >= limit){ break; }
+            if(item.getCombatDataRowCount(proxy.getPrefix()) == 0){ continue; }
+            BattleExDto detail = BattleResultServer.get().getBattleDetail(item);
+            if(detail == null){continue;}
+            Comparable[][] itemBody = proxy.body(detail);
+            if(itemBody!=null){
+                for (Comparable[] body : itemBody) {
+                    allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++i, item) }, body));
+                }
             }
         }
         return allBodies;
     }
 
     /**
+     * 戦闘報告書のヘッダー
+     *
+     * @return ヘッダー
+     */
+    public static String[] getBuiltinCombatResultHeader(String key) {
+        return ArrayUtils.addAll(new String[] { "No." }, BattleExDto.BuiltinScriptHeaderWithKey(key));
+    }
+
+    /**
+     * 戦闘報告書の内容
+     * @param filter フィルタ
+     * @return 内容
+     */
+    public static List<Comparable[]> getBuiltinCombatResultBody(String title, BattleResultFilter filter) {
+        List<BattleResultDto> results = BattleResultServer.get().getFilteredList(filter);
+        List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
+        int limit = AppConfig.get().getMaxPrintItems();
+        int i = 0;
+        for (BattleResultDto item : results) {
+            if(i >= limit){ break; }
+            if(item.getBuiltinCombatDataRowCount(title) == 0){ continue; }
+            BattleExDto detail = BattleResultServer.get().getBattleDetail(item);
+            if(detail == null){continue;}
+            Comparable[][] itemBody = detail.BuiltinScriptBodyWithKey(title,null,null);
+            if(itemBody!=null){
+                for (Comparable[] body : itemBody) {
+                    allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++i, item) }, body));
+                }
+            }
+        }
+        return allBodies;
+    }
+
+
+    /**
      * 建造報告書のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getCreateShipHeader() {
@@ -279,7 +320,7 @@ public final class CreateReportLogic {
 
     /**
      * 開発報告書のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getCreateItemHeader() {
@@ -338,7 +379,7 @@ public final class CreateReportLogic {
 
     /**
      * 所有装備一覧のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getItemListHeader() {
@@ -349,7 +390,7 @@ public final class CreateReportLogic {
 
     /**
      * 所有装備一覧の内容
-     * 
+     *
      * @return 内容
      */
     public static List<Comparable[]> getItemListBody() {
@@ -398,7 +439,7 @@ public final class CreateReportLogic {
 
     /**
      * 所有艦娘一覧のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getShipListHeader() {
@@ -409,7 +450,7 @@ public final class CreateReportLogic {
 
     /**
      * 所有艦娘一覧の内容
-     * 
+     *
      * @param specdiff 成長余地
      * @param filter 鍵付きのみ
      * @return 内容
@@ -435,7 +476,7 @@ public final class CreateReportLogic {
 
     /**
      * 遠征結果のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getMissionResultHeader() {
@@ -555,7 +596,7 @@ public final class CreateReportLogic {
 
     /**
      * 資材のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getMaterialHeader() {
@@ -591,7 +632,7 @@ public final class CreateReportLogic {
 
     /**
      * ロストログのヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getLostHeader() {
@@ -622,7 +663,7 @@ public final class CreateReportLogic {
 
     /**
      * 遠征一覧のヘッダー
-     * 
+     *
      * @return ヘッダー
      */
     public static String[] getMissionHeader() {
@@ -632,7 +673,7 @@ public final class CreateReportLogic {
 
     /**
      * 遠征一覧の内容
-     * 
+     *
      * @param fleetid 遠征艦隊（2～4）
      * @return 内容
      */
@@ -652,7 +693,7 @@ public final class CreateReportLogic {
 
     /**
      * 報告書をCSVファイルに書き込む(最初の列を取り除く)
-     * 
+     *
      * @param file ファイル
      * @param header ヘッダー
      * @param body 内容
@@ -672,7 +713,7 @@ public final class CreateReportLogic {
 
     /**
      * 報告書をCSVファイルに書き込む
-     * 
+     *
      * @param file ファイル
      * @param header ヘッダー
      * @param body 内容
@@ -694,7 +735,21 @@ public final class CreateReportLogic {
             stream.close();
         }
     }
-    
+    public static void writeCsvRed(File file, String[] header, List<String[]> body, boolean applend)
+            throws IOException {
+        OutputStream stream = new BufferedOutputStream(new FileOutputStream(file, applend));
+        try {
+            if (!file.exists() || (FileUtils.sizeOf(file) <= 0)) {
+                IOUtils.write(toRecord(header), stream, AppConstants.CHARSET);
+            }
+            for (String[] colums : body) {
+                IOUtils.write(toRecord(ReportUtils.toStringArray(colums)), stream, AppConstants.CHARSET);
+            }
+        } finally {
+            stream.close();
+        }
+    }
+
     private static String toRecord(String[] fields) {
         fields = fields.clone();
         for (int i = 0; i < fields.length; ++i) {
@@ -708,7 +763,7 @@ public final class CreateReportLogic {
 
     /**
      * 艦娘をフィルタします
-     * 
+     *
      * @param ship 艦娘
      * @param filter フィルターオブジェクト
      * @return フィルタ結果
@@ -851,7 +906,7 @@ public final class CreateReportLogic {
 
     /**
      * 海戦・ドロップ報告書を書き込む
-     * 
+     *
      * @param dto 海戦・ドロップ報告
      */
     public static void storeBattleResultReport(BattleExDto dto) {
@@ -870,7 +925,7 @@ public final class CreateReportLogic {
 
     /**
      * 建造報告書を書き込む
-     * 
+     *
      * @param dto 建造報告
      */
     public static void storeCreateShipReport(GetShipDto dto) {
@@ -889,7 +944,7 @@ public final class CreateReportLogic {
 
     /**
      * 建造報告書を読み込む
-     * 
+     *
      * @return 建造報告
      */
     public static List<GetShipDto> loadCreateShipReport() {
@@ -910,7 +965,7 @@ public final class CreateReportLogic {
 
     /**
      * 開発報告書を書き込む
-     * 
+     *
      * @param dto 開発報告
      */
     public static void storeCreateItemReport(CreateItemDto dto) {
@@ -929,7 +984,7 @@ public final class CreateReportLogic {
 
     /**
      * 開発報告書を読み込む
-     * 
+     *
      * @return 開発報告
      */
     public static List<CreateItemDto> loadCreateItemReport() {
@@ -950,7 +1005,7 @@ public final class CreateReportLogic {
 
     /**
      * 遠征報告書を書き込む
-     * 
+     *
      * @param dto 遠征結果
      */
     public static void storeMissionReport(MissionResultDto dto) {
@@ -969,7 +1024,7 @@ public final class CreateReportLogic {
 
     /**
      * 遠征報告書を読み込む
-     * 
+     *
      * @return 遠征報告
      */
     public static List<MissionResultDto> loadMissionReport() {
@@ -990,7 +1045,7 @@ public final class CreateReportLogic {
 
     /**
      * 資材ログを書き込む
-     * 
+     *
      * @param material 資材
      */
     public static void storeMaterialReport(MaterialDto material, BasicInfoDto basic) {
@@ -1009,7 +1064,7 @@ public final class CreateReportLogic {
 
     /**
      * 解体・廃棄ログを書き込む
-     * 
+     *
      * @param dtoList 解体・廃棄情報
      */
     public static void storeLostReport(List<LostEntityDto> dtoList) {
@@ -1028,7 +1083,7 @@ public final class CreateReportLogic {
 
     /**
      * 書き込み先のファイルを返します
-     * 
+     *
      * @param name ファイル名
      * @param altername 代替ファイル名
      * @return File
@@ -1057,7 +1112,7 @@ public final class CreateReportLogic {
 
     /**
      * alternativeファイルを本体にマージして削除します
-     * 
+     *
      * @param report ファイル本体
      * @param alt_report alternativeファイル
      * @return

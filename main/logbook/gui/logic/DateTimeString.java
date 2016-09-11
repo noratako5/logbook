@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.gui.logic;
 
@@ -27,6 +27,14 @@ public class DateTimeString implements Comparable<DateTimeString> {
     @Override
     public String toString() {
         return format.format(this.date);
+    }
+
+    /**
+     * マルチスレッドで呼ぶときはこっち
+     * @return
+     */
+    public String toStringRed(){
+        return new SimpleDateFormat(AppConstants.DATE_FORMAT).format(this.date);
     }
 
     @Override

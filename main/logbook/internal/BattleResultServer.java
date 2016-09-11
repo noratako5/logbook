@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.internal;
 
@@ -24,8 +24,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.eclipse.swt.widgets.Display;
+
+import com.dyuproject.protostuff.LinkedBuffer;
+import com.dyuproject.protostuff.ProtostuffIOUtil;
+import com.dyuproject.protostuff.Schema;
+import com.dyuproject.protostuff.runtime.RuntimeSchema;
 
 import logbook.config.AppConfig;
 import logbook.constants.AppConstants;
@@ -40,18 +53,6 @@ import logbook.scripting.BattleLogListener;
 import logbook.scripting.BattleLogProxy;
 import logbook.scripting.CombatLogProxy;
 import logbook.util.ReportUtils;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.swt.widgets.Display;
-
-import com.dyuproject.protostuff.LinkedBuffer;
-import com.dyuproject.protostuff.ProtostuffIOUtil;
-import com.dyuproject.protostuff.Schema;
-import com.dyuproject.protostuff.runtime.RuntimeSchema;
 
 /**
  * @author Nekopanda
@@ -150,7 +151,7 @@ public class BattleResultServer {
     private List<BattleExDto> tmpDat = null;
 
     private int failCount = 0;
-    
+
     private boolean isLoaded_ = false;
     private boolean isLoadCombatLog = AppConfig.get().isLoadCombatLog();
 
@@ -163,6 +164,10 @@ public class BattleResultServer {
         }
 
         public List<BattleExDto> readAll() throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
             throw new UnsupportedOperationException();
         }
 
@@ -185,6 +190,12 @@ public class BattleResultServer {
             return result;
         }
 
+        List<BattleExDto> loadWithoutReadFromJson(InputStream input) throws IOException {
+            List<BattleExDto> result = BattleResultServer.this.loadFromInputStreamWithoutReadFromJson(input,
+                    BattleResultServer.this.buffer);
+            this.numRecords = result.size();
+            return result;
+        }
     }
 
     private class NormalDataFile extends DataFile {
@@ -197,6 +208,13 @@ public class BattleResultServer {
         public List<BattleExDto> readAll() throws IOException {
             try (InputStream input = new FileInputStream(this.file)) {
                 return this.load(input);
+            }
+        }
+
+        @Override
+        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
+            try (InputStream input = new FileInputStream(this.file)) {
+                return this.loadWithoutReadFromJson(input);
             }
         }
 
@@ -237,6 +255,15 @@ public class BattleResultServer {
         }
 
         @Override
+        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
+            try (ZipFile zipFile = new ZipFile(this.file)) {
+                try (InputStream input = zipFile.getInputStream(zipFile.getEntry(this.zipName))) {
+                    return this.loadWithoutReadFromJson(input);
+                }
+            }
+        }
+
+        @Override
         public String getPath() {
             return this.file.getAbsolutePath() + ":" + this.zipName;
         }
@@ -260,7 +287,24 @@ public class BattleResultServer {
         }
         return result;
     }
-
+    ///json読みをこの段階でやらない
+    private List<BattleExDto> loadFromInputStreamWithoutReadFromJson(InputStream input, LinkedBuffer buffer) throws IOException {
+        List<BattleExDto> result = new ArrayList<BattleExDto>();
+        try {
+            while (input.available() > 0) {
+                BattleExDto battle = schema.newMessage();
+                ProtostuffIOUtil.mergeDelimitedFrom(input, battle, schema, buffer);
+                try {
+                    result.add(battle);
+                } catch (Exception e) {
+                    this.failCount++;
+                    LOG.get().warn("戦闘ログの読み込みに失敗しました(" + new DateTimeString(battle.getBattleDate()) + ")", e);
+                }
+            }
+        } catch (EOFException e) {
+        }
+        return result;
+    }
     private BattleResultServer() {
         this.path = null;
         this.firstBattleTime = new Date();
@@ -315,8 +359,13 @@ public class BattleResultServer {
 
         battleLogScript.begin();
         CombatLogProxy.beginAll();
-        // 全部読み込む
-        for (DataFile file : this.fileMap.values()) {
+        //新しい順
+        List<DataFile> sortedFileList =
+            this.fileMap.values()
+            .stream()
+            .sorted((f1,f2)->f2.file.getName().compareTo(f1.file.getName()))
+            .collect(Collectors.toList());
+        for (DataFile file : sortedFileList) {
             this.resultList.addAll(loadBattleResults(file, this.isLoadCombatLog, this.resultDateSet));
         }
         CombatLogProxy.endAll();
@@ -523,7 +572,7 @@ public class BattleResultServer {
 
     /**
      * alternativeファイルを本体にマージして削除します
-     * 
+     *
      * @param report ファイル本体
      * @param alt_report alternativeファイル
      * @return
@@ -551,7 +600,100 @@ public class BattleResultServer {
     public int getFailCount() {
         return this.failCount;
     }
-    
+    public static void writeCsvRed(String[] sourcePaths, String targetPath) {
+        Set<Date> resultDateSet = Collections.synchronizedSet(new HashSet<Date>());
+        int n = 0;
+        BattleResultServer self = new BattleResultServer();
+        BattleLogProxy.get().begin();
+        for (String sourcePath : sourcePaths) {
+            File sourceFile = new File(sourcePath);
+            if (sourceFile.isDirectory()) {
+                Map<String, File> files = new TreeMap<String, File>();
+                for (File file : FileUtils.listFiles(sourceFile, new String[] { "dat", "zip" }, true)) {
+                    files.put(file.getPath(), file);
+                }
+                for (File file : files.values()) {
+                    n = writeCsvRed(self, file, targetPath, resultDateSet, n);
+                }
+            }
+            else if (sourceFile.isFile()) {
+                n = writeCsvRed(self, sourceFile, targetPath, resultDateSet, n);
+            }
+        }
+        BattleLogProxy.get().end();
+    }
+    private static int writeCsvRed(DataFile file, String targetPath, Set<Date> resultDateSet, int n) {
+        return writeCsvRed(loadBattleResultsRed(file, resultDateSet), targetPath, n);
+    }
+    private static int writeCsvRed(BattleResultServer self, File file, String targetPath, Set<Date> resultDateSet, int n) {
+        try {
+            if (file.getName().endsWith(".dat")) {
+                DataFile dataFile = self.new NormalDataFile(file);
+                n = writeCsvRed(dataFile, targetPath, resultDateSet, n);
+            }
+            else if (file.getName().endsWith(".zip")) {
+                try (ZipFile zipFile = new ZipFile(file)) {
+                    Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+                    while (enumeration.hasMoreElements()) {
+                        ZipEntry entry = enumeration.nextElement();
+                        DataFile dataFile = self.new ZipDataFile(file, entry.getName());
+                        n = writeCsvRed(dataFile, targetPath, resultDateSet, n);
+                    }
+                }
+            }
+            return n;
+        } catch (IOException e) {
+            LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
+            return n;
+        }
+    }
+    private static int writeCsvRed(List<Map<String,String[][]>> resultList, String targetPath, int n) {
+        try {
+            boolean append = n > 0;
+            Map<String,String[]> header = BattleExDto.BuiltinScriptHeader();
+            Set<String>keySet = header.keySet();
+            for(String key:keySet){
+                List<String[]> allBodies = new ArrayList<String[]>();
+                for (Map<String,String[][]> item : resultList) {
+                    for (String[] body : item.get(key)) {
+                        allBodies.add(ArrayUtils.addAll(new String[] { (new Integer(++n)).toString() }, body));
+                    }
+                }
+                String[] headerArray = header.get(key);
+                CreateReportLogic.writeCsvRed(new File(targetPath).toPath().resolve(key + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, headerArray), allBodies, append);
+            }
+            return n;
+        } catch (IOException e) {
+            LOG.get().warn("出撃ログの書き込みに失敗しました", e);
+            return n;
+        }
+    }
+    private static List<Map<String,String[][]>> loadBattleResultsRed(DataFile file,Set<Date> resultDateSet) {
+        try {
+            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
+            for(BattleExDto b : battleAll){
+                if (b.isCompleteResult() && !resultDateSet.contains(b.getBattleDate())) {
+                    resultDateSet.add(b.getBattleDate());
+                    battle.add(b);
+                }
+            }
+            List<Map<String,String[][]>> result=
+                battle
+                .parallelStream()
+                .map(b->b.BuiltinScriptBody())
+                .collect(Collectors.toList());
+            ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
+            return result;
+        } catch (Exception e) {
+            LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
+            return new ArrayList<Map<String,String[][]>>();
+        }
+    }
+
+
+
+
     public static void writeCsv(String[] sourcePaths, String targetPath) {
         Set<Date> resultDateSet = new HashSet<Date>();
         int n = 0;
@@ -576,7 +718,7 @@ public class BattleResultServer {
         CombatLogProxy.endAll();
         BattleLogProxy.get().end();
     }
-    
+
     private static int writeCsv(BattleResultServer self, File file, String targetPath, Set<Date> resultDateSet, int n) {
         try {
             if (file.getName().endsWith(".dat")) {
@@ -593,64 +735,112 @@ public class BattleResultServer {
                     }
                 }
             }
+            return n;
         } catch (IOException e) {
             LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
-        } finally {
             return n;
         }
     }
-    
+
     private static int writeCsv(DataFile file, String targetPath, Set<Date> resultDateSet, int n) {
-        return writeCsv(loadBattleResults(file, true, resultDateSet), targetPath, n);
+        return writeCsv(loadBattleResultsWriteCsv(file,resultDateSet), targetPath, n);
     }
 
     private static List<BattleResult> loadBattleResults(DataFile file, boolean isLoadCombatLog, Set<Date> resultDateSet) {
-        List<BattleResult> resultList = new ArrayList<BattleResult>();
         try {
-            List<BattleExDto> result = file.readAll();
-            for (int i = 0; i < result.size(); ++i) {
-                BattleExDto dto = result.get(i);
-                if (dto.isCompleteResult() && !resultDateSet.contains(dto.getBattleDate())) {
-                    resultDateSet.add(dto.getBattleDate());
-                    resultList.add(createBattleResult(dto, file, i, isLoadCombatLog));
-                }
+            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            battleAll
+                .parallelStream()
+                .forEach(b->b.readFromJson());
+            ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
+            battleAll
+                .stream()
+                .forEach(b->{
+                        if (b.isCompleteResult() && !resultDateSet.contains(b.getBattleDate())) {
+                            resultDateSet.add(b.getBattleDate());
+                            battle.add(b);
+                        }
+                    });
+
+            List<Comparable[]> battleLog =
+                battle
+                    .parallelStream()
+                    .map(b->BattleLogProxy.get().bodyMT(b))
+                    .collect(Collectors.toList());
+            List<Map<String,Comparable[][]>> combatLog = null;
+            if(isLoadCombatLog){
+                combatLog =
+                    battle
+                    .parallelStream()
+                    .map(b->CombatLogProxy.bodyAllMT(b))
+                    .collect(Collectors.toList());
+            }
+
+            List<BattleResult> result = new ArrayList<BattleResult>();
+            for(int i=0;i<battle.size();i++){
+                result.add(createBattleResultWithCombatLog(battle.get(i),file, i,battleLog.get(i),(isLoadCombatLog)?combatLog.get(i) :null));
             }
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
+            return result;
         } catch (Exception e) {
             LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
-        } finally {
-            return resultList;
+            return new ArrayList<BattleResult>();
         }
     }
-    
-    public void writeCsv(String targetPath) {
-        writeCsv(this.resultList, targetPath, 0);
+    private static List<Map<String,Comparable[][]>> loadBattleResultsWriteCsv(DataFile file,Set<Date> resultDateSet) {
+        try {
+            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            battleAll
+                .parallelStream()
+                .forEach(b->b.readFromJson());
+            ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
+            battleAll
+                .stream()
+                .forEach(b->{
+                        if (b.isCompleteResult() && !resultDateSet.contains(b.getBattleDate())) {
+                            resultDateSet.add(b.getBattleDate());
+                            battle.add(b);
+                        }
+                    });
+            List<Map<String,Comparable[][]>> combatLog =
+                battle
+                    .parallelStream()
+                    .map(b->CombatLogProxy.bodyAllMT(b))
+                    .collect(Collectors.toList());
+            ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
+            return combatLog;
+        } catch (Exception e) {
+            LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
+            return new ArrayList<Map<String,Comparable[][]>>();
+        }
     }
-    
-    private static int writeCsv(List<BattleResult> resultList, String targetPath, int n) {
+
+    private static int writeCsv(List<Map<String,Comparable[][]>> resultList, String targetPath, int n) {
         try {
             boolean append = n > 0;
             for (CombatLogProxy proxy : CombatLogProxy.getAll()) {
                 List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
-                for (BattleResult item : resultList) {
-                    for (Comparable[] body : item.getCombatExtData(proxy.getPrefix())) {
+                for (Map<String,Comparable[][]> item : resultList) {
+                    for (Comparable[] body : item.get(proxy.getPrefix())) {
                         allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++n, item) }, body));
                     }
                 }
                 CreateReportLogic.writeCsv(new File(targetPath).toPath().resolve(proxy.getTitle() + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, proxy.header()), allBodies, append);
             }
+            return n;
         } catch (IOException e) {
             LOG.get().warn("出撃ログの書き込みに失敗しました", e);
-        } finally {
             return n;
         }
     }
-    
+
     private static BattleResult createBattleResult(BattleExDto dto, DataFile file, int n, boolean isLoadCombatLog) {
-        return new BattleResult(dto, file, n,
-                BattleLogProxy.get().body(dto), isLoadCombatLog ? CombatLogProxy.bodyAll(dto) : null);
+        return new BattleResult(dto, file, n,BattleLogProxy.get().bodyMT(dto), isLoadCombatLog ? CombatLogProxy.bodyAllMT(dto) : null);
     }
-    
+    private static BattleResult createBattleResultWithCombatLog(BattleExDto dto, DataFile file, int n,Comparable[] battleLog, Map<String,Comparable[][]>combatLog) {
+        return new BattleResult(dto, file, n,battleLog,combatLog);
+    }
+
     public boolean isLoaded() {
         return this.isLoaded_;
     }

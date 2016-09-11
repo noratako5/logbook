@@ -17,9 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.swt.SWT;
@@ -68,7 +66,6 @@ import logbook.config.bean.AppConfigBean;
 import logbook.constants.AppConstants;
 import logbook.data.context.GlobalContext;
 import logbook.dto.BattleExDto;
-import logbook.dto.BattleResultDto;
 import logbook.dto.DockDto;
 import logbook.dto.MapCellDto;
 import logbook.dto.PracticeUserDetailDto;
@@ -80,7 +77,6 @@ import logbook.gui.listener.MainShellAdapter;
 import logbook.gui.listener.TrayItemMenuListener;
 import logbook.gui.listener.TraySelectionListener;
 import logbook.gui.logic.ColorManager;
-import logbook.gui.logic.CreateReportLogic;
 import logbook.gui.logic.DeckBuilder;
 import logbook.gui.logic.FleetFormatter;
 import logbook.gui.logic.LayoutLogic;
@@ -143,7 +139,7 @@ public final class ApplicationMain extends WindowBase {
     public static ApplicationMain main;
     public static boolean disableUpdate;
     private static ApplicationLock applicationLock = new ApplicationLock();
-    
+
     private static String[] args;
 
     private static final class ApplicationLock {
@@ -246,6 +242,8 @@ public final class ApplicationMain extends WindowBase {
     private DropReportTable dropReportWindow;
     /** 戦闘報告書 */
     private final List<CombatReportTable> allCombatReportWindows = new ArrayList<CombatReportTable>();
+    /** 戦闘報告書 */
+    private final List<BuiltinCombatReportTable> allBuiltinCombatReportWindows = new ArrayList<BuiltinCombatReportTable>();
     /** 建造報告書 */
     private CreateShipReportTable createShipReportWindow;
     /** 開発報告書 */
@@ -578,8 +576,42 @@ public final class ApplicationMain extends WindowBase {
         MenuItem cmdcombatroot = new MenuItem(cmdmenu, SWT.CASCADE);
         cmdcombatroot.setText("戦闘報告書");
         Menu cmdcombat = new Menu(cmdcombatroot);
+        MenuItem cmdcombatwritecsv2 = new MenuItem(cmdcombat, SWT.NONE);
+        cmdcombatwritecsv2.setText("組み込みログCSV保存");
+        cmdcombatwritecsv2.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                BattleResultServer battleResultServer = BattleResultServer.get();
+                if (battleResultServer != null && battleResultServer.isLoaded()) {
+                    DirectoryDialog dialog = new DirectoryDialog(shell);
+                    dialog.setMessage("保存先を指定して下さい");
+                    String path = dialog.open();
+                    if (path != null) {
+                        (new Thread() {
+                            @Override
+                            public void run() {
+                                ApplicationMain.logPrint("出撃ログ読み込み開始");
+                                BattleResultServer.writeCsvRed(new String[] { AppConfig.get().getBattleLogPath() }, path);
+                                ApplicationMain.logPrint("CSVファイルを保存しました");
+                            }
+                        }).start();
+                    }
+                }
+            }
+        });
+        new MenuItem(cmdcombat, SWT.SEPARATOR);
+        BattleExDto.BuiltinScriptKeys()
+            .stream()
+            .forEach(key->{
+                MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
+                cmdcombatItem.setText(key);
+                String prefix = "Builtin"+key; 
+                this.allBuiltinCombatReportWindows.add(new BuiltinCombatReportTable(this.subwindowHost, cmdcombatItem,
+                        prefix, key));
+            });
+        new MenuItem(cmdcombat, SWT.SEPARATOR);
         MenuItem cmdcombatwritecsv = new MenuItem(cmdcombat, SWT.NONE);
-        cmdcombatwritecsv.setText("CSVファイルに保存");
+        cmdcombatwritecsv.setText("拡張ログCSV保存");
         cmdcombatwritecsv.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -592,17 +624,10 @@ public final class ApplicationMain extends WindowBase {
                         (new Thread() {
                             @Override
                             public void run() {
-                                if (isLoadCombatLog) {
-                                    if (battleResultServer != null && battleResultServer.isLoaded()) {
-                                        battleResultServer.writeCsv(path);
-                                        ApplicationMain.logPrint("CSVファイルを保存しました");
-                                    }
-                                }
-                                else {
-                                    ApplicationMain.logPrint("出撃ログ読み込み開始");
-                                    BattleResultServer.writeCsv(new String[] { AppConfig.get().getBattleLogPath() }, path);
-                                    ApplicationMain.logPrint("CSVファイルを保存しました");
-                                }
+                                //全部再読み込み
+                                ApplicationMain.logPrint("出撃ログ読み込み開始");
+                                BattleResultServer.writeCsv(new String[] { AppConfig.get().getBattleLogPath() }, path);
+                                ApplicationMain.logPrint("CSVファイルを保存しました");
                             }
                         }).start();
                     }
@@ -621,7 +646,7 @@ public final class ApplicationMain extends WindowBase {
                         if (combatFile.isFile()) {
                             String combatFileName = combatFile.getName();
                             if (combatFileName.startsWith(AppConstants.COMBATTABLE_PREFIX + "_")
-                                    && combatFileName.endsWith(".js")) {
+                                    && combatFileName.endsWith(".js") && combatFile.length() > 16) {
                                 Path combatDirPath = combatDir.toPath();
                                 String prefix = scriptDirPath.relativize(
                                         combatDirPath.resolve(AppConstants.COMBATTABLE_PREFIX)).toString();
@@ -632,9 +657,7 @@ public final class ApplicationMain extends WindowBase {
                                     this.allCombatReportWindows.add(new CombatReportTable(this.subwindowHost, cmdcombatItem,
                                             prefix, title));
                                 }
-                                else {
-                                    CombatLogProxy.set(prefix, title);
-                                }
+                                CombatLogProxy.set(prefix, title);
                                 break;
                             }
                         }
@@ -1222,7 +1245,7 @@ public final class ApplicationMain extends WindowBase {
         /*
         final MenuItem copyDeckBuilderFormat = new MenuItem(copyDeckBuilderMenu, SWT.PUSH);
         copyDeckBuilderFormat.setText("フォーマットをクリップボードにコピー");
-        
+
         copyDeckBuilderFormat.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -1585,39 +1608,45 @@ public final class ApplicationMain extends WindowBase {
     }
 
     public WindowBase[] getWindowList() {
-        return (WindowBase[]) ArrayUtils.addAll(
+        return 
+            (WindowBase[]) ArrayUtils.addAll(
                 (WindowBase[]) ArrayUtils.addAll(
+                    (WindowBase[]) ArrayUtils.addAll(
                         new WindowBase[] {
-                                this.captureWindow,
-                                this.dropReportWindow,
-                                this.createShipReportWindow,
-                                this.createItemReportWindow,
-                                this.missionResultWindow,
-                                this.missionTableWindow,
-                                this.itemTableWindow,
-                                this.shipTableWindows[0],
-                                this.shipTableWindows[1],
-                                this.shipTableWindows[2],
-                                this.shipTableWindows[3],
-                                this.bathwaterTablwWindow,
-                                this.questTableWindow,
-                                this.battleWindowLarge,
-                                this.battleWindowSmall,
-                                this.battleShipWindow,
-                                this.calcExpWindow,
-                                this.calcPracticeExpWindow,
-                                this.shipFilterGroupWindow,
-                                this.resourceChartWindow,
-                                this.battleCounterWindow
+                            this.captureWindow,
+                            this.dropReportWindow,
+                            this.createShipReportWindow,
+                            this.createItemReportWindow,
+                            this.missionResultWindow,
+                            this.missionTableWindow,
+                            this.itemTableWindow,
+                            this.shipTableWindows[0],
+                            this.shipTableWindows[1],
+                            this.shipTableWindows[2],
+                            this.shipTableWindows[3],
+                            this.bathwaterTablwWindow,
+                            this.questTableWindow,
+                            this.battleWindowLarge,
+                            this.battleWindowSmall,
+                            this.battleShipWindow,
+                            this.calcExpWindow,
+                            this.calcPracticeExpWindow,
+                            this.shipFilterGroupWindow,
+                            this.resourceChartWindow,
+                            this.battleCounterWindow
                         },
-                        this.allCombatReportWindows.toArray()),
+                        this.allBuiltinCombatReportWindows.toArray(new WindowBase[0])
+                    ),
+                    this.allCombatReportWindows.toArray(new WindowBase[0])
+                ),
                 new WindowBase[] {
                         this.fleetWindows[0],
                         this.fleetWindows[1],
                         this.fleetWindows[2],
                         this.fleetWindows[3],
                         this.launcherWindow
-                });
+                }
+            );
     }
 
     /**

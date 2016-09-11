@@ -6,7 +6,10 @@ package logbook.dto;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -19,7 +22,9 @@ import com.dyuproject.protostuff.Tag;
 
 import logbook.data.DataType;
 import logbook.data.context.GlobalContext;
+import logbook.gui.logic.DateTimeString;
 import logbook.internal.EnemyData;
+import logbook.internal.Item;
 import logbook.internal.UseItem;
 import logbook.util.JsonUtils;
 
@@ -1870,4 +1875,2129 @@ public class BattleExDto extends AbstractDto {
             return -1;
         }
     }
+
+
+    //標準装備のスクリプト群については全部Java側で処理することにした
+    private static ArrayList<String> PhaseRowHeader(){
+        ArrayList<String> header = new ArrayList<String>();
+        header.add("日付");
+        header.add("海域");
+        header.add("マス");
+        header.add("出撃");
+        header.add("ランク");
+        header.add("敵艦隊");
+        header.add("提督レベル");
+        header.add("自陣形");
+        header.add("敵陣形");
+        return header;
+    }
+    private ArrayList<String> PhaseRowBody(){
+        ArrayList<String> body = new ArrayList<String>();
+        body.add("");//日付は最後に追加する
+        body.add(this.getQuestName());
+        String report = "";
+        String reportType = "";
+        if(this.mapCellDto != null){
+            report = this.mapCellDto.getReportString();
+            if(this.mapCellDto.isStart()&&this.mapCellDto.isBoss()){
+                reportType = "出撃&ボス";
+            }else if(this.mapCellDto.isStart()){
+                reportType = "出撃";
+            }else if(this.mapCellDto.isBoss()){
+                reportType = "ボス";
+            }
+        }
+        body.add(report);
+        body.add(reportType);
+        body.add(this.rank.toString());
+        body.add(this.enemyName);
+        body.add((new Integer(this.hqLv)).toString());
+
+        String formation0 = "";
+        String formation1 = "";
+        if(this.formation != null){
+            formation0 = this.formation[0];
+            formation1 = this.formation[1];
+        }
+        body.add(formation0);
+        body.add(formation1);
+        return body;
+    }
+    private static ArrayList<String> DayPhaseRowHeader(){
+        ArrayList<String> header = PhaseRowHeader();
+        header.add("自索敵");
+        header.add("敵索敵");
+        header.add("制空権");
+        header.add("会敵");
+        header.add("自触接");
+        header.add("敵触接");
+        header.add("自照明弾");
+        header.add("敵照明弾");
+        return header;
+    }
+    private ArrayList<String> DayPhaseRowBody(){
+        ArrayList<String> body = this.PhaseRowBody();
+        if(this.sakuteki != null){
+            body.add(this.sakuteki[0]);
+            body.add(this.sakuteki[1]);
+        }else{
+            body.add("");
+            body.add("");
+        }
+
+        Phase phase1 = this.getPhase1();
+        String seiku = "";
+        if(phase1 != null && phase1.air != null){
+            seiku = phase1.air.seiku;
+        }
+        body.add(seiku);
+        body.add(this.formationMatch);
+
+        String touchPlane0 = "";
+        String touchPlane1 = "";
+        if(phase1 != null && phase1.air != null && phase1.getTouchPlane() != null){
+            String[] names = phase1.air.getTouchPlane();
+            touchPlane0 = (names[0].equals("なし"))?"" :names[0];
+            touchPlane1 = (names[1].equals("なし"))?"" :names[1];
+        }
+        body.add(touchPlane0);
+        body.add(touchPlane1);
+
+        body.add("");
+        body.add("");
+        return body;
+    }
+    static private ArrayList<String> NightPhaseRowHeader(){
+        return DayPhaseRowHeader();
+    }
+    private ArrayList<String> NightPhaseRowBody(){
+        Phase phase = null;
+        if(this.getPhase1()!=null && this.getPhase1().isNight){
+            phase = this.getPhase1();
+        }else if(this.getPhase2()!=null && this.getPhase2().isNight){
+            phase = this.getPhase2();
+        }else{
+            ArrayList<String> body = this.PhaseRowBody();
+            int length = this.NightPhaseRowHeader().size();
+            for(int i=body.size();i<length;i++){
+                body.add("");
+            }
+            return body;
+        }
+        ArrayList<String> body = this.PhaseRowBody();
+        body.add("");
+        body.add("");
+        body.add("");
+        body.add(this.formationMatch);
+        String touchPlane0 = "";
+        String touchPlane1 = "";
+        if(phase.touchPlane != null){
+            String[] names = AirBattleDto.toTouchPlaneString(phase.touchPlane);
+            touchPlane0 = (names[0].equals("なし"))?"" :names[0];
+            touchPlane1 = (names[1].equals("なし"))?"" :names[1];
+        }
+        body.add(touchPlane0);
+        body.add(touchPlane1);
+        String flarePos0 = "";
+        String flarePos1 = "";
+        if(phase.flarePos!=null){
+            if(phase.flarePos[0]>0){
+                flarePos0 = (new Integer(phase.flarePos[0])).toString();
+            }
+            if(phase.flarePos[1]>0){
+                flarePos1 = (new Integer(phase.flarePos[1])).toString();
+            }
+        }
+        body.add(flarePos0);
+        body.add(flarePos1);
+        return body;
+    }
+
+    private static ArrayList<String> _itemRowHeader = null;
+    private static ArrayList<String> ItemRowHeader(){
+        if(_itemRowHeader == null){
+            ArrayList<String> header = new ArrayList<String>();
+            for(int i=1;i<=5;i++){
+                header.add(String.format("装備%d.名前",i));
+                header.add(String.format("装備%d.改修",i));
+                header.add(String.format("装備%d.熟練度",i));
+                header.add(String.format("装備%d.搭載数",i));
+            }
+            _itemRowHeader = header;
+        }
+        return _itemRowHeader;
+    }
+    private ArrayList<String> ItemRowBodyConstruct(ItemDto item,ItemInfoDto info,Integer onSlot){
+        ArrayList<String> body = new ArrayList<String>();
+        String name = "";
+        String level = "";
+        String alv = "";
+        String onSlotS = "";
+        if(info != null){
+            name = info.getName();
+            if(item != null){
+                level = (new Integer(item.getLevel())).toString();
+                alv = (new Integer(item.getAlv())).toString();
+            }
+        }
+        if(onSlot != null){
+            onSlotS = onSlot.toString();
+        }
+        body.add(name);
+        body.add(level);
+        body.add(alv);
+        body.add(onSlotS);
+        return body;
+    }
+    private ArrayList<String> ItemRowBody(ShipBaseDto ship){
+        ArrayList<String> body = new ArrayList<String>();
+
+        List<ItemDto>itemDtos = null;
+        ItemDto itemExDto = null;
+        List<ItemInfoDto>itemInfoDtos = null;
+        ItemInfoDto itemInfoExDto = null;
+        int[] onSlots = null;
+        if(ship != null){
+            if(ship instanceof ShipDto){
+                ShipDto s = (ShipDto)ship;
+                itemDtos = s.getItem2();
+                itemExDto = s.getSlotExItem();
+                if(itemExDto != null){
+                    itemInfoExDto = itemExDto.getInfo();
+                }
+            }
+            itemInfoDtos = ship.getItem();
+            onSlots = ship.getOnSlot();
+        }
+        for(int i=0;i<5;i++){
+            ArrayList<String> itemRow = null;
+            if(i==4 && itemExDto != null && itemInfoExDto != null){
+                itemRow = this.ItemRowBodyConstruct(itemExDto, itemInfoExDto, null);
+            }
+            else if(itemInfoDtos != null && i < itemInfoDtos.size()){
+                Integer onSlot = null;
+                if(onSlots != null && i < onSlots.length){
+                    onSlot = new Integer(onSlots[i]);
+                }
+                if(itemDtos != null && i < itemDtos.size()){
+                    itemRow = this.ItemRowBodyConstruct(itemDtos.get(i),itemInfoDtos.get(i),onSlot);
+                }else{
+                    itemRow = this.ItemRowBodyConstruct(null, itemInfoDtos.get(i), onSlot);
+                }
+            }
+            else{
+                itemRow = this.ItemRowBodyConstruct(null, null, null);
+            }
+            body.addAll(itemRow);
+        }
+        return body;
+    }
+    private static ArrayList<String> ShipRowHeader(){
+        ArrayList<String> header = new ArrayList<String>();
+        header.add("編成順");
+        header.add("ID");
+        header.add("名前");
+        header.add("種別");
+        header.add("疲労");
+        header.add("残耐久");
+        header.add("最大耐久");
+        header.add("損傷");
+        header.add("残燃料");
+        header.add("最大燃料");
+        header.add("残弾薬");
+        header.add("最大弾薬");
+        header.add("Lv");
+        header.add("速力");
+        header.add("火力");
+        header.add("雷装");
+        header.add("対空");
+        header.add("装甲");
+        header.add("回避");
+        header.add("対潜");
+        header.add("索敵");
+        header.add("運");
+        header.add("射程");
+        header.addAll(ItemRowHeader());
+        return header;
+    }
+    //戦闘中に更新されるHPと損小状態が空、女神など非対応
+    private ArrayList<String> ShipRowBodyBase(ShipBaseDto ship,int maxHp,int index){
+        if(ship != null){
+            ArrayList<String> body = new ArrayList<String>();
+            String shipId = "";
+            String fullName = "";
+            String type = "";
+            String maxFuel = "";
+            String maxBull = "";
+            if(ship.shipInfo != null){
+                shipId = (new Integer(ship.shipInfo.getShipId())).toString();
+                fullName = ship.shipInfo.getFullName();
+                type = ship.shipInfo.getType();
+                maxFuel = (new Integer(ship.shipInfo.getMaxFuel())).toString();
+                maxBull = (new Integer(ship.shipInfo.getMaxBull())).toString();
+            }
+            String cond = "";
+            String fuel = "";
+            String bull = "";
+            if(ship instanceof ShipDto){
+                ShipDto s = (ShipDto)ship;
+                cond = (new Integer(s.getCond())).toString();
+                fuel = (new Integer(s.getFuel())).toString();
+                bull = (new Integer(s.getBull())).toString();
+            }
+            String soku = "";
+            String houg = "";
+            String raig = "";
+            String tyku = "";
+            String souk = "";
+            String kaih = "";
+            String tais = "";
+            String saku = "";
+            String luck = "";
+            String leng = "";
+            if(ship.param != null){
+                switch(ship.param.getSoku()){
+                    case 0:soku = "陸上";break;
+                    case 5:soku = "低速";break;
+                    case 10:soku = "高速";break;
+                }
+                houg = (new Integer(ship.param.getHoug())).toString();
+                raig = (new Integer(ship.param.getRaig())).toString();
+                tyku = (new Integer(ship.param.getTyku())).toString();
+                souk = (new Integer(ship.param.getSouk())).toString();
+                kaih = (new Integer(ship.param.getKaih())).toString();
+                tais = (new Integer(ship.param.getTais())).toString();
+                saku = (new Integer(ship.param.getSaku())).toString();
+                luck = (new Integer(ship.param.getLuck())).toString();
+                switch(ship.param.getLeng()){
+                    case 0:leng = "超短";break;
+                    case 1:leng = "短";break;
+                    case 2:leng = "中";break;
+                    case 3:leng = "長";break;
+                    case 4:leng = "超長";break;
+                }
+            }
+            String lv = (new Integer(ship.getLv())).toString();
+            body.add((new Integer(index+1)).toString());
+            body.add(shipId);
+            body.add(fullName);
+            body.add(type);
+            body.add(cond);
+            body.add("");
+            body.add((new Integer(maxHp)).toString());
+            body.add("");
+            body.add(fuel);
+            body.add(maxFuel);
+            body.add(bull);
+            body.add(maxBull);
+            body.add(lv);
+            body.add(soku);
+            body.add(houg);
+            body.add(raig);
+            body.add(tyku);
+            body.add(souk);
+            body.add(kaih);
+            body.add(tais);
+            body.add(saku);
+            body.add(luck);
+            body.add(leng);
+            body.addAll(this.ItemRowBody(ship));
+            return body;
+        }else{
+            int length = ShipRowHeader().size();
+            ArrayList<String> body = new ArrayList<String>();
+            for(int i=0;i<length;i++){
+                body.add("");
+            }
+            return body;
+        }
+    }
+    private ArrayList<String> ShipRowBodyUpdate(ArrayList<String> body,int hp,int maxHp){
+        String hpText = "";
+        double hpRate = 4.0*(double)hp/(double)maxHp;
+        if(hpRate > 3){ hpText = "小破未満"; }
+        else if(hpRate > 2){ hpText = "小破"; }
+        else if(hpRate > 1){ hpText = "中破"; }
+        else if(hpRate > 0){ hpText = "大破"; }
+        else{ hpText = "轟沈"; }
+        body.set(5, (new Integer(hp)).toString());
+        body.set(7, hpText);
+        return body;
+    }
+    private static ArrayList<String>ShipSummaryRowHeader(){
+        ArrayList<String> header = new ArrayList<String>();
+        header.add("ID");
+        header.add("名前");
+        header.add("Lv");
+        return header;
+    }
+    private ArrayList<String>ShipSummaryRowBody(ShipBaseDto ship){
+        if(ship != null){
+            ArrayList<String> body = new ArrayList<String>();
+            String shipId = "";
+            String fullName = "";
+            if(ship.shipInfo != null){
+                shipId = (new Integer(ship.shipInfo.getShipId())).toString();
+                fullName = ship.shipInfo.getFullName();
+            }
+            String lv = (new Integer(ship.getLv())).toString();
+            body.add(shipId);
+            body.add(fullName);
+            body.add(lv);
+            return body;
+        }
+        else{
+            int length = ShipSummaryRowHeader().size();
+            ArrayList<String> body = new ArrayList<String>();
+            for(int i=0;i<length;i++){
+                body.add("");
+            }
+            return body;
+        }
+    }
+    //HPは敵、味方、味方第二
+    private int[][] createNextHP(int[][] prevHP,List<BattleAtackDto> attackList){
+        if(attackList != null){
+            int[] enemy = prevHP[0].clone();
+            int[] friend = prevHP[1].clone();
+            int[] combined = (this.isCombined()) ?prevHP[2].clone() :null;
+
+            for(int i=0;i<attackList.size();i++){
+                BattleAtackDto attack = attackList.get(i);
+                for(int j=0;j<attack.target.length;j++){
+                    int t = attack.target[j];
+                    int damage = attack.damage[j];
+                    if(attack.friendAtack){
+                        enemy[t] = Math.max(0, enemy[t]-damage);
+                    }else{
+                        if(t<6){
+                            friend[t] = Math.max(0, friend[t]-damage);
+                        }else{
+                            combined[t-6] = Math.max(0, combined[t-6]-damage);
+                        }
+                    }
+                }
+            }
+            int [][] result = new int[3][];
+            result[0] = enemy;
+            result[1] = friend;
+            result[2] = combined;
+            return result;
+        }
+        else{
+            return prevHP;
+        }
+    }
+    private int[][] createNextHPAir(int[][] prevHP,AirBattleDto airBattle){
+        if(airBattle!=null){
+            return this.createNextHP(prevHP, airBattle.atacks);
+        }
+        else{
+            return prevHP;
+        }
+    }
+    private ArrayList<int[][]>createNextHPAirBase(int[][] prevHP,List<AirBattleDto> baseAirBattleList){
+        ArrayList<int[][]>result = new ArrayList<int[][]>();
+        int [][] prev = prevHP;
+        for(int i=0;i<baseAirBattleList.size();i++){
+            prev = this.createNextHPAir(prev, baseAirBattleList.get(i));
+            result.add(prev);
+        }
+        return result;
+    }
+    private ArrayList<ArrayList<int[][]>> createNextHPHougeki(int[][] prevHP,List<BattleAtackDto> attackList){
+        int[] enemy = prevHP[0].clone();
+        int[] friend = prevHP[1].clone();
+        int[] combined = null;
+        if(this.isCombined()){
+            combined = prevHP[2].clone();
+        }
+        ArrayList<ArrayList<int[][]>>result = new ArrayList<ArrayList<int[][]>>();
+        for(int i=0;i<attackList.size();i++){
+            ArrayList<int[][]> array = new ArrayList<int[][]>();
+
+            BattleAtackDto attack = attackList.get(i);
+            for(int j=0;j<attack.target.length;j++){
+                int[][] next = new int[3][];
+
+                int t = attack.target[j];
+                int damage = attack.damage[j];
+                if(attack.friendAtack){
+                    enemy[t] = Math.max(0, enemy[t]-damage);
+                }else{
+                    if(t<6){
+                        friend[t] = Math.max(0, friend[t]-damage);
+                    }else{
+                        combined[t-6] = Math.max(0, combined[t-6]-damage);
+                    }
+                }
+
+                next[0] = enemy.clone();
+                next[1] = friend.clone();
+                next[2] = (this.isCombined())?combined.clone():null;
+                array.add(next);
+            }
+
+            result.add(array);
+        }
+        return result;
+    }
+    static public ArrayList<String> HougekiRowHeader(){
+        ArrayList<String> header = DayPhaseRowHeader();
+        header.add("戦闘種別");
+        header.add("自艦隊");
+        header.add("巡目");
+        header.add("攻撃艦");
+        header.add("砲撃種別");
+        header.add("表示装備1");
+        header.add("表示装備2");
+        header.add("表示装備3");
+        header.add("クリティカル");
+        header.add("ダメージ");
+        header.add("かばう");
+        ArrayList<String> shipHeader = ShipRowHeader();
+        int length = shipHeader.size();
+        for(int i=0;i<length;i++){
+            header.add(String.format("攻撃艦.%s",shipHeader.get(i)));
+        }
+        for(int i=0;i<length;i++){
+            header.add(String.format("防御艦.%s",shipHeader.get(i)));
+        }
+        header.add("艦隊種類");
+        return header;
+    }
+    private int[][] HougekiRowBodyConstruct(
+        ArrayList<ArrayList<String>>enemyRows,
+        ArrayList<ArrayList<String>>friendRows,
+        List<BattleAtackDto>attackList,
+        JsonObject api_hougeki,
+        boolean isSecond,
+        String hougekiCount,
+        String combinedFlagString,
+        int[][]startHP,
+        ArrayList<ArrayList<String>> body)
+    {
+        int[][]prevHP = startHP;
+        if(attackList != null){
+            String fleetName =
+                (!this.isCombined())?"通常艦隊"
+                :(isSecond)?"連合第2艦隊"
+                :"連合第1艦隊";
+            ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
+
+            JsonArray api_at_list = api_hougeki.getJsonArray("api_at_list");
+            JsonArray api_at_type = api_hougeki.getJsonArray("api_at_type");
+            JsonArray api_df_list = api_hougeki.getJsonArray("api_df_list");
+            JsonArray api_si_list = api_hougeki.getJsonArray("api_si_list");
+            JsonArray api_cl_list = api_hougeki.getJsonArray("api_cl_list");
+            JsonArray api_damage = api_hougeki.getJsonArray("api_damage");
+            List<EnemyShipDto> enemyLisy = this.getEnemy();
+            List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
+            ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
+            for(int i=1;i<api_at_list.size();++i){
+                int at = api_at_list.getInt(i);
+                int atType = api_at_type.getInt(i);
+                JsonArray dfList = api_df_list.getJsonArray(i);
+                JsonArray siList = api_si_list.getJsonArray(i);
+                JsonArray clList = api_cl_list.getJsonArray(i);
+                JsonArray damageList = api_damage.getJsonArray(i);
+
+                String attackFleetName = (at<7)?"自軍" :"敵軍";
+                String itemName0 = (siList.size()>0 && Integer.parseInt(siList.get(0).toString())>0)?Item.get(Integer.parseInt(siList.get(0).toString())).getName() :"";
+                String itemName1 = (siList.size()>1 && Integer.parseInt(siList.get(1).toString())>0)?Item.get(Integer.parseInt(siList.get(1).toString())).getName() :"";
+                String itemName2 = (siList.size()>2 && Integer.parseInt(siList.get(2).toString())>0)?Item.get(Integer.parseInt(siList.get(2).toString())).getName() :"";
+
+                List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
+                for(int j=0;j<dfList.size();++j){
+                    int df = dfList.getInt(j);
+                    int damage = damageList.getInt(j);
+                    boolean kabau = !(new Integer(damage)).toString().equals(damageList.get(j).toString());
+                    int cl = clList.getInt(j);
+                    ArrayList<String> row = (ArrayList<String>) dayPhaseRow.clone();
+                    row.add("砲撃戦");
+                    row.add(fleetName);
+                    row.add(hougekiCount);
+                    row.add(attackFleetName);
+                    row.add((new Integer(atType)).toString());
+                    row.add(itemName0);
+                    row.add(itemName1);
+                    row.add(itemName2);
+                    row.add((new Integer(cl)).toString());
+                    row.add((new Integer(damage)).toString());
+                    row.add(kabau?"1" :"0");
+                    if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                    else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
+                    if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                    else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
+                    row.add(combinedFlagString);
+                    body.add(row);
+                    if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
+                        prevHP = hougekiHP.get(i-1).get(j);
+                    }
+                }
+            }
+        }
+        return prevHP;
+    }
+    private ArrayList<ArrayList<String>> HougekiRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        if(phase.isNight){
+            return body;
+        }
+        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){
+            enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+        }
+        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){
+                friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+            }
+        }
+        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+        if(this.isCombined() && this.getDockCombined()!=null){
+            List<ShipDto> ships = this.getDockCombined().getShips();
+            for(int i=0;i<ships.size();i++){
+                combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+            }
+        }
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+        int[][]airBaseStartHP = phaseStartHP;
+        int[][]air1StartHP = airBaseStartHP;
+        if(phase.airBase != null){
+            ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
+            air1StartHP = airHP.get(airHP.size()-1);
+        }
+        int[][]supportStartHP = this.createNextHPAir(air1StartHP, phase.air);
+        int[][]openingTaisenStartHP = this.createNextHP(supportStartHP,phase.support);
+        int[][]openingRaigekiStartHP = openingTaisenStartHP;
+        if(phase.openingTaisen != null){
+            JsonObject api_hougeki = json.getJsonObject("api_opening_taisen");
+            openingRaigekiStartHP =
+                this.HougekiRowBodyConstruct(
+                    enemyRows,
+                    (this.isCombined()?combinedRows :friendRows),
+                    phase.openingTaisen,
+                    api_hougeki,
+                    this.isCombined(),
+                    "先制対潜",
+                    combinedFlagString,
+                    openingTaisenStartHP,
+                    body
+                );
+        }
+        int[][]air2StartHP = this.createNextHP(openingRaigekiStartHP, phase.opening);
+        int[][]hougeki1StartHP = this.createNextHPAir(air2StartHP, phase.air2);
+
+        int[][]hougeki2StartHP;
+        int[][]hougeki3StartHP;
+        int[][]raigekiStartHP;
+        int[][]endHP;
+        if(phase.getKind().isHougeki1Second()){
+            raigekiStartHP = hougeki1StartHP;
+            if(phase.hougeki1 != null){
+                JsonObject api_hougeki = json.getJsonObject("api_hougeki1");
+                raigekiStartHP =
+                    this.HougekiRowBodyConstruct(
+                        enemyRows,
+                        combinedRows,
+                        phase.hougeki1,
+                        api_hougeki,
+                        true,
+                        "1",
+                        combinedFlagString,
+                        hougeki1StartHP,
+                        body
+                    );
+            }
+            hougeki2StartHP = this.createNextHP(raigekiStartHP, phase.raigeki);
+            hougeki3StartHP = hougeki2StartHP;
+            if(phase.hougeki2 != null){
+                JsonObject api_hougeki = json.getJsonObject("api_hougeki2");
+                hougeki3StartHP =
+                    this.HougekiRowBodyConstruct(
+                        enemyRows,
+                        friendRows,
+                        phase.hougeki2,
+                        api_hougeki,
+                        false,
+                        "1",
+                        combinedFlagString,
+                        hougeki2StartHP,
+                        body
+                    );
+            }
+            endHP = hougeki3StartHP;
+            if(phase.hougeki3 != null){
+                JsonObject api_hougeki = json.getJsonObject("api_hougeki3");
+                endHP =
+                    this.HougekiRowBodyConstruct(
+                        enemyRows,
+                        friendRows,
+                        phase.hougeki3,
+                        api_hougeki,
+                        false,
+                        "2",
+                        combinedFlagString,
+                        hougeki3StartHP,
+                        body
+                    );
+            }
+        }else{
+            hougeki2StartHP = hougeki1StartHP;
+            if(phase.hougeki1 != null){
+                JsonObject api_hougeki = json.getJsonObject("api_hougeki1");
+                hougeki2StartHP =
+                    this.HougekiRowBodyConstruct(
+                        enemyRows,
+                        friendRows,
+                        phase.hougeki1,
+                        api_hougeki,
+                        false,
+                        "1",
+                        combinedFlagString,
+                        hougeki1StartHP,
+                        body
+                    );
+            }
+            hougeki3StartHP = hougeki2StartHP;
+            if(phase.hougeki2 != null){
+                JsonObject api_hougeki = json.getJsonObject("api_hougeki2");
+                hougeki3StartHP =
+                    this.HougekiRowBodyConstruct(
+                        enemyRows,
+                        friendRows,
+                        phase.hougeki2,
+                        api_hougeki,
+                        false,
+                        "2",
+                        combinedFlagString,
+                        hougeki2StartHP,
+                        body
+                    );
+            }
+            raigekiStartHP = hougeki3StartHP;
+            if(phase.hougeki3 != null){
+                JsonObject api_hougeki = json.getJsonObject("api_hougeki3");
+                raigekiStartHP =
+                    this.HougekiRowBodyConstruct(
+                        enemyRows,
+                        combinedRows,
+                        phase.hougeki3,
+                        api_hougeki,
+                        true,
+                        "2",
+                        combinedFlagString,
+                        hougeki3StartHP,
+                        body
+                    );
+            }
+            endHP = this.createNextHP(raigekiStartHP, phase.raigeki);
+        }
+        return body;
+    }
+    static public ArrayList<String> YasenRowHeader(){
+        ArrayList<String> header = NightPhaseRowHeader();
+        header.add("戦闘種別");
+        header.add("自艦隊");
+        header.add("開始");
+        header.add("攻撃艦");
+        header.add("砲撃種別");
+        header.add("表示装備1");
+        header.add("表示装備2");
+        header.add("表示装備3");
+        header.add("クリティカル");
+        header.add("ダメージ");
+        header.add("かばう");
+        ArrayList<String> shipHeader = ShipRowHeader();
+        int length = shipHeader.size();
+        for(int i=0;i<length;i++){
+            header.add(String.format("攻撃艦.%s",shipHeader.get(i)));
+        }
+        for(int i=0;i<length;i++){
+            header.add(String.format("防御艦.%s",shipHeader.get(i)));
+        }
+        header.add("艦隊種類");
+        return header;
+    }
+    private int[][] YasenRowBodyConstruct(
+        ArrayList<ArrayList<String>>enemyRows,
+        ArrayList<ArrayList<String>>friendRows,
+        List<BattleAtackDto>attackList,
+        JsonObject api_hougeki,
+        String spMidnightString,
+        String combinedFlagString,
+        int[][]startHP,
+        ArrayList<ArrayList<String>> body)
+    {
+        int[][]prevHP = startHP;
+        if(attackList != null){
+            boolean isSecond = this.isCombined();
+            String fleetName =
+                (!this.isCombined())?"通常艦隊"
+                :(isSecond)?"連合第2艦隊"
+                :"連合第1艦隊";
+            ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
+
+            JsonArray api_at_list = api_hougeki.getJsonArray("api_at_list");
+            JsonArray api_sp_list = api_hougeki.getJsonArray("api_sp_list");
+            JsonArray api_df_list = api_hougeki.getJsonArray("api_df_list");
+            JsonArray api_si_list = api_hougeki.getJsonArray("api_si_list");
+            JsonArray api_cl_list = api_hougeki.getJsonArray("api_cl_list");
+            JsonArray api_damage = api_hougeki.getJsonArray("api_damage");
+            List<EnemyShipDto> enemyLisy = this.getEnemy();
+            List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
+            ArrayList<String> nightPhaseRow = this.NightPhaseRowBody();
+            for(int i=1;i<api_at_list.size();++i){
+                int at = api_at_list.getInt(i);
+                int sp = api_sp_list.getInt(i);
+                JsonArray dfList = api_df_list.getJsonArray(i);
+                JsonArray siList = api_si_list.getJsonArray(i);
+                JsonArray clList = api_cl_list.getJsonArray(i);
+                JsonArray damageList = api_damage.getJsonArray(i);
+
+                String attackFleetName = (at<7)?"自軍" :"敵軍";
+                String itemName0 = (siList.size()>0 && Integer.parseInt(siList.get(0).toString())>0)?Item.get(Integer.parseInt(siList.get(0).toString())).getName() :"";
+                String itemName1 = (siList.size()>1 && Integer.parseInt(siList.get(1).toString())>0)?Item.get(Integer.parseInt(siList.get(1).toString())).getName() :"";
+                String itemName2 = (siList.size()>2 && Integer.parseInt(siList.get(2).toString())>0)?Item.get(Integer.parseInt(siList.get(2).toString())).getName() :"";
+
+                List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
+                for(int j=0;j<dfList.size();++j){
+                    int cl = clList.getInt(j);
+                    if(cl >= 0){
+                        int df = dfList.getInt(j);
+                        int damage = damageList.getInt(j);
+                        boolean kabau = !(new Integer(damage)).toString().equals(damageList.get(j).toString());
+                        ArrayList<String> row = (ArrayList<String>) nightPhaseRow.clone();
+                        row.add("夜戦");
+                        row.add(fleetName);
+                        row.add(spMidnightString);
+                        row.add(attackFleetName);
+                        row.add((new Integer(sp)).toString());
+                        row.add(itemName0);
+                        row.add(itemName1);
+                        row.add(itemName2);
+                        row.add((new Integer(cl)).toString());
+                        row.add((new Integer(damage)).toString());
+                        row.add(kabau?"1" :"0");
+                        if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                        else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
+                        if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                        else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
+                        row.add(combinedFlagString);
+                        body.add(row);
+                        if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
+                            prevHP = hougekiHP.get(i-1).get(j);
+                        }
+                    }
+                }
+            }
+        }
+        return prevHP;
+    }
+    private ArrayList<ArrayList<String>> YasenRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        if(!phase.isNight){
+            return body;
+        }
+        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){
+            enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+        }
+        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){
+                friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+            }
+        }
+        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+        if(this.isCombined() && this.getDockCombined()!=null){
+            List<ShipDto> ships = this.getDockCombined().getShips();
+            for(int i=0;i<ships.size();i++){
+                combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+            }
+        }
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+        int[][]endHP = phaseStartHP;
+        if(phase.hougeki != null){
+            JsonObject api_hougeki = json.getJsonObject("api_hougeki");
+            endHP =
+                this.YasenRowBodyConstruct(
+                    enemyRows,
+                    (this.isCombined())?combinedRows :friendRows,
+                    phase.hougeki,
+                    api_hougeki,
+                    (phase == this.getPhase1())?"夜戦開始" :"昼戦開始",
+                    combinedFlagString,
+                    phaseStartHP,
+                    body
+                );
+        }
+        return body;
+    }
+
+    static public ArrayList<String> RaigekiRowHeader(){
+        ArrayList<String> header = DayPhaseRowHeader();
+        header.add("戦闘種別");
+        header.add("自艦隊");
+        header.add("開幕|閉幕");
+        header.add("攻撃艦");
+        header.add("種別");
+        header.add("表示装備1");
+        header.add("表示装備2");
+        header.add("表示装備3");
+        header.add("クリティカル");
+        header.add("ダメージ");
+        header.add("かばう");
+        ArrayList<String> shipHeader = ShipRowHeader();
+        int length = shipHeader.size();
+        for(int i=0;i<length;i++){
+            header.add(String.format("攻撃艦.%s",shipHeader.get(i)));
+        }
+        for(int i=0;i<length;i++){
+            header.add(String.format("防御艦.%s",shipHeader.get(i)));
+        }
+        header.add("艦隊種類");
+        return header;
+    }
+
+    private int[][] RaigekiRowBodyConstruct(
+        ArrayList<ArrayList<String>>enemyRows,
+        ArrayList<ArrayList<String>>friendRows,
+        List<BattleAtackDto>attackList,
+        JsonObject api_raigeki,
+        String stage,
+        String combinedFlagString,
+        int[][]startHP,
+        ArrayList<ArrayList<String>> body)
+    {
+        int[][]prevHP = startHP;
+        boolean isSecond = this.isCombined();
+        String fleetName =
+            (!this.isCombined())?"通常艦隊"
+            :(isSecond)?"連合第2艦隊"
+            :"連合第1艦隊";
+
+        JsonArray api_frai = api_raigeki.getJsonArray("api_frai");
+        JsonArray api_erai = api_raigeki.getJsonArray("api_erai");
+        JsonArray api_fdam = api_raigeki.getJsonArray("api_fdam");
+        JsonArray api_edam = api_raigeki.getJsonArray("api_edam");
+        JsonArray api_fydam = api_raigeki.getJsonArray("api_fydam");
+        JsonArray api_eydam = api_raigeki.getJsonArray("api_eydam");
+        JsonArray api_fcl = api_raigeki.getJsonArray("api_fcl");
+        JsonArray api_ecl = api_raigeki.getJsonArray("api_ecl");
+
+        List<EnemyShipDto> enemyLisy = this.getEnemy();
+        List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
+        ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
+
+        for(int i=1;i<=6;++i){
+            int at = i;
+            int df = api_frai.getInt(i);
+            if(df <= 0){ continue; }
+            int cl = api_fcl.getInt(i);
+            int ydam = api_fydam.getInt(i);
+            boolean kabau = !(new Integer(api_edam.getInt(df))).toString().equals(api_edam.get(df).toString());
+            ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
+            row.add("雷撃戦");
+            row.add(fleetName);
+            row.add(stage);
+            row.add("自軍");
+            row.add("");
+            row.add("");
+            row.add("");
+            row.add("");
+            row.add((new Integer(cl)).toString());
+            row.add((new Integer(ydam)).toString());
+            row.add((kabau)?"1" :"0");
+            row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));
+            row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));
+            row.add(combinedFlagString);
+            body.add(row);
+        }
+        for(int i=1;i<=6;++i){
+            int at = i;
+            int df = api_erai.getInt(i);
+            if(df <= 0){ continue; }
+            int cl = api_ecl.getInt(i);
+            int ydam = api_eydam.getInt(i);
+            boolean kabau = !(new Integer(api_fdam.getInt(df))).toString().equals(api_fdam.get(df).toString());
+            ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
+            row.add("雷撃戦");
+            row.add(fleetName);
+            row.add(stage);
+            row.add("敵軍");
+            row.add("");
+            row.add("");
+            row.add("");
+            row.add("");
+            row.add((new Integer(cl)).toString());
+            row.add((new Integer(ydam)).toString());
+            row.add((kabau)?"1" :"0");
+            row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-1), prevHP[0][at-1],this.maxEnemyHp[at-1]));
+            row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));
+            row.add(combinedFlagString);
+            body.add(row);
+        }
+        return createNextHP(prevHP, attackList);
+    }
+    private ArrayList<ArrayList<String>>RaigekiRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        if(phase.isNight){
+            return body;
+        }
+        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){
+            enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+        }
+        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){
+                friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+            }
+        }
+        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+        if(this.isCombined() && this.getDockCombined()!=null){
+            List<ShipDto> ships = this.getDockCombined().getShips();
+            for(int i=0;i<ships.size();i++){
+                combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+            }
+        }
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+        int[][]airBaseStartHP = phaseStartHP;
+        int[][]air1StartHP = airBaseStartHP;
+        if(phase.airBase != null){
+            ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
+            air1StartHP = airHP.get(airHP.size()-1);
+        }
+        int[][]supportStartHP = this.createNextHPAir(air1StartHP, phase.air);
+        int[][]openingTaisenStartHP = this.createNextHP(supportStartHP,phase.support);
+        int[][]openingRaigekiStartHP = this.createNextHP(openingTaisenStartHP,phase.openingTaisen);
+        int[][]air2StartHP = openingRaigekiStartHP;
+        if(phase.opening != null){
+            JsonObject api_raigeki = json.getJsonObject("api_opening_atack");
+            air2StartHP =
+                this.RaigekiRowBodyConstruct(
+                    enemyRows,
+                    (this.isCombined()?combinedRows :friendRows),
+                    phase.opening,
+                    api_raigeki,
+                    "開幕",
+                    combinedFlagString,
+                    openingRaigekiStartHP,
+                    body
+                );
+        }
+        int[][]hougeki1StartHP = this.createNextHPAir(air2StartHP, phase.air2);
+
+        int[][]hougeki2StartHP;
+        int[][]hougeki3StartHP;
+        int[][]raigekiStartHP;
+        int[][]endHP;
+        if(phase.getKind().isHougeki1Second()){
+            raigekiStartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki2StartHP = raigekiStartHP;
+            if(phase.raigeki != null){
+                JsonObject api_raigeki = json.getJsonObject("api_raigeki");
+                hougeki2StartHP =
+                    this.RaigekiRowBodyConstruct(
+                        enemyRows,
+                        (this.isCombined()?combinedRows :friendRows),
+                        phase.raigeki,
+                        api_raigeki,
+                        "閉幕",
+                        combinedFlagString,
+                        raigekiStartHP,
+                        body
+                    );
+            }
+            hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
+            endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+        }else{
+            hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki3StartHP = createNextHP(hougeki2StartHP,phase.hougeki2);
+            raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+            endHP = raigekiStartHP;
+            if(phase.raigeki != null){
+                JsonObject api_raigeki = json.getJsonObject("api_raigeki");
+                endHP =
+                    this.RaigekiRowBodyConstruct(
+                        enemyRows,
+                        (this.isCombined()?combinedRows :friendRows),
+                        phase.raigeki,
+                        api_raigeki,
+                        "閉幕",
+                        combinedFlagString,
+                        raigekiStartHP,
+                        body
+                    );
+            }
+        }
+        return body;
+    }
+
+    static public ArrayList<String> AirRowHeader(){
+        ArrayList<String> header = DayPhaseRowHeader();
+        header.add("ステージ1.自艦載機総数");
+        header.add("ステージ1.自艦載機喪失数");
+        header.add("ステージ1.敵艦載機総数");
+        header.add("ステージ1.敵艦載機喪失数");
+        header.add("ステージ2.自艦載機総数");
+        header.add("ステージ2.自艦載機喪失数");
+        header.add("ステージ2.敵艦載機総数");
+        header.add("ステージ2.敵艦載機喪失数");
+        header.add("対空カットイン.発動艦");
+        header.add("対空カットイン.種別");
+        header.add("対空カットイン.表示装備1");
+        header.add("対空カットイン.表示装備2");
+        header.add("対空カットイン.表示装備3");
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipSummaryRowHeader()
+                .stream()
+                .forEach(s->header.add("攻撃艦"+index+"."+s));
+        }
+        header.add("雷撃");
+        header.add("爆撃");
+        header.add("クリティカル");
+        header.add("ダメージ");
+        header.add("かばう");
+        ShipRowHeader()
+            .stream()
+            .forEach(s->header.add("防御艦."+s));
+        return header;
+    }
+
+    private int[][] AirRowBodyConstruct(
+        ArrayList<ArrayList<String>>enemyRows,
+        ArrayList<ArrayList<String>>friendRows,
+        ArrayList<ArrayList<String>>combinedRows,
+        ArrayList<ArrayList<String>>enemySummaryRows,
+        ArrayList<ArrayList<String>>friendSummaryRows,
+        AirBattleDto air,
+        JsonObject api_kouku,
+        int[][]startHP,
+        ArrayList<ArrayList<String>> body)
+    {
+        int[][]prevHP = startHP;
+        if(!api_kouku.isNull("api_stage3") ||(api_kouku.containsKey("api_stage3_combined") && !api_kouku.isNull("api_stage3_combined"))){
+            ArrayList<String> rowHead = this.DayPhaseRowBody();
+            String stage1_f_count = "";
+            String stage1_f_lostcount = "";
+            String stage1_e_count = "";
+            String stage1_e_lostcount = "";
+            if(!api_kouku.isNull("api_stage1")){
+                JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
+                stage1_f_count = api_stage1.get("api_f_count").toString();
+                stage1_f_lostcount = api_stage1.get("api_f_lostcount").toString();
+                stage1_e_count = api_stage1.get("api_e_count").toString();
+                stage1_e_lostcount = api_stage1.get("api_e_lostcount").toString();
+            }
+            rowHead.add(stage1_f_count);
+            rowHead.add(stage1_f_lostcount);
+            rowHead.add(stage1_e_count);
+            rowHead.add(stage1_e_lostcount);
+            String stage2_f_count = "";
+            String stage2_f_lostcount = "";
+            String stage2_e_count = "";
+            String stage2_e_lostcount = "";
+            String air_fire_idx = "";
+            String air_fire_kind = "";
+            String[] air_fire_use_item = new String[3];
+            for(int i=0;i<air_fire_use_item.length;i++){ air_fire_use_item[i] = ""; }
+            if(!api_kouku.isNull("api_stage2")){
+                JsonObject api_stage2 = api_kouku.getJsonObject("api_stage2");
+                stage2_f_count = api_stage2.get("api_f_count").toString();
+                stage2_f_lostcount = api_stage2.get("api_f_lostcount").toString();
+                stage2_e_count = api_stage2.get("api_e_count").toString();
+                stage2_e_lostcount = api_stage2.get("api_e_lostcount").toString();
+                if(api_stage2.containsKey("api_air_fire")&&!api_stage2.isNull("api_air_fire")){
+                    JsonObject api_air_fire = api_stage2.getJsonObject("api_air_fire");
+                    air_fire_idx = (new Integer(api_air_fire.getInt("api_idx")+1)).toString();
+                    air_fire_kind = api_air_fire.get("api_kind").toString();
+                    JsonArray useItems = api_air_fire.getJsonArray("api_use_items");
+                    for(int i=0;i < air_fire_use_item.length && i < useItems.size();i++){
+                        ItemInfoDto info = Item.get(useItems.getInt(i));
+                        if(info != null){ air_fire_use_item[i] = info.getName();}
+                    }
+                }
+            }
+            rowHead.add(stage2_f_count);
+            rowHead.add(stage2_f_lostcount);
+            rowHead.add(stage2_e_count);
+            rowHead.add(stage2_e_lostcount);
+            rowHead.add(air_fire_idx);
+            rowHead.add(air_fire_kind);
+            rowHead.add(air_fire_use_item[0]);
+            rowHead.add(air_fire_use_item[1]);
+            rowHead.add(air_fire_use_item[2]);
+            if(!api_kouku.isNull("api_stage3")){
+                JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3");
+                JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
+                JsonArray erai_flag = api_stage3.getJsonArray("api_erai_flag");
+                JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
+                JsonArray ebak_flag = api_stage3.getJsonArray("api_ebak_flag");
+                JsonArray fcl_flag = api_stage3.getJsonArray("api_fcl_flag");
+                JsonArray ecl_flag = api_stage3.getJsonArray("api_ecl_flag");
+                JsonArray fdam = api_stage3.getJsonArray("api_fdam");
+                JsonArray edam = api_stage3.getJsonArray("api_edam");
+                for(int i=1; i<=6; i++){
+                    int df = i;
+                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                    friendSummaryRows.stream().forEach(b->row.addAll(b));
+                    row.add(erai_flag.get(i).toString());
+                    row.add(ebak_flag.get(i).toString());
+                    row.add(ecl_flag.get(i).toString());
+                    int damage = edam.getInt(i);
+                    boolean kabau = !(new Integer(damage)).toString().equals(edam.get(i).toString());
+                    row.add((new Integer(damage)).toString());
+                    row.add((kabau)?"1" :"0");
+                    row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]) :enemyRows.get(df-1));
+                    body.add(row);
+                }
+                for(int i=1; i<=6; i++){
+                    int df = i;
+                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                    enemySummaryRows.stream().forEach(b->row.addAll(b));
+                    row.add(frai_flag.get(i).toString());
+                    row.add(fbak_flag.get(i).toString());
+                    row.add(fcl_flag.get(i).toString());
+                    int damage = fdam.getInt(i);
+                    boolean kabau = !(new Integer(damage)).toString().equals(fdam.get(i).toString());
+                    row.add((new Integer(damage)).toString());
+                    row.add((kabau)?"1" :"0");
+                    row.addAll((df-1)<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1]) :friendRows.get(df-1));
+                    body.add(row);
+                }
+            }
+            if(api_kouku.containsKey("api_stage3_combined") && !api_kouku.isNull("api_stage3_combined")){
+                JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3_combined");
+                JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
+                JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
+                JsonArray fcl_flag = api_stage3.getJsonArray("api_fcl_flag");
+                JsonArray fdam = api_stage3.getJsonArray("api_fdam");
+                for(int i=1; i<=6; i++){
+                    int df = i;
+                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                    enemySummaryRows.stream().forEach(b->row.addAll(b));
+                    row.add(frai_flag.get(i).toString());
+                    row.add(fbak_flag.get(i).toString());
+                    row.add(fcl_flag.get(i).toString());
+                    int damage = fdam.getInt(i);
+                    boolean kabau = !(new Integer(damage)).toString().equals(fdam.get(i).toString());
+                    row.add((new Integer(damage)).toString());
+                    row.add((kabau)?"1" :"0");
+                    row.addAll((df-1)<this.maxFriendHpCombined.length?this.ShipRowBodyUpdate(combinedRows.get(df-1), prevHP[2][df-1],this.maxFriendHpCombined[df-1]) :combinedRows.get(df-1));
+                    body.add(row);
+                }
+            }
+        }
+        return createNextHPAir(prevHP, air);
+    }
+
+    private ArrayList<ArrayList<String>>AirRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        if(phase.isNight){
+            return body;
+        }
+        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
+        for(int i=this.enemy.size();i<6;i++){enemyRows.add(this.ShipRowBodyBase(null,0, i));}
+        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
+            for(int i=ships.size();i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        }
+        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+        if(this.isCombined() && this.getDockCombined()!=null){
+            List<ShipDto> ships = this.getDockCombined().getShips();
+            for(int i=0;i<ships.size();i++){combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
+            for(int i=ships.size();i<6;i++){combinedRows.add(this.ShipRowBodyBase(null,0,i));}
+        }
+        ArrayList<ArrayList<String>> enemySummaryRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){enemySummaryRows.add(this.ShipSummaryRowBody(this.enemy.get(i)));}
+        for(int i=this.enemy.size();i<6;i++){enemySummaryRows.add(this.ShipSummaryRowBody(null));}
+        ArrayList<ArrayList<String>> friendSummaryRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){friendSummaryRows.add(this.ShipSummaryRowBody(ships.get(i)));}
+            for(int i=ships.size();i<6;i++){friendSummaryRows.add(this.ShipSummaryRowBody(null));}
+        }
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+        int[][]airBaseStartHP = phaseStartHP;
+        int[][]air1StartHP = airBaseStartHP;
+        if(phase.airBase != null){
+            ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
+            air1StartHP = airHP.get(airHP.size()-1);
+        }
+        int[][]supportStartHP = air1StartHP;
+        if(phase.air != null){
+            JsonObject api_kouku = json.getJsonObject("api_kouku");
+            supportStartHP =
+                this.AirRowBodyConstruct(
+                    enemyRows,
+                    friendRows,
+                    combinedRows,
+                    enemySummaryRows,
+                    friendSummaryRows,
+                    phase.air,
+                    api_kouku,
+                    air1StartHP,
+                    body
+                );
+        }
+        int[][]openingTaisenStartHP = this.createNextHP(supportStartHP,phase.support);
+        int[][]openingRaigekiStartHP = this.createNextHP(openingTaisenStartHP,phase.openingTaisen);
+        int[][]air2StartHP = this.createNextHP(openingRaigekiStartHP, phase.opening);
+        int[][]hougeki1StartHP = air2StartHP;
+        if(phase.air2 != null){
+            JsonObject api_kouku = json.getJsonObject("api_kouku2");
+            hougeki1StartHP =
+                this.AirRowBodyConstruct(
+                        enemyRows,
+                        friendRows,
+                        combinedRows,
+                        enemySummaryRows,
+                        friendSummaryRows,
+                        phase.air2,
+                        api_kouku,
+                        air2StartHP,
+                        body
+                    );
+        }
+
+        int[][]hougeki2StartHP;
+        int[][]hougeki3StartHP;
+        int[][]raigekiStartHP;
+        int[][]endHP;
+        if(phase.getKind().isHougeki1Second()){
+            raigekiStartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki2StartHP = createNextHP(raigekiStartHP,phase.raigeki);
+            hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
+            endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+        }else{
+            hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki3StartHP = createNextHP(hougeki2StartHP,phase.hougeki2);
+            raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+            endHP =createNextHP(raigekiStartHP,phase.raigeki);
+        }
+        return body;
+    }
+
+    static public ArrayList<String> BaseAirRowHeader(){
+        ArrayList<String> header = DayPhaseRowHeader();
+        header.add("航空隊");
+        header.add("攻撃順");
+        header.add("基地自触接");
+        header.add("基地敵触接");
+        for(int i=1;i<=4;i++){
+            String index = (new Integer(i)).toString();
+            header.add("第"+index+"中隊");
+            header.add("第"+index+"機数");
+        }
+        header.add("ステージ1.自艦載機総数");
+        header.add("ステージ1.自艦載機喪失数");
+        header.add("ステージ1.敵艦載機総数");
+        header.add("ステージ1.敵艦載機喪失数");
+        header.add("ステージ2.自艦載機総数");
+        header.add("ステージ2.自艦載機喪失数");
+        header.add("ステージ2.敵艦載機総数");
+        header.add("ステージ2.敵艦載機喪失数");
+
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipSummaryRowHeader()
+                .stream()
+                .forEach(s->header.add("攻撃艦"+index+"."+s));
+        }
+        header.add("雷撃");
+        header.add("爆撃");
+        header.add("クリティカル");
+        header.add("ダメージ");
+        header.add("かばう");
+        ShipRowHeader()
+            .stream()
+            .forEach(s->header.add("防御艦."+s));
+        return header;
+    }
+    private int[][] BaseAirRowBodyConstruct(
+        ArrayList<ArrayList<String>>enemyRows,
+        ArrayList<ArrayList<String>>friendSummaryRows,
+        AirBattleDto air,
+        JsonObject api_kouku,
+        int airIndex,
+        int[][]startHP,
+        ArrayList<ArrayList<String>> body)
+    {
+        int[][]prevHP = startHP;
+        if(!api_kouku.isNull("api_stage3")){
+            ArrayList<String> rowHead = this.DayPhaseRowBody();
+            rowHead.add(api_kouku.get("api_base_id").toString());
+            rowHead.add((new Integer(airIndex)).toString());
+
+            String touch_plane0 = "";
+            String touch_plane1 = "";
+            if(!api_kouku.isNull("api_stage1")){
+                JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
+                if(!api_stage1.isNull("api_touch_plane")){
+                    JsonArray touch_plane = api_stage1.getJsonArray("api_touch_plane");
+                    ItemInfoDto info0 = Item.get(touch_plane.getInt(0));
+                    if(info0!=null){touch_plane0 = info0.getName();}
+                    ItemInfoDto info1 = Item.get(touch_plane.getInt(1));
+                    if(info1!=null){touch_plane1 = info1.getName();}
+                }
+            }
+            rowHead.add(touch_plane0);
+            rowHead.add(touch_plane1);
+            JsonArray squadron_plane = null;
+            if(!api_kouku.isNull("api_squadron_plane")){ squadron_plane = api_kouku.getJsonArray("api_squadron_plane"); }
+            for(int i=0;i<4;++i){
+                String basePlane = "";
+                String count = "";
+                if(squadron_plane != null && i < squadron_plane.size()){
+                    JsonObject plane = squadron_plane.getJsonObject(i);
+                    ItemInfoDto info = Item.get(plane.getInt("api_mst_id"));
+                    if(info != null){ basePlane = info.getName(); }
+                    count = plane.get("api_count").toString();
+                }
+                rowHead.add(basePlane);
+                rowHead.add(count);
+            }
+
+
+            String stage1_f_count = "";
+            String stage1_f_lostcount = "";
+            String stage1_e_count = "";
+            String stage1_e_lostcount = "";
+            if(!api_kouku.isNull("api_stage1")){
+                JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
+                stage1_f_count = api_stage1.get("api_f_count").toString();
+                stage1_f_lostcount = api_stage1.get("api_f_lostcount").toString();
+                stage1_e_count = api_stage1.get("api_e_count").toString();
+                stage1_e_lostcount = api_stage1.get("api_e_lostcount").toString();
+            }
+            rowHead.add(stage1_f_count);
+            rowHead.add(stage1_f_lostcount);
+            rowHead.add(stage1_e_count);
+            rowHead.add(stage1_e_lostcount);
+            String stage2_f_count = "";
+            String stage2_f_lostcount = "";
+            String stage2_e_count = "";
+            String stage2_e_lostcount = "";
+            if(!api_kouku.isNull("api_stage2")){
+                JsonObject api_stage2 = api_kouku.getJsonObject("api_stage2");
+                stage2_f_count = api_stage2.get("api_f_count").toString();
+                stage2_f_lostcount = api_stage2.get("api_f_lostcount").toString();
+                stage2_e_count = api_stage2.get("api_e_count").toString();
+                stage2_e_lostcount = api_stage2.get("api_e_lostcount").toString();
+            }
+            rowHead.add(stage2_f_count);
+            rowHead.add(stage2_f_lostcount);
+            rowHead.add(stage2_e_count);
+            rowHead.add(stage2_e_lostcount);
+            if(!api_kouku.isNull("api_stage3")){
+                JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3");
+                JsonArray erai_flag = api_stage3.getJsonArray("api_erai_flag");
+                JsonArray ebak_flag = api_stage3.getJsonArray("api_ebak_flag");
+                JsonArray ecl_flag = api_stage3.getJsonArray("api_ecl_flag");
+                JsonArray edam = api_stage3.getJsonArray("api_edam");
+                for(int i=1; i<=6; i++){
+                    int df = i;
+                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                    friendSummaryRows.stream().forEach(b->row.addAll(b));
+                    row.add(erai_flag.get(i).toString());
+                    row.add(ebak_flag.get(i).toString());
+                    row.add(ecl_flag.get(i).toString());
+                    int damage = edam.getInt(i);
+                    boolean kabau = !(new Integer(damage)).toString().equals(edam.get(i).toString());
+                    row.add((new Integer(damage)).toString());
+                    row.add((kabau)?"1" :"0");
+                    row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]):enemyRows.get(df-1));
+                    body.add(row);
+                }
+            }
+        }
+        return createNextHPAir(prevHP, air);
+    }
+
+    private ArrayList<ArrayList<String>>BaseAirRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        if(phase.isNight){
+            return body;
+        }
+        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
+        for(int i=this.enemy.size();i<6;i++){enemyRows.add(this.ShipRowBodyBase(null,0, i));}
+        ArrayList<ArrayList<String>> friendSummaryRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){friendSummaryRows.add(this.ShipSummaryRowBody(ships.get(i)));}
+            for(int i=ships.size();i<6;i++){friendSummaryRows.add(this.ShipSummaryRowBody(null));}
+        }
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+        int[][]airBaseStartHP = phaseStartHP;
+        int[][]air1StartHP = airBaseStartHP;
+        if(phase.airBase != null){
+            JsonArray airBase = json.getJsonArray("api_air_base_attack");
+            int[][] prevHP = airBaseStartHP;
+            for(int i=0;i<phase.airBase.size();i++){
+                AirBattleDto air = phase.airBase.get(i);
+                JsonObject api_kouku = airBase.getJsonObject(i);
+                prevHP =
+                    this.BaseAirRowBodyConstruct(
+                        enemyRows,
+                        friendSummaryRows,
+                        air,
+                        api_kouku,
+                        i+1,
+                        prevHP,
+                        body
+                    );
+            }
+            air1StartHP = prevHP;
+        }
+        int[][]supportStartHP = createNextHPAir(air1StartHP,phase.air);
+        int[][]openingTaisenStartHP = this.createNextHP(supportStartHP,phase.support);
+        int[][]openingRaigekiStartHP = this.createNextHP(openingTaisenStartHP,phase.openingTaisen);
+        int[][]air2StartHP = this.createNextHP(openingRaigekiStartHP, phase.opening);
+        int[][]hougeki1StartHP = this.createNextHPAir(air2StartHP, phase.air2);
+
+        int[][]hougeki2StartHP;
+        int[][]hougeki3StartHP;
+        int[][]raigekiStartHP;
+        int[][]endHP;
+        if(phase.getKind().isHougeki1Second()){
+            raigekiStartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki2StartHP = createNextHP(raigekiStartHP,phase.raigeki);
+            hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
+            endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+        }else{
+            hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki3StartHP = createNextHP(hougeki2StartHP,phase.hougeki2);
+            raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+            endHP =createNextHP(raigekiStartHP,phase.raigeki);
+        }
+        return body;
+    }
+
+    static public ArrayList<String> AirLostRowHeader(){
+        ArrayList<String> header = DayPhaseRowHeader();
+        header.add("ステージ1.自艦載機総数");
+        header.add("ステージ1.自艦載機喪失数");
+        header.add("ステージ1.敵艦載機総数");
+        header.add("ステージ1.敵艦載機喪失数");
+        header.add("ステージ2.自艦載機総数");
+        header.add("ステージ2.自艦載機喪失数");
+        header.add("ステージ2.敵艦載機総数");
+        header.add("ステージ2.敵艦載機喪失数");
+        header.add("対空カットイン.発動艦");
+        header.add("対空カットイン.種別");
+        header.add("対空カットイン.表示装備1");
+        header.add("対空カットイン.表示装備2");
+        header.add("対空カットイン.表示装備3");
+        header.add("味方雷撃被タゲ数");
+        header.add("味方爆撃被タゲ数");
+        header.add("敵雷撃被タゲ数");
+        header.add("敵爆撃被タゲ数");
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipRowHeader()
+                .stream()
+                .forEach(s->header.add("敵艦"+index+"."+s));
+        }
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipRowHeader()
+                .stream()
+                .forEach(s->header.add("味方艦"+index+"."+s));
+        }
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipRowHeader()
+                .stream()
+                .forEach(s->header.add("連合第二艦隊艦"+index+"."+s));
+        }
+        header.add("艦隊種類");
+        return header;
+    }
+    private int[][] AirLostRowBodyConstruct(
+        ArrayList<ArrayList<String>>enemyRows,
+        ArrayList<ArrayList<String>>friendRows,
+        ArrayList<ArrayList<String>>combinedRows,
+        AirBattleDto air,
+        JsonObject api_kouku,
+        String combinedFlagString,
+        int[][]startHP,
+        ArrayList<ArrayList<String>> body)
+    {
+        int[][]prevHP = startHP;
+        ArrayList<String> row = this.DayPhaseRowBody();
+        String stage1_f_count = "";
+        String stage1_f_lostcount = "";
+        String stage1_e_count = "";
+        String stage1_e_lostcount = "";
+        if(!api_kouku.isNull("api_stage1")){
+            JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
+            stage1_f_count = api_stage1.get("api_f_count").toString();
+            stage1_f_lostcount = api_stage1.get("api_f_lostcount").toString();
+            stage1_e_count = api_stage1.get("api_e_count").toString();
+            stage1_e_lostcount = api_stage1.get("api_e_lostcount").toString();
+            if(api_stage1.getInt("api_f_count")==0 && api_stage1.getInt("api_e_count")==0){
+                return createNextHPAir(prevHP, air);
+            }
+        }
+        row.add(stage1_f_count);
+        row.add(stage1_f_lostcount);
+        row.add(stage1_e_count);
+        row.add(stage1_e_lostcount);
+        String stage2_f_count = "";
+        String stage2_f_lostcount = "";
+        String stage2_e_count = "";
+        String stage2_e_lostcount = "";
+        String air_fire_idx = "";
+        String air_fire_kind = "";
+        String[] air_fire_use_item = new String[3];
+        for(int i=0;i<air_fire_use_item.length;i++){ air_fire_use_item[i] = ""; }
+        if(!api_kouku.isNull("api_stage2")){
+            JsonObject api_stage2 = api_kouku.getJsonObject("api_stage2");
+            stage2_f_count = api_stage2.get("api_f_count").toString();
+            stage2_f_lostcount = api_stage2.get("api_f_lostcount").toString();
+            stage2_e_count = api_stage2.get("api_e_count").toString();
+            stage2_e_lostcount = api_stage2.get("api_e_lostcount").toString();
+            if(api_stage2.containsKey("api_air_fire") && !api_stage2.isNull("api_air_fire")){
+                JsonObject api_air_fire = api_stage2.getJsonObject("api_air_fire");
+                air_fire_idx = (new Integer(api_air_fire.getInt("api_idx")+1)).toString();
+                air_fire_kind = api_air_fire.get("api_kind").toString();
+                JsonArray useItems = api_air_fire.getJsonArray("api_use_items");
+                for(int i=0;i<air_fire_use_item.length && i<useItems.size();i++){
+                    ItemInfoDto info = Item.get(useItems.getInt(i));
+                    if(info != null){ air_fire_use_item[i] = info.getName();}
+                }
+            }
+        }
+        row.add(stage2_f_count);
+        row.add(stage2_f_lostcount);
+        row.add(stage2_e_count);
+        row.add(stage2_e_lostcount);
+        row.add(air_fire_idx);
+        row.add(air_fire_kind);
+        row.add(air_fire_use_item[0]);
+        row.add(air_fire_use_item[1]);
+        row.add(air_fire_use_item[2]);
+        int frai_count = 0;
+        int erai_count = 0;
+        int fbak_count = 0;
+        int ebak_count = 0;
+        if(!api_kouku.isNull("api_stage3")){
+            JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3");
+            JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
+            JsonArray erai_flag = api_stage3.getJsonArray("api_erai_flag");
+            JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
+            JsonArray ebak_flag = api_stage3.getJsonArray("api_ebak_flag");
+            for(int i=0;i<frai_flag.size();i++){
+                if(frai_flag.getInt(i)==1){frai_count++;}
+                if(erai_flag.getInt(i)==1){erai_count++;}
+                if(fbak_flag.getInt(i)==1){fbak_count++;}
+                if(ebak_flag.getInt(i)==1){ebak_count++;}
+            }
+        }
+        if(api_kouku.containsKey("api_stage3_combined") && !api_kouku.isNull("api_stage3_combined")){
+            JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3_combined");
+            JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
+            JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
+            for(int i=0;i<frai_flag.size();i++){
+                if(frai_flag.getInt(i)==1){frai_count++;}
+                if(fbak_flag.getInt(i)==1){fbak_count++;}
+            }
+        }
+        row.add((new Integer(frai_count)).toString());
+        row.add((new Integer(fbak_count)).toString());
+        row.add((new Integer(erai_count)).toString());
+        row.add((new Integer(ebak_count)).toString());
+        for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(i),prevHP[0][i],this.maxEnemyHp[i]):enemyRows.get(i)); }
+        for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(i),prevHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
+        for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),prevHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
+        row.add(combinedFlagString);
+        body.add(row);
+        return createNextHPAir(prevHP, air);
+    }
+
+    private ArrayList<ArrayList<String>>AirLostRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        if(phase.isNight){
+            return body;
+        }
+        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
+        for(int i=this.enemy.size();i<6;i++){enemyRows.add(this.ShipRowBodyBase(null,0, i));}
+        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
+            for(int i=ships.size();i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        }else{
+            for(int i=0;i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        }
+        ArrayList<ArrayList<String>> combinedRows = new ArrayList<ArrayList<String>>();
+        if(this.isCombined() && this.getDockCombined()!=null){
+            List<ShipDto> ships = this.getDockCombined().getShips();
+            for(int i=0;i<ships.size();i++){combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
+            for(int i=ships.size();i<6;i++){combinedRows.add(this.ShipRowBodyBase(null,0,i));}
+        }else{
+            for(int i=0;i<6;i++){combinedRows.add(this.ShipRowBodyBase(null,0,i));}
+        }
+
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+        int[][]airBaseStartHP = phaseStartHP;
+        int[][]air1StartHP = airBaseStartHP;
+        if(phase.airBase != null){
+            ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
+            air1StartHP = airHP.get(airHP.size()-1);
+        }
+        int[][]supportStartHP = air1StartHP;
+        if(phase.air != null){
+            JsonObject api_kouku = json.getJsonObject("api_kouku");
+            supportStartHP =
+                this.AirLostRowBodyConstruct(
+                    enemyRows,
+                    friendRows,
+                    combinedRows,
+                    phase.air,
+                    api_kouku,
+                    combinedFlagString,
+                    air1StartHP,
+                    body
+                );
+        }
+        int[][]openingTaisenStartHP = this.createNextHP(supportStartHP,phase.support);
+        int[][]openingRaigekiStartHP = this.createNextHP(openingTaisenStartHP,phase.openingTaisen);
+        int[][]air2StartHP = this.createNextHP(openingRaigekiStartHP, phase.opening);
+        int[][]hougeki1StartHP = air2StartHP;
+        if(phase.air2 != null){
+            JsonObject api_kouku = json.getJsonObject("api_kouku2");
+            hougeki1StartHP =
+                this.AirLostRowBodyConstruct(
+                        enemyRows,
+                        friendRows,
+                        combinedRows,
+                        phase.air2,
+                        api_kouku,
+                        combinedFlagString,
+                        air2StartHP,
+                        body
+                    );
+        }
+
+        int[][]hougeki2StartHP;
+        int[][]hougeki3StartHP;
+        int[][]raigekiStartHP;
+        int[][]endHP;
+        if(phase.getKind().isHougeki1Second()){
+            raigekiStartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki2StartHP = createNextHP(raigekiStartHP,phase.raigeki);
+            hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
+            endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+        }else{
+            hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki3StartHP = createNextHP(hougeki2StartHP,phase.hougeki2);
+            raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+            endHP =createNextHP(raigekiStartHP,phase.raigeki);
+        }
+        return body;
+    }
+
+
+    static public ArrayList<String> HenseiRowHeader(){
+        ArrayList<String> header = DayPhaseRowHeader();
+        header.add("昼戦|夜戦");
+        for(int i=1;i<=6;i++){
+            String index = (new Integer(i)).toString();
+            header.addAll(
+                ShipRowHeader()
+                    .stream()
+                    .map(s->"自軍"+index+"."+s)
+                    .collect(Collectors.toList())
+            );
+        }
+        return header;
+    }
+    private ArrayList<ArrayList<String>>HenseiRowBody(Phase phase,JsonObject json){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
+            for(int i=ships.size();i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        }else{
+            for(int i=0;i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        }
+        int[][]phaseStartHP = new int[3][];
+        if(phase == this.getPhase1()){
+            phaseStartHP[0] = this.startEnemyHp.clone();
+            phaseStartHP[1] = this.startFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+        }
+        else{
+            Phase phase1 = this.getPhase1();
+            phaseStartHP[0] = phase1.nowEnemyHp.clone();
+            phaseStartHP[1] = phase1.nowFriendHp.clone();
+            phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+        }
+
+        ArrayList<String> row = null;
+        if(phase.isNight){
+            row = this.NightPhaseRowBody();
+            row.add("夜戦");
+        }else{
+            row = this.DayPhaseRowBody();
+            row.add("昼戦");
+        }
+        for (int i = 0; i < 6; ++i) { row.addAll((i<this.maxFriendHp.length)?this.ShipRowBodyUpdate(friendRows.get(i),phaseStartHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
+        body.add(row);
+        return body;
+    }
+    public static ArrayList<String> BuiltinScriptKeys(){
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("砲撃戦");
+        list.add("夜戦");
+        list.add("雷撃戦");
+        list.add("航空戦");
+        list.add("航空戦撃墜");
+        list.add("基地航空戦");
+        list.add("編成");
+        return list;
+    }
+    public static Map<String,String[]> BuiltinScriptHeader(){
+        try{
+            HashMap<String,String[]>result = new HashMap<String,String[]>();
+            BuiltinScriptKeys()
+                .stream()
+                .forEach(key->result.put(key,BuiltinScriptHeaderWithKey(key)));
+            return result;
+        }
+        catch (Exception e) {
+            return new HashMap<String,String[]>();
+        }
+    }
+    private static HashMap<String,String[]> _headerCache = new HashMap<>();
+    public static String[] BuiltinScriptHeaderWithKey(String key){
+        try{
+            if(_headerCache.get(key)!=null){ return _headerCache.get(key); }
+            switch(key){
+                case"砲撃戦":
+                    _headerCache.put(key,HougekiRowHeader().toArray(new String[0]));
+                    break;
+                case"夜戦":
+                    _headerCache.put(key,YasenRowHeader().toArray(new String[0]));
+                    break;
+                case"雷撃戦":
+                    _headerCache.put(key,RaigekiRowHeader().toArray(new String[0]));
+                    break;
+                case"航空戦":
+                    _headerCache.put(key,AirRowHeader().toArray(new String[0]));
+                    break;
+                case"航空戦撃墜":
+                    _headerCache.put(key, AirLostRowHeader().toArray(new String[0]));
+                    break;
+                case"基地航空戦":
+                    _headerCache.put(key,BaseAirRowHeader().toArray(new String[0]));
+                    break;
+                case"編成":
+                    _headerCache.put(key,HenseiRowHeader().toArray(new String[0]));
+                    break;
+            }
+            return _headerCache.get(key);
+        }
+        catch (Exception e) {
+            return new String[0];
+        }
+    }
+
+
+    /**
+     * 初期化終わってるやつからBody取得
+     * @return keyに対応する出力Body
+     */
+    public String[][] BuiltinScriptBodyWithKey(String key,JsonObject[] jsonArray,String dateString){
+        try{
+            if (this.exVersion >= 2) {
+                if(dateString == null){dateString = new DateTimeString(this.battleDate).toStringRed();}
+                if(jsonArray == null){ jsonArray = this.phaseList.stream().map(p->p.getJson()).collect(Collectors.toList()).toArray(new JsonObject[0]); }
+                switch(key){
+                    case"砲撃戦":
+                        try{
+                            ArrayList<ArrayList<String>> body = this.HougekiRowBody(this.getPhase1(),jsonArray[0]);
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    case"夜戦":
+                        try{
+                            ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+                            if(this.getPhase1() != null && this.getPhase1().isNight){
+                                body.addAll(this.YasenRowBody(this.getPhase1(),jsonArray[0]));
+                            }
+                            if(this.getPhase2() != null && this.getPhase2().isNight){
+                                body.addAll(this.YasenRowBody(this.getPhase2(),jsonArray[1]));
+                            }
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    case"雷撃戦":
+                        try{
+                            ArrayList<ArrayList<String>> body = this.RaigekiRowBody(this.getPhase1(),jsonArray[0]);
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    case"航空戦":
+                        try{
+                            ArrayList<ArrayList<String>> body = this.AirRowBody(this.getPhase1(),jsonArray[0]);
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    case"航空戦撃墜":
+                        try{
+                            ArrayList<ArrayList<String>> body = this.AirLostRowBody(this.getPhase1(),jsonArray[0]);
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    case"基地航空戦":
+                        try{
+                            ArrayList<ArrayList<String>> body = this.BaseAirRowBody(this.getPhase1(),jsonArray[0]);
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    case"編成":
+                        try{
+                            ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+                            if(this.getPhase1() != null){
+                                body.addAll(this.HenseiRowBody(this.getPhase1(),jsonArray[0]));
+                            }
+                            if(this.getPhase2() != null){
+                                body.addAll(this.HenseiRowBody(this.getPhase2(),jsonArray[1]));
+                            }
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            return new String[0][];
+                        }
+                    default:
+                        return new String[0][];
+                }
+            }
+            else{
+                return new String[0][];
+            }
+        }
+        catch (Exception e) {
+            return new String[0][];
+        }
+    }
+    /**
+     * json読んで初期化と同時にスクリプト実行してBody取得
+     * @return 各スクリプトの出力Body
+     */
+    public Map<String,String[][]> BuiltinScriptBody(){
+        try{
+            HashMap<String,String[][]>result = new HashMap<String,String[][]>();
+            if (this.exVersion >= 2) {
+                String dateString = new DateTimeString(this.battleDate).toStringRed();
+                JsonObject[] jsonArray = new JsonObject[this.phaseList.size()];
+                //初期化
+                {
+                    Phase[] phaseCopy = this.phaseList.toArray(new Phase[0]);
+                    this.enemy.clear();
+                    this.phaseList.clear();
+                    for (int i=0;i<phaseCopy.length;i++) {
+                        Phase phase = phaseCopy[i];
+                        JsonObject json = phase.getJson();
+                        jsonArray[i] = json;
+                        this.addPhase(json, phase.getKind());
+                    }
+                    this.readResultJson(JsonUtils.fromString(this.resultJson));
+                }
+                BuiltinScriptKeys()
+                    .stream()
+                    .forEach(key->result.put(key, BuiltinScriptBodyWithKey(key,jsonArray,dateString)));
+            }
+            return result;
+        }
+        catch (Exception e) {
+            return new HashMap<String,String[][]>();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
+

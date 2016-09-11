@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.scripting;
 
@@ -48,7 +48,7 @@ public class CombatLogProxy {
     };
 
     private static final Map<String, CombatLogProxy> instance = new TreeMap<String, CombatLogProxy>();
-    
+
     public static void set(String prefix, String title) {
         CombatLogProxy value = instance.get(prefix);
         if (value == null) {
@@ -80,6 +80,14 @@ public class CombatLogProxy {
         }
         return bodyAll;
     }
+    //(多分)マルチスレッド大丈夫版
+    public static Map<String, Comparable[][]> bodyAllMT(BattleExDto battle) {
+        Map<String, Comparable[][]> bodyAll = new TreeMap<String, Comparable[][]>();
+        for (Map.Entry<String, CombatLogProxy> entry : instance.entrySet()) {
+            bodyAll.put(entry.getKey(), entry.getValue().bodyMT(battle));
+        }
+        return bodyAll;
+    }
 
     public static void beginAll() {
         for (CombatLogProxy value : instance.values()) {
@@ -107,7 +115,7 @@ public class CombatLogProxy {
     public String getPrefix() {
         return this.prefix;
     }
-    
+
     public String getTitle() {
         return this.title;
     }
@@ -119,6 +127,11 @@ public class CombatLogProxy {
     public Comparable[][] body(BattleExDto battle) {
         this.anyBodiesMethod.battle = battle;
         return this.getScript().anyBodies(this.anyBodiesMethod);
+    }
+    public Comparable[][] bodyMT(BattleExDto battle) {
+        AnyBodiesMethod m = new AnyBodiesMethod();
+        m.battle = battle;
+        return this.getScript().anyBodies(m);
     }
 
     public void begin() {

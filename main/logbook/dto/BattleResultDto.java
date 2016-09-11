@@ -2,12 +2,13 @@ package logbook.dto;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import logbook.constants.AppConstants;
-
 import org.apache.commons.lang3.StringUtils;
+
+import logbook.constants.AppConstants;
 
 /**
  * 海戦とドロップした艦娘を表します
@@ -51,7 +52,9 @@ public class BattleResultDto extends AbstractDto {
     private final Comparable[] extData;
 
     /** 戦闘スクリプトサポート */
-    private final Map<String, Comparable[][]> allCombatExtData;
+    private final Map<String,Integer> allCombatExtDataRowCount;
+    /** 戦闘スクリプトサポート */
+    private final Map<String,Integer> allBuiltinCombatExtDataRowCount;
 
     public BattleResultDto(BattleExDto dto, Comparable[] extData, Map<String, Comparable[][]> allCombatExtData) {
         this.battleDate = dto.getBattleDate();
@@ -66,7 +69,23 @@ public class BattleResultDto extends AbstractDto {
         this.dropItemName = dto.getDropItemName();
         this.noSpaceForShip = (dto.getExVersion() >= 1) && (dto.getShipSpace() == 0);
         this.extData = extData;
-        this.allCombatExtData = allCombatExtData;
+        {
+            Map<String,Integer> count = new HashMap<String,Integer>();
+            if(allCombatExtData != null){
+                for(String key : allCombatExtData.keySet()){
+                    count.put(key,allCombatExtData.get(key).length);
+                }
+            }
+            this.allCombatExtDataRowCount = count;
+        }
+        {
+            Map<String,Integer> count = new HashMap<String,Integer>();
+            Map<String,String[][]> log = dto.BuiltinScriptBody();
+            for(String key : log.keySet()){
+                count.put(key,log.get(key).length);
+            }
+            this.allBuiltinCombatExtDataRowCount = count;
+        }
     }
 
     private boolean hasTaihaInFleet(int[] nowhp, int[] maxhp) {
@@ -225,14 +244,10 @@ public class BattleResultDto extends AbstractDto {
         return this.extData;
     }
 
-    /**
-     * @return combatExtData
-     */
-    public Comparable[][] getCombatExtData(String name) {
-        return this.allCombatExtData.get(name);
+    public int getCombatDataRowCount(String name){
+        return this.allCombatExtDataRowCount.get(name);
     }
-
-    public Map<String, Comparable[][]> getAllCombatExtData() {
-        return this.allCombatExtData;
+    public int getBuiltinCombatDataRowCount(String name){
+        return this.allBuiltinCombatExtDataRowCount.get(name);
     }
 }

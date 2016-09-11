@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.scripting;
 
@@ -59,7 +59,11 @@ public class BattleLogProxy implements BattleLogListener {
         this.bodyMethod.battle = battle;
         return this.script.body(this.bodyMethod);
     }
-
+    public Comparable[] bodyMT(BattleExDto battle) {
+        BodyMethod m = new BodyMethod();
+        m.battle = battle;
+        return this.script.body(m);
+    }
     @Override
     public void begin() {
         this.script.invoke(this.beginMethod);
