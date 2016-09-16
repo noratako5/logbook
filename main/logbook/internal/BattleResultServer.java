@@ -70,9 +70,9 @@ public class BattleResultServer {
         public DataFile file;
         public int index;
 
-        BattleResult(BattleExDto dto, DataFile file, int index, Comparable[] extData,
+        BattleResult(BattleExDto dto, DataFile file, int index, Comparable[] extData,Map<String,String[][]> builtinCombatExtData,
                 Map<String, Comparable[][]> combatExtData) {
-            super(dto, extData, combatExtData);
+            super(dto, extData,builtinCombatExtData, combatExtData);
             this.file = file;
             this.index = index;
         }
@@ -671,6 +671,9 @@ public class BattleResultServer {
     private static List<Map<String,String[][]>> loadBattleResultsRed(DataFile file,Set<Date> resultDateSet) {
         try {
             List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            battleAll
+                .parallelStream()
+                .forEach(b->b.readFromJson());
             ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
             for(BattleExDto b : battleAll){
                 if (b.isCompleteResult() && !resultDateSet.contains(b.getBattleDate())) {
@@ -767,6 +770,12 @@ public class BattleResultServer {
                     .parallelStream()
                     .map(b->BattleLogProxy.get().bodyMT(b))
                     .collect(Collectors.toList());
+            List<Map<String,String[][]>> builtinCombatLog =
+                battle
+                    .parallelStream()
+                    .map(b->b.BuiltinScriptBody())
+                    .collect(Collectors.toList());
+
             List<Map<String,Comparable[][]>> combatLog = null;
             if(isLoadCombatLog){
                 combatLog =
@@ -778,7 +787,7 @@ public class BattleResultServer {
 
             List<BattleResult> result = new ArrayList<BattleResult>();
             for(int i=0;i<battle.size();i++){
-                result.add(createBattleResultWithCombatLog(battle.get(i),file, i,battleLog.get(i),(isLoadCombatLog)?combatLog.get(i) :null));
+                result.add(createBattleResultWithCombatLog(battle.get(i),file, i,battleLog.get(i),builtinCombatLog.get(i),(isLoadCombatLog)?combatLog.get(i) :null));
             }
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
             return result;
@@ -835,10 +844,10 @@ public class BattleResultServer {
     }
 
     private static BattleResult createBattleResult(BattleExDto dto, DataFile file, int n, boolean isLoadCombatLog) {
-        return new BattleResult(dto, file, n,BattleLogProxy.get().bodyMT(dto), isLoadCombatLog ? CombatLogProxy.bodyAllMT(dto) : null);
+        return new BattleResult(dto, file, n,BattleLogProxy.get().bodyMT(dto),dto.BuiltinScriptBody(),isLoadCombatLog ? CombatLogProxy.bodyAllMT(dto) : null);
     }
-    private static BattleResult createBattleResultWithCombatLog(BattleExDto dto, DataFile file, int n,Comparable[] battleLog, Map<String,Comparable[][]>combatLog) {
-        return new BattleResult(dto, file, n,battleLog,combatLog);
+    private static BattleResult createBattleResultWithCombatLog(BattleExDto dto, DataFile file, int n,Comparable[] battleLog,Map<String,String[][]> builtinCombatExtData, Map<String,Comparable[][]>combatLog) {
+        return new BattleResult(dto, file, n,battleLog,builtinCombatExtData,combatLog);
     }
 
     public boolean isLoaded() {

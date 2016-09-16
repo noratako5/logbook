@@ -10,21 +10,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import logbook.config.AppConfig;
-import logbook.config.bean.TableConfigBean;
-import logbook.config.bean.TableConfigBean.Column;
-import logbook.config.bean.TableConfigBean.SortKey;
-import logbook.data.Data;
-import logbook.data.DataType;
-import logbook.data.EventListener;
-import logbook.data.context.GlobalContext;
-import logbook.gui.listener.TableKeyShortcutAdapter;
-import logbook.gui.listener.TableToClipboardAdapter;
-import logbook.gui.listener.TableToCsvSaveAdapter;
-import logbook.gui.logic.TableItemCreator;
-import logbook.gui.logic.TableRowHeader;
-import logbook.internal.LoggerHolder;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
@@ -46,6 +31,21 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+
+import logbook.config.AppConfig;
+import logbook.config.bean.TableConfigBean;
+import logbook.config.bean.TableConfigBean.Column;
+import logbook.config.bean.TableConfigBean.SortKey;
+import logbook.data.Data;
+import logbook.data.DataType;
+import logbook.data.EventListener;
+import logbook.data.context.GlobalContext;
+import logbook.gui.listener.TableKeyShortcutAdapter;
+import logbook.gui.listener.TableToClipboardAdapter;
+import logbook.gui.listener.TableToCsvSaveAdapter;
+import logbook.gui.logic.TableItemCreator;
+import logbook.gui.logic.TableRowHeader;
+import logbook.internal.LoggerHolder;
 
 /**
  * テーブルで構成されるダイアログの基底クラス
@@ -199,6 +199,21 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         MenuItem selectVisible = new MenuItem(this.opemenu, SWT.NONE);
         selectVisible.setText("列の表示・非表示(&V)");
         selectVisible.addSelectionListener(new SelectVisibleColumnAdapter());
+
+
+        MenuItem visibleAll = new MenuItem(this.opemenu, SWT.NONE);
+        visibleAll.setText("列を全て表示");
+        visibleAll.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                // カラム設定を取得
+                boolean[] visibles = AbstractTableDialog.this.getConfig().getVisibleColumn();
+                for(int i=0;i<visibles.length;i++){
+                    visibles[i] = true;
+                }
+                AbstractTableDialog.this.setColumnVisible(visibles);
+            }
+        });
 
         MenuItem resetOrder = new MenuItem(this.opemenu, SWT.NONE);
         resetOrder.setText("列の順番をリセット");
@@ -759,7 +774,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
     /**
      * テーブル行を作成するクリエイターを返します
-     * 
+     *
      * @return TableItemCreatorProxy
      */
     protected abstract TableItemCreator getTableItemCreator();
@@ -810,7 +825,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
     /**
      * テーブルをソートします
-     * 
+     *
      * @param headerColumn ソートするカラム
      */
     protected void sortTableItems(TableColumn headerColumn) {
@@ -819,7 +834,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
     /**
      * テーブルをソートします
-     * 
+     *
      * @param index カラムインデックス
      * @param headerColumn ソートするカラム
      */
@@ -931,7 +946,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
     /**
      * 現在表示されているテキストのテーブルを返す
-     * 
+     *
      * @param header
      * @param tableItems
      * @param config
@@ -1056,7 +1071,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
 
         /**
          * 比較する
-         * 
+         *
          * @param o1
          * @param o2
          * @param order

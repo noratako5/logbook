@@ -19,6 +19,8 @@ import javax.json.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 
 import com.dyuproject.protostuff.Tag;
+import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 
 import logbook.data.DataType;
 import logbook.data.context.GlobalContext;
@@ -26,6 +28,7 @@ import logbook.gui.logic.DateTimeString;
 import logbook.internal.EnemyData;
 import logbook.internal.Item;
 import logbook.internal.UseItem;
+import logbook.util.GsonUtil;
 import logbook.util.JsonUtils;
 
 /**
@@ -368,6 +371,120 @@ public class BattleExDto extends AbstractDto {
 
             this.json = object.toString();
         }
+
+        public Phase(BattleExDto battle, LinkedTreeMap tree,String json, BattlePhaseKind kind,
+                int[] beforeFriendHp, int[] beforeFriendHpCombined, int[] beforeEnemyHp)
+        {
+            boolean isCombined = (beforeFriendHpCombined != null);
+
+            this.kind = kind;
+            this.isNight = kind.isNight();
+
+            this.nowFriendHp = beforeFriendHp.clone();
+            this.nowEnemyHp = beforeEnemyHp.clone();
+            if (isCombined) {
+                this.nowFriendHpCombined = beforeFriendHpCombined.clone();
+            }
+            else {
+                this.nowFriendHpCombined = null;
+            }
+
+            // 夜間触接
+            int[] jsonTouchPlane = GsonUtil.toIntArray(tree.get("api_touch_plane"));
+            this.touchPlane = jsonTouchPlane;
+
+            // 照明弾発射艦
+            int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
+            this.flarePos = jsonFlarePos;
+
+            // 攻撃シーケンスを読み取る //
+
+            // 基地航空隊
+            Object air_base_attack = tree.get("api_air_base_attack");
+            if (air_base_attack instanceof List) {
+                this.airBase = new ArrayList<>();
+                for (Object item : (List)air_base_attack) {
+                    this.airBase.add(new AirBattleDto((LinkedTreeMap)item, isCombined, true));
+                }
+            }
+
+            // 航空戦（通常）
+            LinkedTreeMap kouku = (LinkedTreeMap)tree.get("api_kouku");
+            if (kouku != null) {
+                this.air = new AirBattleDto(kouku, isCombined, false);
+                // 昼戦の触接はここ
+                this.touchPlane = this.air.touchPlane;
+                // 制空はここから取る
+                this.seiku = this.air.seiku;
+            }
+
+            // 支援艦隊
+            int support_flag = GsonUtil.toInt(tree.get("api_support_flag"));
+            if (support_flag > 0) {
+                LinkedTreeMap support = (LinkedTreeMap)tree.get("api_support_info");
+                LinkedTreeMap support_hourai = (LinkedTreeMap)support.get("api_support_hourai");
+                LinkedTreeMap support_air = (LinkedTreeMap)support.get("api_support_airatack");
+                if (support_hourai != null) {
+                    int[] edam = GsonUtil.toIntArray(support_hourai.get("api_damage"));
+                    int[] ecl = GsonUtil.toIntArray(support_hourai.get("api_cl_list"));
+                    if (edam != null) {
+                        this.support = BattleAtackDto.makeSupport(edam,ecl);
+                    }
+                }
+                else if (support_air != null) {
+                    LinkedTreeMap stage3 = (LinkedTreeMap)support_air.get("api_stage3");
+                    if (stage3 != null) {
+                        this.support = BattleAtackDto.makeSupportAir(GsonUtil.toIntArray(stage3.get("api_edam")),GsonUtil.toIntArray(stage3.get("api_ecl_flag")));
+                    }
+                }
+                this.supportType = toSupport(support_flag);
+            }
+            else {
+                this.supportType = "";
+            }
+
+            //航空戦
+            LinkedTreeMap kouku2 = (LinkedTreeMap)tree.get("api_kouku2");
+            if (kouku2 != null){
+                this.air2 = new AirBattleDto(kouku2, isCombined, false);
+            }
+
+            // 開幕対潜
+            this.openingTaisen = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_opening_taisen"), kind.isOpeningSecond());
+
+            // 開幕
+            this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_opening_atack"), kind.isOpeningSecond());
+
+            // 砲撃
+            this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), kind.isHougekiSecond()); // 夜戦
+            this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki1"), kind.isHougeki1Second());
+            this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki2"), kind.isHougeki2Second());
+            this.hougeki3 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki3"), kind.isHougeki3Second());
+
+            // 雷撃
+            this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_raigeki"), kind.isRaigekiSecond());
+
+            // ダメージを反映 //
+
+            if (this.airBase != null)
+                for (AirBattleDto attack : this.airBase)
+                    this.doAtack(attack.atacks);
+            if (this.air != null)
+                this.doAtack(this.air.atacks);
+            this.doAtack(this.support);
+            if (this.air2 != null)
+                this.doAtack(this.air2.atacks);
+            this.doAtack(this.openingTaisen);
+            this.doAtack(this.opening);
+            this.doAtack(this.hougeki);
+            this.doAtack(this.hougeki1);
+            this.doAtack(this.raigeki);
+            this.doAtack(this.hougeki2);
+            this.doAtack(this.hougeki3);
+
+            this.json = json;
+        }
+
 
         public void battleDamage(BattleExDto battle) {
             int numFships = this.nowFriendHp.length;
@@ -943,9 +1060,13 @@ public class BattleExDto extends AbstractDto {
             this.enemy.clear();
             this.phaseList.clear();
             for (Phase phase : phaseCopy) {
-                this.addPhase(phase.getJson(), phase.getKind());
+                //this.addPhase(phase.getJson(), phase.getKind());
+                String json = phase.json;
+                LinkedTreeMap tree = getGson().fromJson(json,LinkedTreeMap.class);
+                this.addPhase2(tree,json,phase.getKind());
             }
-            this.readResultJson(JsonUtils.fromString(this.resultJson));
+            //this.readResultJson(JsonUtils.fromString(this.resultJson));
+            this.readResultJson2(getGson().fromJson(this.resultJson,LinkedTreeMap.class));
         }
         else {
             // 旧バージョンのログに対応
@@ -1113,6 +1234,157 @@ public class BattleExDto extends AbstractDto {
         return this.phaseList.get(this.phaseList.size() - 1);
     }
 
+    /**
+     * 戦闘フェーズ結果を読み込む
+     * @param tree 受け取ったJSON
+     * @param kind 戦闘の種別
+     * @return 作成されたPhaseオブジェクト
+     */
+    public Phase addPhase2(LinkedTreeMap tree,String json,BattlePhaseKind kind) {
+        if (this.phaseList.size() == 0) {
+            // 最初のフェーズ
+            String dockId;
+            if (tree.containsKey("api_dock_id")) {
+                dockId = GsonUtil.toIntString(tree.get("api_dock_id"));
+            } else {
+                dockId = GsonUtil.toIntString(tree.get("api_deck_id"));
+            }
+
+            int[] nowhps = GsonUtil.toIntArray(tree.get("api_nowhps"));
+            int[] maxhps = GsonUtil.toIntArray(tree.get("api_maxhps"));
+            int[] nowhpsCombined = GsonUtil.toIntArray(tree.get("api_nowhps_combined"));
+            int[] maxhpsCombined = GsonUtil.toIntArray(tree.get("api_maxhps_combined"));
+            boolean isCombined = (nowhpsCombined != null);
+
+            int numFships = 6;
+            int numFshipsCombined = 0;
+
+            for (int i = 1; i <= 6; ++i) {
+                if (maxhps[i] == -1) {
+                    numFships = i-1;
+                    break;
+                }
+            }
+            if (tree.containsKey("api_fParam_combined")) {
+                numFshipsCombined = 6;
+                for (int i = 1; i <= 6; ++i) {
+                    if (maxhpsCombined[i] == -1) {
+                        numFshipsCombined = i - 1;
+                        break;
+                    }
+                }
+            }
+
+            if (this.friends.size() == 0) { // 再読み込みの場合はスキップ
+                this.friends.add(GlobalContext.getDock(dockId));
+                if (numFshipsCombined > 0) {
+                    this.friends.add(GlobalContext.getDock("2"));
+                }
+            }
+
+            int[] shipKe = GsonUtil.toIntArray(tree.get("api_ship_ke"));
+            int[][] eSlots = GsonUtil.toIntArrayArray(tree.get("api_eSlot"));
+            int[][] eParams = GsonUtil.toIntArrayArray(tree.get("api_eParam"));
+            int[] eLevel = GsonUtil.toIntArray(tree.get("api_ship_lv"));
+            for (int i = 1; i < shipKe.length; i++) {
+                int id = shipKe[i];
+                if (id != -1) {
+                    int[] slot = eSlots[i - 1];
+                    int[] param = eParams[i - 1];
+                    this.enemy.add(new EnemyShipDto(id, slot, param, eLevel[i]));
+                }
+            }
+            int numEships = this.enemy.size();
+
+            this.startFriendHp = new int[numFships];
+            this.startEnemyHp = new int[numEships];
+            this.maxFriendHp = new int[numFships];
+            this.maxEnemyHp = new int[numEships];
+            if (isCombined) {
+                this.startFriendHpCombined = new int[numFshipsCombined];
+                this.maxFriendHpCombined = new int[numFshipsCombined];
+            }
+            else {
+                this.maxFriendHpCombined = null;
+            }
+
+            // 陣形
+            if (tree.containsKey("api_formation")) {
+                int[] formation = GsonUtil.toIntArray(tree.get("api_formation"));
+                for (int i = 0; i < 2; ++i) {
+                    this.formation[i] = toFormation(formation[i]);
+                }
+                this.formationMatch = toMatch(formation[2]);
+            }
+
+            // 索敵
+            int[] jsonSearch = GsonUtil.toIntArray(tree.get("api_search"));
+            if (jsonSearch != null) {
+                this.sakuteki = new String[] {
+                        toSearch(jsonSearch[0]),
+                        toSearch(jsonSearch[1])
+                };
+            }
+
+            // この戦闘の開始前HPを取得
+            for (int i = 1; i < nowhps.length; i++) {
+                int hp = nowhps[i];
+                int maxHp = maxhps[i];
+                if (i <= 6) {
+                    if (i <= numFships) {
+                        this.maxFriendHp[i - 1] = maxHp;
+                        this.friendGaugeMax += this.startFriendHp[i - 1] = hp;
+                    }
+                } else {
+                    if ((i - 6) <= numEships) {
+                        this.maxEnemyHp[i - 1 - 6] = maxHp;
+                        this.enemyGaugeMax += this.startEnemyHp[i - 1 - 6] = hp;
+                    }
+                }
+            }
+            if (isCombined) {
+                for (int i = 1; i < nowhpsCombined.length; i++) {
+                    int hp = nowhpsCombined[i];
+                    int maxHp = maxhpsCombined[i];
+                    if (i <= numFshipsCombined) {
+                        this.maxFriendHpCombined[i - 1] = maxHp;
+                        this.friendGaugeMax += this.startFriendHpCombined[i - 1] = hp;
+                    }
+                }
+
+                // 退避
+                this.escaped = new boolean[12];
+                int[] escape1 = GsonUtil.toIntArray(tree.get("api_escape_idx"));
+                if(escape1 != null){
+                    for(int index:escape1){
+                        this.escaped[index - 1] = true;
+                    }
+                }
+                int[] escape2 = GsonUtil.toIntArray(tree.get("api_escape_idx_combined"));
+                if(escape2 != null){
+                    for(int index:escape2){
+                        this.escaped[index - 1 + 6] = true;
+                    }
+                }
+                for (int i = 0; i < 2; ++i) {
+                    this.friends.get(i).setEscaped(Arrays.copyOfRange(this.escaped, i * 6, (i + 1) * 6));
+                }
+            }
+        }
+
+        if (this.phaseList.size() > 0) {
+            Phase phase = this.phaseList.get(0);
+            this.completeDamageAndAddPhase(new Phase(this, tree, json, kind,
+                    phase.getNowFriendHp(), phase.getNowFriendHpCombined(), phase.getNowEnemyHp()), kind);
+        }
+        else {
+            this.completeDamageAndAddPhase(new Phase(this, tree, json, kind,
+                    this.startFriendHp, this.startFriendHpCombined, this.startEnemyHp), kind);
+        }
+        return this.phaseList.get(this.phaseList.size() - 1);
+    }
+
+
     private void completeDamageAndAddPhase(Phase phase, BattlePhaseKind kind) {
         if (kind.isPractice()) {
             phase.practiceDamage(this);
@@ -1173,6 +1445,62 @@ public class BattleExDto extends AbstractDto {
             JsonArray jsonLostflag = object.getJsonArray("api_lost_flag");
             for (int i = 1; i < jsonLostflag.size(); i++) {
                 this.lostflag[i - 1] = (jsonLostflag.getInt(i) != 0);
+            }
+        }
+    }
+
+
+    private void readResultJson2(LinkedTreeMap tree) {
+        Object questName = tree.get("api_quest_name");
+        if (questName instanceof String) {
+            this.questName = (String)questName;
+        }
+        else {
+            // 演習の場合はない
+            this.questName = null;
+        }
+        this.rank = ResultRank.fromRank(tree.get("api_win_rank").toString());
+        // 完全勝利Sは分からないので戦闘結果を見る
+        Phase lastPhase = this.getLastPhase();
+        if ((lastPhase != null) && (lastPhase.getEstimatedRank() == ResultRank.PERFECT)) {
+            this.rank = ResultRank.PERFECT;
+        }
+        this.enemyName = ((LinkedTreeMap)tree.get("api_enemy_info")).get("api_deck_name").toString();
+        this.dropShip = tree.containsKey("api_get_ship");
+        this.dropItem = tree.containsKey("api_get_useitem");
+        if (this.dropShip) {
+            LinkedTreeMap getShip = (LinkedTreeMap)tree.get("api_get_ship");
+            this.dropShipId = GsonUtil.toInt(getShip.get("api_ship_id"));
+            this.dropType = getShip.get("api_ship_type").toString();
+            this.dropName = getShip.get("api_ship_name").toString();
+        }
+        else {
+            this.dropType = "";
+            this.dropName = "";
+        }
+        if (this.dropItem) {
+            String name = UseItem.get(GsonUtil.toInt(((LinkedTreeMap)tree.get("api_get_useitem")).get("api_useitem_id")));
+            this.dropItemName = StringUtils.defaultString(name);
+        } else {
+            this.dropItemName = "";
+        }
+        this.mvp = GsonUtil.toInt(tree.get("api_mvp"));
+        if (tree.get("api_mvp_combined")!=null) {
+            this.mvpCombined = GsonUtil.toInt(tree.get("api_mvp_combined"));
+        }
+        this.hqLv = GsonUtil.toInt(tree.get("api_member_lv"));
+        if (tree.get("api_escape")!=null) {
+            LinkedTreeMap escape = (LinkedTreeMap)tree.get("api_escape");
+            this.escapeInfo = new int[] {
+                    GsonUtil.toIntArray(escape.get("api_escape_idx"))[0] - 1,
+                    GsonUtil.toIntArray(escape.get("api_tow_idx"))[0] - 1
+            };
+        }
+        if (tree.get("api_lost_flag")!=null) {
+            this.lostflag = new boolean[6];
+            int[] lostflagArray = GsonUtil.toIntArray(tree.get("api_lost_flag"));
+            for (int i = 1; i < lostflagArray.length; i++) {
+                this.lostflag[i - 1] = (lostflagArray[i] != 0);
             }
         }
     }
@@ -1878,6 +2206,11 @@ public class BattleExDto extends AbstractDto {
 
 
     //標準装備のスクリプト群については全部Java側で処理することにした
+    private static Gson _gson = new Gson();
+    private static Gson getGson(){
+        return _gson;
+    }
+
     private static ArrayList<String> PhaseRowHeader(){
         ArrayList<String> header = new ArrayList<String>();
         header.add("日付");
@@ -2036,8 +2369,8 @@ public class BattleExDto extends AbstractDto {
         if(info != null){
             name = info.getName();
             if(item != null){
-                level = (new Integer(item.getLevel())).toString();
-                alv = (new Integer(item.getAlv())).toString();
+                level = String.valueOf(item.getLevel());
+                alv = String.valueOf(item.getAlv());
             }
         }
         if(onSlot != null){
@@ -2077,7 +2410,7 @@ public class BattleExDto extends AbstractDto {
             else if(itemInfoDtos != null && i < itemInfoDtos.size()){
                 Integer onSlot = null;
                 if(onSlots != null && i < onSlots.length){
-                    onSlot = new Integer(onSlots[i]);
+                    onSlot = Integer.valueOf(onSlots[i]);
                 }
                 if(itemDtos != null && i < itemDtos.size()){
                     itemRow = this.ItemRowBodyConstruct(itemDtos.get(i),itemInfoDtos.get(i),onSlot);
@@ -2092,7 +2425,12 @@ public class BattleExDto extends AbstractDto {
         }
         return body;
     }
+
+    private static ArrayList<String> _shipRowHeader = null;
     private static ArrayList<String> ShipRowHeader(){
+        if(_shipRowHeader != null){
+            return _shipRowHeader;
+        }
         ArrayList<String> header = new ArrayList<String>();
         header.add("編成順");
         header.add("ID");
@@ -2118,7 +2456,8 @@ public class BattleExDto extends AbstractDto {
         header.add("運");
         header.add("射程");
         header.addAll(ItemRowHeader());
-        return header;
+        _shipRowHeader = header;
+        return _shipRowHeader;
     }
     //戦闘中に更新されるHPと損小状態が空、女神など非対応
     private ArrayList<String> ShipRowBodyBase(ShipBaseDto ship,int maxHp,int index){
@@ -2130,20 +2469,20 @@ public class BattleExDto extends AbstractDto {
             String maxFuel = "";
             String maxBull = "";
             if(ship.shipInfo != null){
-                shipId = (new Integer(ship.shipInfo.getShipId())).toString();
+                shipId = String.valueOf(ship.shipInfo.getShipId());
                 fullName = ship.shipInfo.getFullName();
                 type = ship.shipInfo.getType();
-                maxFuel = (new Integer(ship.shipInfo.getMaxFuel())).toString();
-                maxBull = (new Integer(ship.shipInfo.getMaxBull())).toString();
+                maxFuel = String.valueOf(ship.shipInfo.getMaxFuel());
+                maxBull = String.valueOf(ship.shipInfo.getMaxBull());
             }
             String cond = "";
             String fuel = "";
             String bull = "";
             if(ship instanceof ShipDto){
                 ShipDto s = (ShipDto)ship;
-                cond = (new Integer(s.getCond())).toString();
-                fuel = (new Integer(s.getFuel())).toString();
-                bull = (new Integer(s.getBull())).toString();
+                cond = String.valueOf(s.getCond());
+                fuel = String.valueOf(s.getFuel());
+                bull = String.valueOf(s.getBull());
             }
             String soku = "";
             String houg = "";
@@ -2161,14 +2500,14 @@ public class BattleExDto extends AbstractDto {
                     case 5:soku = "低速";break;
                     case 10:soku = "高速";break;
                 }
-                houg = (new Integer(ship.param.getHoug())).toString();
-                raig = (new Integer(ship.param.getRaig())).toString();
-                tyku = (new Integer(ship.param.getTyku())).toString();
-                souk = (new Integer(ship.param.getSouk())).toString();
-                kaih = (new Integer(ship.param.getKaih())).toString();
-                tais = (new Integer(ship.param.getTais())).toString();
-                saku = (new Integer(ship.param.getSaku())).toString();
-                luck = (new Integer(ship.param.getLuck())).toString();
+                houg = String.valueOf(ship.param.getHoug());
+                raig = String.valueOf(ship.param.getRaig());
+                tyku = String.valueOf(ship.param.getTyku());
+                souk = String.valueOf(ship.param.getSouk());
+                kaih = String.valueOf(ship.param.getKaih());
+                tais = String.valueOf(ship.param.getTais());
+                saku = String.valueOf(ship.param.getSaku());
+                luck = String.valueOf(ship.param.getLuck());
                 switch(ship.param.getLeng()){
                     case 0:leng = "超短";break;
                     case 1:leng = "短";break;
@@ -2177,14 +2516,14 @@ public class BattleExDto extends AbstractDto {
                     case 4:leng = "超長";break;
                 }
             }
-            String lv = (new Integer(ship.getLv())).toString();
-            body.add((new Integer(index+1)).toString());
+            String lv = String.valueOf(ship.getLv());
+            body.add(String.valueOf(index+1));
             body.add(shipId);
             body.add(fullName);
             body.add(type);
             body.add(cond);
             body.add("");
-            body.add((new Integer(maxHp)).toString());
+            body.add(String.valueOf(maxHp));
             body.add("");
             body.add(fuel);
             body.add(maxFuel);
@@ -2220,7 +2559,7 @@ public class BattleExDto extends AbstractDto {
         else if(hpRate > 1){ hpText = "中破"; }
         else if(hpRate > 0){ hpText = "大破"; }
         else{ hpText = "轟沈"; }
-        body.set(5, (new Integer(hp)).toString());
+        body.set(5, String.valueOf(hp));
         body.set(7, hpText);
         return body;
     }
@@ -2237,7 +2576,7 @@ public class BattleExDto extends AbstractDto {
             String shipId = "";
             String fullName = "";
             if(ship.shipInfo != null){
-                shipId = (new Integer(ship.shipInfo.getShipId())).toString();
+                shipId = String.valueOf(ship.shipInfo.getShipId());
                 fullName = ship.shipInfo.getFullName();
             }
             String lv = (new Integer(ship.getLv())).toString();
@@ -2366,100 +2705,113 @@ public class BattleExDto extends AbstractDto {
         header.add("艦隊種類");
         return header;
     }
+
     private int[][] HougekiRowBodyConstruct(
-        ArrayList<ArrayList<String>>enemyRows,
-        ArrayList<ArrayList<String>>friendRows,
-        List<BattleAtackDto>attackList,
-        JsonObject api_hougeki,
-        boolean isSecond,
-        String hougekiCount,
-        String combinedFlagString,
-        int[][]startHP,
-        ArrayList<ArrayList<String>> body)
-    {
-        int[][]prevHP = startHP;
-        if(attackList != null){
-            String fleetName =
-                (!this.isCombined())?"通常艦隊"
-                :(isSecond)?"連合第2艦隊"
-                :"連合第1艦隊";
-            ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            List<BattleAtackDto>attackList,
+            LinkedTreeMap api_hougeki,
+            boolean isSecond,
+            String hougekiCount,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body)
+        {
+            int[][]prevHP = startHP;
+            if(attackList != null){
+                String fleetName =
+                    (!this.isCombined())?"通常艦隊"
+                    :(isSecond)?"連合第2艦隊"
+                    :"連合第1艦隊";
+                ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
 
-            JsonArray api_at_list = api_hougeki.getJsonArray("api_at_list");
-            JsonArray api_at_type = api_hougeki.getJsonArray("api_at_type");
-            JsonArray api_df_list = api_hougeki.getJsonArray("api_df_list");
-            JsonArray api_si_list = api_hougeki.getJsonArray("api_si_list");
-            JsonArray api_cl_list = api_hougeki.getJsonArray("api_cl_list");
-            JsonArray api_damage = api_hougeki.getJsonArray("api_damage");
-            List<EnemyShipDto> enemyLisy = this.getEnemy();
-            List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
-            ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
-            for(int i=1;i<api_at_list.size();++i){
-                int at = api_at_list.getInt(i);
-                int atType = api_at_type.getInt(i);
-                JsonArray dfList = api_df_list.getJsonArray(i);
-                JsonArray siList = api_si_list.getJsonArray(i);
-                JsonArray clList = api_cl_list.getJsonArray(i);
-                JsonArray damageList = api_damage.getJsonArray(i);
+                int[] api_at_list = GsonUtil.toIntArray(api_hougeki.get("api_at_list"));
+                int[] api_at_type = GsonUtil.toIntArray(api_hougeki.get("api_at_type"));
+                int[][] api_df_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_df_list"));
+                int[][] api_si_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_si_list"));
+                int[][] api_cl_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_cl_list"));
+                double[][] api_damage = GsonUtil.toDoubleArrayArray(api_hougeki.get("api_damage"));
+                List<EnemyShipDto> enemyLisy = this.getEnemy();
+                List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
+                ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
+                for(int i=1;i<api_at_list.length;++i){
+                    int at = api_at_list[i];
+                    int atType = api_at_type[i];
+                    int[] dfList = api_df_list[i];
+                    int[] siList = api_si_list[i];
+                    int[] clList = api_cl_list[i];
+                    double[] damageList = api_damage[i];
 
-                String attackFleetName = (at<7)?"自軍" :"敵軍";
-                String itemName0 = (siList.size()>0 && Integer.parseInt(siList.get(0).toString())>0)?Item.get(Integer.parseInt(siList.get(0).toString())).getName() :"";
-                String itemName1 = (siList.size()>1 && Integer.parseInt(siList.get(1).toString())>0)?Item.get(Integer.parseInt(siList.get(1).toString())).getName() :"";
-                String itemName2 = (siList.size()>2 && Integer.parseInt(siList.get(2).toString())>0)?Item.get(Integer.parseInt(siList.get(2).toString())).getName() :"";
+                    String attackFleetName = (at<7)?"自軍" :"敵軍";
+                    String[] itemName = new String[3];
+                    for(int j=0;j<itemName.length;j++){
+                        if(j < siList.length && siList[j] > 0){
+                            itemName[j]=Item.get(siList[j]).getName();
+                        }else{
+                            itemName[j]="";
+                        }
+                    }
 
-                List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
-                for(int j=0;j<dfList.size();++j){
-                    int df = dfList.getInt(j);
-                    int damage = damageList.getInt(j);
-                    boolean kabau = !(new Integer(damage)).toString().equals(damageList.get(j).toString());
-                    int cl = clList.getInt(j);
-                    ArrayList<String> row = (ArrayList<String>) dayPhaseRow.clone();
-                    row.add("砲撃戦");
-                    row.add(fleetName);
-                    row.add(hougekiCount);
-                    row.add(attackFleetName);
-                    row.add((new Integer(atType)).toString());
-                    row.add(itemName0);
-                    row.add(itemName1);
-                    row.add(itemName2);
-                    row.add((new Integer(cl)).toString());
-                    row.add((new Integer(damage)).toString());
-                    row.add(kabau?"1" :"0");
-                    if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
-                    else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
-                    if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
-                    else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
-                    row.add(combinedFlagString);
-                    body.add(row);
-                    if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
-                        prevHP = hougekiHP.get(i-1).get(j);
+                    List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
+                    for(int j=0;j<dfList.length;++j){
+                        int df = dfList[j];
+                        int damage = (int)damageList[j];
+                        boolean kabau = (damageList[j] - (double)damage) > 0.05;
+                        int cl = clList[j];
+                        ArrayList<String> row = (ArrayList<String>) dayPhaseRow.clone();
+                        row.add("砲撃戦");
+                        row.add(fleetName);
+                        row.add(hougekiCount);
+                        row.add(attackFleetName);
+                        row.add(String.valueOf(atType));
+                        row.add(itemName[0]);
+                        row.add(itemName[1]);
+                        row.add(itemName[2]);
+                        row.add(String.valueOf(cl));
+                        row.add(String.valueOf(damage));
+                        row.add(kabau?"1" :"0");
+                        if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                        else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
+                        if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                        else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
+                        row.add(combinedFlagString);
+                        body.add(row);
+                        if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
+                            prevHP = hougekiHP.get(i-1).get(j);
+                        }
                     }
                 }
             }
+            return prevHP;
         }
-        return prevHP;
-    }
-    private ArrayList<ArrayList<String>> HougekiRowBody(Phase phase,JsonObject json){
+
+    private ArrayList<ArrayList<String>> HougekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
         }
-        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
-        for(int i=0;i<this.enemy.size();i++){
-            enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
-        }
-        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
-        if(this.getDock()!=null){
-            List<ShipDto> ships = this.getDock().getShips();
-            for(int i=0;i<ships.size();i++){
-                friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+        if(enemyRows == null){
+            enemyRows = new ArrayList<ArrayList<String>>();
+            for(int i=0;i<this.enemy.size();i++){
+                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
             }
         }
-        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
-        if(this.isCombined() && this.getDockCombined()!=null){
-            List<ShipDto> ships = this.getDockCombined().getShips();
-            for(int i=0;i<ships.size();i++){
-                combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+        if(friendRows == null){
+            friendRows = new ArrayList<ArrayList<String>>();
+            if(this.getDock()!=null){
+                List<ShipDto> ships = this.getDock().getShips();
+                for(int i=0;i<ships.size();i++){
+                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+                }
+            }
+        }
+        if(combinedRows == null && this.isCombined()){
+            combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isCombined() && this.getDockCombined()!=null){
+                List<ShipDto> ships = this.getDockCombined().getShips();
+                for(int i=0;i<ships.size();i++){
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                }
             }
         }
         int combinedFlag = this.getCombinedFlag();
@@ -2492,7 +2844,7 @@ public class BattleExDto extends AbstractDto {
         int[][]openingTaisenStartHP = this.createNextHP(supportStartHP,phase.support);
         int[][]openingRaigekiStartHP = openingTaisenStartHP;
         if(phase.openingTaisen != null){
-            JsonObject api_hougeki = json.getJsonObject("api_opening_taisen");
+            LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_opening_taisen");
             openingRaigekiStartHP =
                 this.HougekiRowBodyConstruct(
                     enemyRows,
@@ -2516,7 +2868,7 @@ public class BattleExDto extends AbstractDto {
         if(phase.getKind().isHougeki1Second()){
             raigekiStartHP = hougeki1StartHP;
             if(phase.hougeki1 != null){
-                JsonObject api_hougeki = json.getJsonObject("api_hougeki1");
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki1");
                 raigekiStartHP =
                     this.HougekiRowBodyConstruct(
                         enemyRows,
@@ -2533,7 +2885,7 @@ public class BattleExDto extends AbstractDto {
             hougeki2StartHP = this.createNextHP(raigekiStartHP, phase.raigeki);
             hougeki3StartHP = hougeki2StartHP;
             if(phase.hougeki2 != null){
-                JsonObject api_hougeki = json.getJsonObject("api_hougeki2");
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki2");
                 hougeki3StartHP =
                     this.HougekiRowBodyConstruct(
                         enemyRows,
@@ -2549,7 +2901,7 @@ public class BattleExDto extends AbstractDto {
             }
             endHP = hougeki3StartHP;
             if(phase.hougeki3 != null){
-                JsonObject api_hougeki = json.getJsonObject("api_hougeki3");
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki3");
                 endHP =
                     this.HougekiRowBodyConstruct(
                         enemyRows,
@@ -2566,7 +2918,7 @@ public class BattleExDto extends AbstractDto {
         }else{
             hougeki2StartHP = hougeki1StartHP;
             if(phase.hougeki1 != null){
-                JsonObject api_hougeki = json.getJsonObject("api_hougeki1");
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki1");
                 hougeki2StartHP =
                     this.HougekiRowBodyConstruct(
                         enemyRows,
@@ -2582,7 +2934,7 @@ public class BattleExDto extends AbstractDto {
             }
             hougeki3StartHP = hougeki2StartHP;
             if(phase.hougeki2 != null){
-                JsonObject api_hougeki = json.getJsonObject("api_hougeki2");
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki2");
                 hougeki3StartHP =
                     this.HougekiRowBodyConstruct(
                         enemyRows,
@@ -2598,7 +2950,7 @@ public class BattleExDto extends AbstractDto {
             }
             raigekiStartHP = hougeki3StartHP;
             if(phase.hougeki3 != null){
-                JsonObject api_hougeki = json.getJsonObject("api_hougeki3");
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki3");
                 raigekiStartHP =
                     this.HougekiRowBodyConstruct(
                         enemyRows,
@@ -2616,6 +2968,7 @@ public class BattleExDto extends AbstractDto {
         }
         return body;
     }
+
     static public ArrayList<String> YasenRowHeader(){
         ArrayList<String> header = NightPhaseRowHeader();
         header.add("戦闘種別");
@@ -2640,102 +2993,115 @@ public class BattleExDto extends AbstractDto {
         header.add("艦隊種類");
         return header;
     }
+
     private int[][] YasenRowBodyConstruct(
-        ArrayList<ArrayList<String>>enemyRows,
-        ArrayList<ArrayList<String>>friendRows,
-        List<BattleAtackDto>attackList,
-        JsonObject api_hougeki,
-        String spMidnightString,
-        String combinedFlagString,
-        int[][]startHP,
-        ArrayList<ArrayList<String>> body)
-    {
-        int[][]prevHP = startHP;
-        if(attackList != null){
-            boolean isSecond = this.isCombined();
-            String fleetName =
-                (!this.isCombined())?"通常艦隊"
-                :(isSecond)?"連合第2艦隊"
-                :"連合第1艦隊";
-            ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            List<BattleAtackDto>attackList,
+            LinkedTreeMap api_hougeki,
+            String spMidnightString,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body)
+        {
+            int[][]prevHP = startHP;
+            if(attackList != null){
+                boolean isSecond = this.isCombined();
+                String fleetName =
+                    (!this.isCombined())?"通常艦隊"
+                    :(isSecond)?"連合第2艦隊"
+                    :"連合第1艦隊";
+                ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
 
-            JsonArray api_at_list = api_hougeki.getJsonArray("api_at_list");
-            JsonArray api_sp_list = api_hougeki.getJsonArray("api_sp_list");
-            JsonArray api_df_list = api_hougeki.getJsonArray("api_df_list");
-            JsonArray api_si_list = api_hougeki.getJsonArray("api_si_list");
-            JsonArray api_cl_list = api_hougeki.getJsonArray("api_cl_list");
-            JsonArray api_damage = api_hougeki.getJsonArray("api_damage");
-            List<EnemyShipDto> enemyLisy = this.getEnemy();
-            List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
-            ArrayList<String> nightPhaseRow = this.NightPhaseRowBody();
-            for(int i=1;i<api_at_list.size();++i){
-                int at = api_at_list.getInt(i);
-                int sp = api_sp_list.getInt(i);
-                JsonArray dfList = api_df_list.getJsonArray(i);
-                JsonArray siList = api_si_list.getJsonArray(i);
-                JsonArray clList = api_cl_list.getJsonArray(i);
-                JsonArray damageList = api_damage.getJsonArray(i);
+                int[] api_at_list = GsonUtil.toIntArray(api_hougeki.get("api_at_list"));
+                int[] api_sp_list = GsonUtil.toIntArray(api_hougeki.get("api_sp_list"));
+                int[][] api_df_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_df_list"));
+                int[][] api_si_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_si_list"));
+                int[][] api_cl_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_cl_list"));
+                double[][] api_damage = GsonUtil.toDoubleArrayArray(api_hougeki.get("api_damage"));
+                List<EnemyShipDto> enemyLisy = this.getEnemy();
+                List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
+                ArrayList<String> nightPhaseRow = this.NightPhaseRowBody();
+                for(int i=1;i<api_at_list.length;++i){
+                    int at = api_at_list[i];
+                    int sp = api_sp_list[i];
+                    int[] dfList = api_df_list[i];
+                    int[] siList = api_si_list[i];
+                    int[] clList = api_cl_list[i];
+                    double[] damageList = api_damage[i];
 
-                String attackFleetName = (at<7)?"自軍" :"敵軍";
-                String itemName0 = (siList.size()>0 && Integer.parseInt(siList.get(0).toString())>0)?Item.get(Integer.parseInt(siList.get(0).toString())).getName() :"";
-                String itemName1 = (siList.size()>1 && Integer.parseInt(siList.get(1).toString())>0)?Item.get(Integer.parseInt(siList.get(1).toString())).getName() :"";
-                String itemName2 = (siList.size()>2 && Integer.parseInt(siList.get(2).toString())>0)?Item.get(Integer.parseInt(siList.get(2).toString())).getName() :"";
+                    String attackFleetName = (at<7)?"自軍" :"敵軍";
+                    String[] itemName = new String[3];
+                    for(int j=0;j<itemName.length;j++){
+                        if(j < siList.length && siList[j] > 0){
+                            itemName[j]=Item.get(siList[j]).getName();
+                        }else{
+                            itemName[j]="";
+                        }
+                    }
 
-                List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
-                for(int j=0;j<dfList.size();++j){
-                    int cl = clList.getInt(j);
-                    if(cl >= 0){
-                        int df = dfList.getInt(j);
-                        int damage = damageList.getInt(j);
-                        boolean kabau = !(new Integer(damage)).toString().equals(damageList.get(j).toString());
-                        ArrayList<String> row = (ArrayList<String>) nightPhaseRow.clone();
-                        row.add("夜戦");
-                        row.add(fleetName);
-                        row.add(spMidnightString);
-                        row.add(attackFleetName);
-                        row.add((new Integer(sp)).toString());
-                        row.add(itemName0);
-                        row.add(itemName1);
-                        row.add(itemName2);
-                        row.add((new Integer(cl)).toString());
-                        row.add((new Integer(damage)).toString());
-                        row.add(kabau?"1" :"0");
-                        if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
-                        else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
-                        if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
-                        else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
-                        row.add(combinedFlagString);
-                        body.add(row);
-                        if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
-                            prevHP = hougekiHP.get(i-1).get(j);
+                    List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
+                    for(int j=0;j<dfList.length;++j){
+                        int cl = clList[j];
+                        if(cl >= 0){
+                            int df = dfList[j];
+                            int damage = (int)damageList[j];
+                            boolean kabau = damageList[j] - (double)damage > 0.05;
+                            ArrayList<String> row = (ArrayList<String>) nightPhaseRow.clone();
+                            row.add("夜戦");
+                            row.add(fleetName);
+                            row.add(spMidnightString);
+                            row.add(attackFleetName);
+                            row.add(String.valueOf(sp));
+                            row.add(itemName[0]);
+                            row.add(itemName[1]);
+                            row.add(itemName[2]);
+                            row.add(String.valueOf(cl));
+                            row.add(String.valueOf(damage));
+                            row.add(kabau?"1" :"0");
+                            if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
+                            if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
+                            row.add(combinedFlagString);
+                            body.add(row);
+                            if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
+                                prevHP = hougekiHP.get(i-1).get(j);
+                            }
                         }
                     }
                 }
             }
+            return prevHP;
         }
-        return prevHP;
-    }
-    private ArrayList<ArrayList<String>> YasenRowBody(Phase phase,JsonObject json){
+
+    private ArrayList<ArrayList<String>> YasenRowBody(Phase phase, LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(!phase.isNight){
             return body;
         }
-        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
-        for(int i=0;i<this.enemy.size();i++){
-            enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
-        }
-        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
-        if(this.getDock()!=null){
-            List<ShipDto> ships = this.getDock().getShips();
-            for(int i=0;i<ships.size();i++){
-                friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+        if(enemyRows == null){
+            enemyRows = new ArrayList<ArrayList<String>>();
+            for(int i=0;i<this.enemy.size();i++){
+                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
             }
         }
-        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
-        if(this.isCombined() && this.getDockCombined()!=null){
-            List<ShipDto> ships = this.getDockCombined().getShips();
-            for(int i=0;i<ships.size();i++){
-                combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+        if(friendRows == null){
+            friendRows = new ArrayList<ArrayList<String>>();
+            if(this.getDock()!=null){
+                List<ShipDto> ships = this.getDock().getShips();
+                for(int i=0;i<ships.size();i++){
+                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+                }
+            }
+        }
+        if(combinedRows == null && this.isCombined()){
+            combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isCombined() && this.getDockCombined()!=null){
+                List<ShipDto> ships = this.getDockCombined().getShips();
+                for(int i=0;i<ships.size();i++){
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                }
             }
         }
         int combinedFlag = this.getCombinedFlag();
@@ -2760,7 +3126,7 @@ public class BattleExDto extends AbstractDto {
         }
         int[][]endHP = phaseStartHP;
         if(phase.hougeki != null){
-            JsonObject api_hougeki = json.getJsonObject("api_hougeki");
+            LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki");
             endHP =
                 this.YasenRowBodyConstruct(
                     enemyRows,
@@ -2802,106 +3168,113 @@ public class BattleExDto extends AbstractDto {
     }
 
     private int[][] RaigekiRowBodyConstruct(
-        ArrayList<ArrayList<String>>enemyRows,
-        ArrayList<ArrayList<String>>friendRows,
-        List<BattleAtackDto>attackList,
-        JsonObject api_raigeki,
-        String stage,
-        String combinedFlagString,
-        int[][]startHP,
-        ArrayList<ArrayList<String>> body)
-    {
-        int[][]prevHP = startHP;
-        boolean isSecond = this.isCombined();
-        String fleetName =
-            (!this.isCombined())?"通常艦隊"
-            :(isSecond)?"連合第2艦隊"
-            :"連合第1艦隊";
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            List<BattleAtackDto>attackList,
+            LinkedTreeMap api_raigeki,
+            String stage,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body)
+        {
+            int[][]prevHP = startHP;
+            boolean isSecond = this.isCombined();
+            String fleetName =
+                (!this.isCombined())?"通常艦隊"
+                :(isSecond)?"連合第2艦隊"
+                :"連合第1艦隊";
 
-        JsonArray api_frai = api_raigeki.getJsonArray("api_frai");
-        JsonArray api_erai = api_raigeki.getJsonArray("api_erai");
-        JsonArray api_fdam = api_raigeki.getJsonArray("api_fdam");
-        JsonArray api_edam = api_raigeki.getJsonArray("api_edam");
-        JsonArray api_fydam = api_raigeki.getJsonArray("api_fydam");
-        JsonArray api_eydam = api_raigeki.getJsonArray("api_eydam");
-        JsonArray api_fcl = api_raigeki.getJsonArray("api_fcl");
-        JsonArray api_ecl = api_raigeki.getJsonArray("api_ecl");
+            int[] api_frai = GsonUtil.toIntArray(api_raigeki.get("api_frai"));
+            int[] api_erai = GsonUtil.toIntArray(api_raigeki.get("api_erai"));
+            double[] api_fdam = GsonUtil.toDoubleArray(api_raigeki.get("api_fdam"));
+            double[] api_edam = GsonUtil.toDoubleArray(api_raigeki.get("api_edam"));
+            int[] api_fydam = GsonUtil.toIntArray(api_raigeki.get("api_fydam"));
+            int[] api_eydam = GsonUtil.toIntArray(api_raigeki.get("api_eydam"));
+            int[] api_fcl = GsonUtil.toIntArray(api_raigeki.get("api_fcl"));
+            int[] api_ecl = GsonUtil.toIntArray(api_raigeki.get("api_ecl"));
 
-        List<EnemyShipDto> enemyLisy = this.getEnemy();
-        List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
-        ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
+            List<EnemyShipDto> enemyLisy = this.getEnemy();
+            List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
+            ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
 
-        for(int i=1;i<=6;++i){
-            int at = i;
-            int df = api_frai.getInt(i);
-            if(df <= 0){ continue; }
-            int cl = api_fcl.getInt(i);
-            int ydam = api_fydam.getInt(i);
-            boolean kabau = !(new Integer(api_edam.getInt(df))).toString().equals(api_edam.get(df).toString());
-            ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
-            row.add("雷撃戦");
-            row.add(fleetName);
-            row.add(stage);
-            row.add("自軍");
-            row.add("");
-            row.add("");
-            row.add("");
-            row.add("");
-            row.add((new Integer(cl)).toString());
-            row.add((new Integer(ydam)).toString());
-            row.add((kabau)?"1" :"0");
-            row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));
-            row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));
-            row.add(combinedFlagString);
-            body.add(row);
+            for(int i=1;i<=6;++i){
+                int at = i;
+                int df = api_frai[i];
+                if(df <= 0){ continue; }
+                int cl = api_fcl[i];
+                int ydam = api_fydam[i];
+                boolean kabau = ((int)(api_edam[df]*100))%100 > 5;
+                ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
+                row.add("雷撃戦");
+                row.add(fleetName);
+                row.add(stage);
+                row.add("自軍");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add(String.valueOf(cl));
+                row.add(String.valueOf(ydam));
+                row.add((kabau)?"1" :"0");
+                row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));
+                row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));
+                row.add(combinedFlagString);
+                body.add(row);
+            }
+            for(int i=1;i<=6;++i){
+                int at = i;
+                int df = api_erai[i];
+                if(df <= 0){ continue; }
+                int cl = api_ecl[i];
+                int ydam = api_eydam[i];
+                boolean kabau = ((int)(api_fdam[df]*100))%100 > 5;
+                ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
+                row.add("雷撃戦");
+                row.add(fleetName);
+                row.add(stage);
+                row.add("敵軍");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add(String.valueOf(cl));
+                row.add(String.valueOf(ydam));
+                row.add((kabau)?"1" :"0");
+                row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-1), prevHP[0][at-1],this.maxEnemyHp[at-1]));
+                row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));
+                row.add(combinedFlagString);
+                body.add(row);
+            }
+            return createNextHP(prevHP, attackList);
         }
-        for(int i=1;i<=6;++i){
-            int at = i;
-            int df = api_erai.getInt(i);
-            if(df <= 0){ continue; }
-            int cl = api_ecl.getInt(i);
-            int ydam = api_eydam.getInt(i);
-            boolean kabau = !(new Integer(api_fdam.getInt(df))).toString().equals(api_fdam.get(df).toString());
-            ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
-            row.add("雷撃戦");
-            row.add(fleetName);
-            row.add(stage);
-            row.add("敵軍");
-            row.add("");
-            row.add("");
-            row.add("");
-            row.add("");
-            row.add((new Integer(cl)).toString());
-            row.add((new Integer(ydam)).toString());
-            row.add((kabau)?"1" :"0");
-            row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-1), prevHP[0][at-1],this.maxEnemyHp[at-1]));
-            row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));
-            row.add(combinedFlagString);
-            body.add(row);
-        }
-        return createNextHP(prevHP, attackList);
-    }
-    private ArrayList<ArrayList<String>>RaigekiRowBody(Phase phase,JsonObject json){
+
+    private ArrayList<ArrayList<String>>RaigekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
         }
-        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
-        for(int i=0;i<this.enemy.size();i++){
-            enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
-        }
-        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
-        if(this.getDock()!=null){
-            List<ShipDto> ships = this.getDock().getShips();
-            for(int i=0;i<ships.size();i++){
-                friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+        if(enemyRows == null){
+            enemyRows = new ArrayList<ArrayList<String>>();
+            for(int i=0;i<this.enemy.size();i++){
+                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
             }
         }
-        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
-        if(this.isCombined() && this.getDockCombined()!=null){
-            List<ShipDto> ships = this.getDockCombined().getShips();
-            for(int i=0;i<ships.size();i++){
-                combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+        if(friendRows == null){
+            friendRows = new ArrayList<ArrayList<String>>();
+            if(this.getDock()!=null){
+                List<ShipDto> ships = this.getDock().getShips();
+                for(int i=0;i<ships.size();i++){
+                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+                }
+            }
+        }
+        if(combinedRows == null && this.isCombined()){
+            combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isCombined() && this.getDockCombined()!=null){
+                List<ShipDto> ships = this.getDockCombined().getShips();
+                for(int i=0;i<ships.size();i++){
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                }
             }
         }
         int combinedFlag = this.getCombinedFlag();
@@ -2935,7 +3308,7 @@ public class BattleExDto extends AbstractDto {
         int[][]openingRaigekiStartHP = this.createNextHP(openingTaisenStartHP,phase.openingTaisen);
         int[][]air2StartHP = openingRaigekiStartHP;
         if(phase.opening != null){
-            JsonObject api_raigeki = json.getJsonObject("api_opening_atack");
+            LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_opening_atack");
             air2StartHP =
                 this.RaigekiRowBodyConstruct(
                     enemyRows,
@@ -2958,7 +3331,7 @@ public class BattleExDto extends AbstractDto {
             raigekiStartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
             hougeki2StartHP = raigekiStartHP;
             if(phase.raigeki != null){
-                JsonObject api_raigeki = json.getJsonObject("api_raigeki");
+                LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_raigeki");
                 hougeki2StartHP =
                     this.RaigekiRowBodyConstruct(
                         enemyRows,
@@ -2979,7 +3352,7 @@ public class BattleExDto extends AbstractDto {
             raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);
             endHP = raigekiStartHP;
             if(phase.raigeki != null){
-                JsonObject api_raigeki = json.getJsonObject("api_raigeki");
+                LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_raigeki");
                 endHP =
                     this.RaigekiRowBodyConstruct(
                         enemyRows,
@@ -2995,6 +3368,7 @@ public class BattleExDto extends AbstractDto {
         }
         return body;
     }
+
 
     static public ArrayList<String> AirRowHeader(){
         ArrayList<String> header = DayPhaseRowHeader();
@@ -3029,151 +3403,160 @@ public class BattleExDto extends AbstractDto {
     }
 
     private int[][] AirRowBodyConstruct(
-        ArrayList<ArrayList<String>>enemyRows,
-        ArrayList<ArrayList<String>>friendRows,
-        ArrayList<ArrayList<String>>combinedRows,
-        ArrayList<ArrayList<String>>enemySummaryRows,
-        ArrayList<ArrayList<String>>friendSummaryRows,
-        AirBattleDto air,
-        JsonObject api_kouku,
-        int[][]startHP,
-        ArrayList<ArrayList<String>> body)
-    {
-        int[][]prevHP = startHP;
-        if(!api_kouku.isNull("api_stage3") ||(api_kouku.containsKey("api_stage3_combined") && !api_kouku.isNull("api_stage3_combined"))){
-            ArrayList<String> rowHead = this.DayPhaseRowBody();
-            String stage1_f_count = "";
-            String stage1_f_lostcount = "";
-            String stage1_e_count = "";
-            String stage1_e_lostcount = "";
-            if(!api_kouku.isNull("api_stage1")){
-                JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
-                stage1_f_count = api_stage1.get("api_f_count").toString();
-                stage1_f_lostcount = api_stage1.get("api_f_lostcount").toString();
-                stage1_e_count = api_stage1.get("api_e_count").toString();
-                stage1_e_lostcount = api_stage1.get("api_e_lostcount").toString();
-            }
-            rowHead.add(stage1_f_count);
-            rowHead.add(stage1_f_lostcount);
-            rowHead.add(stage1_e_count);
-            rowHead.add(stage1_e_lostcount);
-            String stage2_f_count = "";
-            String stage2_f_lostcount = "";
-            String stage2_e_count = "";
-            String stage2_e_lostcount = "";
-            String air_fire_idx = "";
-            String air_fire_kind = "";
-            String[] air_fire_use_item = new String[3];
-            for(int i=0;i<air_fire_use_item.length;i++){ air_fire_use_item[i] = ""; }
-            if(!api_kouku.isNull("api_stage2")){
-                JsonObject api_stage2 = api_kouku.getJsonObject("api_stage2");
-                stage2_f_count = api_stage2.get("api_f_count").toString();
-                stage2_f_lostcount = api_stage2.get("api_f_lostcount").toString();
-                stage2_e_count = api_stage2.get("api_e_count").toString();
-                stage2_e_lostcount = api_stage2.get("api_e_lostcount").toString();
-                if(api_stage2.containsKey("api_air_fire")&&!api_stage2.isNull("api_air_fire")){
-                    JsonObject api_air_fire = api_stage2.getJsonObject("api_air_fire");
-                    air_fire_idx = (new Integer(api_air_fire.getInt("api_idx")+1)).toString();
-                    air_fire_kind = api_air_fire.get("api_kind").toString();
-                    JsonArray useItems = api_air_fire.getJsonArray("api_use_items");
-                    for(int i=0;i < air_fire_use_item.length && i < useItems.size();i++){
-                        ItemInfoDto info = Item.get(useItems.getInt(i));
-                        if(info != null){ air_fire_use_item[i] = info.getName();}
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>combinedRows,
+            ArrayList<ArrayList<String>>enemySummaryRows,
+            ArrayList<ArrayList<String>>friendSummaryRows,
+            AirBattleDto air,
+            LinkedTreeMap api_kouku,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body)
+        {
+            int[][]prevHP = startHP;
+            if(api_kouku.get("api_stage3")!=null || api_kouku.get("api_stage3_combined")!=null){
+                ArrayList<String> rowHead = this.DayPhaseRowBody();
+                String stage1_f_count = "";
+                String stage1_f_lostcount = "";
+                String stage1_e_count = "";
+                String stage1_e_lostcount = "";
+                LinkedTreeMap api_stage1 = (LinkedTreeMap)api_kouku.get("api_stage1");
+                if(api_stage1 != null){
+                    stage1_f_count = GsonUtil.toIntString(api_stage1.get("api_f_count"));
+                    stage1_f_lostcount = GsonUtil.toIntString(api_stage1.get("api_f_lostcount"));
+                    stage1_e_count = GsonUtil.toIntString(api_stage1.get("api_e_count"));
+                    stage1_e_lostcount = GsonUtil.toIntString(api_stage1.get("api_e_lostcount"));
+                }
+                rowHead.add(stage1_f_count);
+                rowHead.add(stage1_f_lostcount);
+                rowHead.add(stage1_e_count);
+                rowHead.add(stage1_e_lostcount);
+                String stage2_f_count = "";
+                String stage2_f_lostcount = "";
+                String stage2_e_count = "";
+                String stage2_e_lostcount = "";
+                String air_fire_idx = "";
+                String air_fire_kind = "";
+                String[] air_fire_use_item = new String[3];
+                for(int i=0;i<air_fire_use_item.length;i++){ air_fire_use_item[i] = ""; }
+                LinkedTreeMap api_stage2 = (LinkedTreeMap)api_kouku.get("api_stage2");
+                if(api_stage2 != null){
+                    stage2_f_count = GsonUtil.toIntString(api_stage2.get("api_f_count"));
+                    stage2_f_lostcount = GsonUtil.toIntString(api_stage2.get("api_f_lostcount"));
+                    stage2_e_count = GsonUtil.toIntString(api_stage2.get("api_e_count"));
+                    stage2_e_lostcount = GsonUtil.toIntString(api_stage2.get("api_e_lostcount"));
+                    LinkedTreeMap api_air_fire = (LinkedTreeMap)api_stage2.get("api_air_fire");
+                    if(api_air_fire != null){
+                        air_fire_idx = String.valueOf(GsonUtil.toInt(api_air_fire.get("api_idx"))+1);
+                        air_fire_kind = GsonUtil.toIntString(api_air_fire.get("api_kind"));
+                        int[] useItems = GsonUtil.toIntArray(api_air_fire.get("api_use_items"));
+                        for(int i=0;i < air_fire_use_item.length && i < useItems.length;i++){
+                            ItemInfoDto info = Item.get(useItems[i]);
+                            if(info != null){ air_fire_use_item[i] = info.getName();}
+                        }
+                    }
+                }
+                rowHead.add(stage2_f_count);
+                rowHead.add(stage2_f_lostcount);
+                rowHead.add(stage2_e_count);
+                rowHead.add(stage2_e_lostcount);
+                rowHead.add(air_fire_idx);
+                rowHead.add(air_fire_kind);
+                rowHead.add(air_fire_use_item[0]);
+                rowHead.add(air_fire_use_item[1]);
+                rowHead.add(air_fire_use_item[2]);
+                LinkedTreeMap api_stage3 = (LinkedTreeMap)api_kouku.get("api_stage3");
+                if(api_stage3 != null){
+                    int[] frai_flag = GsonUtil.toIntArray(api_stage3.get("api_frai_flag"));
+                    int[] erai_flag = GsonUtil.toIntArray(api_stage3.get("api_erai_flag"));
+                    int[] fbak_flag = GsonUtil.toIntArray(api_stage3.get("api_fbak_flag"));
+                    int[] ebak_flag = GsonUtil.toIntArray(api_stage3.get("api_ebak_flag"));
+                    int[] fcl_flag = GsonUtil.toIntArray(api_stage3.get("api_fcl_flag"));
+                    int[] ecl_flag = GsonUtil.toIntArray(api_stage3.get("api_ecl_flag"));
+                    double[] fdam = GsonUtil.toDoubleArray(api_stage3.get("api_fdam"));
+                    double[] edam = GsonUtil.toDoubleArray(api_stage3.get("api_edam"));
+                    for(int i=1; i<=6; i++){
+                        int df = i;
+                        ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                        friendSummaryRows.stream().forEach(b->row.addAll(b));
+                        row.add(String.valueOf(erai_flag[i]));
+                        row.add(String.valueOf(ebak_flag[i]));
+                        row.add(String.valueOf(ecl_flag[i]));
+                        int damage = (int)edam[i];
+                        boolean kabau = edam[i] - (double)damage > 0.05;
+                        row.add(String.valueOf(damage));
+                        row.add((kabau)?"1" :"0");
+                        row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]) :enemyRows.get(df-1));
+                        body.add(row);
+                    }
+                    for(int i=1; i<=6; i++){
+                        int df = i;
+                        ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                        enemySummaryRows.stream().forEach(b->row.addAll(b));
+                        row.add(String.valueOf(frai_flag[i]));
+                        row.add(String.valueOf(fbak_flag[i]));
+                        row.add(String.valueOf(fcl_flag[i]));
+                        int damage = (int)fdam[i];
+                        boolean kabau = fdam[i] - (double)damage > 0.05;
+                        row.add(String.valueOf(damage));
+                        row.add((kabau)?"1" :"0");
+                        row.addAll((df-1)<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1]) :friendRows.get(df-1));
+                        body.add(row);
+                    }
+                }
+                LinkedTreeMap combined = (LinkedTreeMap)api_kouku.get("api_stage3_combined");
+                if(combined != null){
+                    int[] frai_flag = GsonUtil.toIntArray(combined.get("api_frai_flag"));
+                    int[] fbak_flag = GsonUtil.toIntArray(combined.get("api_fbak_flag"));
+                    int[] fcl_flag = GsonUtil.toIntArray(combined.get("api_fcl_flag"));
+                    double[] fdam = GsonUtil.toDoubleArray(combined.get("api_fdam"));
+                    for(int i=1; i<=6; i++){
+                        int df = i;
+                        ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                        enemySummaryRows.stream().forEach(b->row.addAll(b));
+                        row.add(String.valueOf(frai_flag[i]));
+                        row.add(String.valueOf(fbak_flag[i]));
+                        row.add(String.valueOf(fcl_flag[i]));
+                        int damage = (int)fdam[i];
+                        boolean kabau = fdam[i] - (double)damage > 0.05;
+                        row.add(String.valueOf(damage));
+                        row.add((kabau)?"1" :"0");
+                        row.addAll((df-1)<this.maxFriendHpCombined.length?this.ShipRowBodyUpdate(combinedRows.get(df-1), prevHP[2][df-1],this.maxFriendHpCombined[df-1]) :combinedRows.get(df-1));
+                        body.add(row);
                     }
                 }
             }
-            rowHead.add(stage2_f_count);
-            rowHead.add(stage2_f_lostcount);
-            rowHead.add(stage2_e_count);
-            rowHead.add(stage2_e_lostcount);
-            rowHead.add(air_fire_idx);
-            rowHead.add(air_fire_kind);
-            rowHead.add(air_fire_use_item[0]);
-            rowHead.add(air_fire_use_item[1]);
-            rowHead.add(air_fire_use_item[2]);
-            if(!api_kouku.isNull("api_stage3")){
-                JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3");
-                JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
-                JsonArray erai_flag = api_stage3.getJsonArray("api_erai_flag");
-                JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
-                JsonArray ebak_flag = api_stage3.getJsonArray("api_ebak_flag");
-                JsonArray fcl_flag = api_stage3.getJsonArray("api_fcl_flag");
-                JsonArray ecl_flag = api_stage3.getJsonArray("api_ecl_flag");
-                JsonArray fdam = api_stage3.getJsonArray("api_fdam");
-                JsonArray edam = api_stage3.getJsonArray("api_edam");
-                for(int i=1; i<=6; i++){
-                    int df = i;
-                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
-                    friendSummaryRows.stream().forEach(b->row.addAll(b));
-                    row.add(erai_flag.get(i).toString());
-                    row.add(ebak_flag.get(i).toString());
-                    row.add(ecl_flag.get(i).toString());
-                    int damage = edam.getInt(i);
-                    boolean kabau = !(new Integer(damage)).toString().equals(edam.get(i).toString());
-                    row.add((new Integer(damage)).toString());
-                    row.add((kabau)?"1" :"0");
-                    row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]) :enemyRows.get(df-1));
-                    body.add(row);
-                }
-                for(int i=1; i<=6; i++){
-                    int df = i;
-                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
-                    enemySummaryRows.stream().forEach(b->row.addAll(b));
-                    row.add(frai_flag.get(i).toString());
-                    row.add(fbak_flag.get(i).toString());
-                    row.add(fcl_flag.get(i).toString());
-                    int damage = fdam.getInt(i);
-                    boolean kabau = !(new Integer(damage)).toString().equals(fdam.get(i).toString());
-                    row.add((new Integer(damage)).toString());
-                    row.add((kabau)?"1" :"0");
-                    row.addAll((df-1)<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1]) :friendRows.get(df-1));
-                    body.add(row);
-                }
-            }
-            if(api_kouku.containsKey("api_stage3_combined") && !api_kouku.isNull("api_stage3_combined")){
-                JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3_combined");
-                JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
-                JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
-                JsonArray fcl_flag = api_stage3.getJsonArray("api_fcl_flag");
-                JsonArray fdam = api_stage3.getJsonArray("api_fdam");
-                for(int i=1; i<=6; i++){
-                    int df = i;
-                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
-                    enemySummaryRows.stream().forEach(b->row.addAll(b));
-                    row.add(frai_flag.get(i).toString());
-                    row.add(fbak_flag.get(i).toString());
-                    row.add(fcl_flag.get(i).toString());
-                    int damage = fdam.getInt(i);
-                    boolean kabau = !(new Integer(damage)).toString().equals(fdam.get(i).toString());
-                    row.add((new Integer(damage)).toString());
-                    row.add((kabau)?"1" :"0");
-                    row.addAll((df-1)<this.maxFriendHpCombined.length?this.ShipRowBodyUpdate(combinedRows.get(df-1), prevHP[2][df-1],this.maxFriendHpCombined[df-1]) :combinedRows.get(df-1));
-                    body.add(row);
-                }
-            }
+            return createNextHPAir(prevHP, air);
         }
-        return createNextHPAir(prevHP, air);
-    }
 
-    private ArrayList<ArrayList<String>>AirRowBody(Phase phase,JsonObject json){
+    private ArrayList<ArrayList<String>>AirRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
         }
-        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
-        for(int i=0;i<this.enemy.size();i++){enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
-        for(int i=this.enemy.size();i<6;i++){enemyRows.add(this.ShipRowBodyBase(null,0, i));}
-        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
-        if(this.getDock()!=null){
-            List<ShipDto> ships = this.getDock().getShips();
-            for(int i=0;i<ships.size();i++){friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
-            for(int i=ships.size();i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        if(enemyRows == null){
+            enemyRows = new ArrayList<ArrayList<String>>();
+            for(int i=0;i<this.enemy.size();i++){
+                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+            }
         }
-        ArrayList<ArrayList<String>> combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
-        if(this.isCombined() && this.getDockCombined()!=null){
-            List<ShipDto> ships = this.getDockCombined().getShips();
-            for(int i=0;i<ships.size();i++){combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
-            for(int i=ships.size();i<6;i++){combinedRows.add(this.ShipRowBodyBase(null,0,i));}
+        if(friendRows == null){
+            friendRows = new ArrayList<ArrayList<String>>();
+            if(this.getDock()!=null){
+                List<ShipDto> ships = this.getDock().getShips();
+                for(int i=0;i<ships.size();i++){
+                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+                }
+            }
+        }
+        if(combinedRows == null && this.isCombined()){
+            combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isCombined() && this.getDockCombined()!=null){
+                List<ShipDto> ships = this.getDockCombined().getShips();
+                for(int i=0;i<ships.size();i++){
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                }
+            }
         }
         ArrayList<ArrayList<String>> enemySummaryRows = new ArrayList<ArrayList<String>>();
         for(int i=0;i<this.enemy.size();i++){enemySummaryRows.add(this.ShipSummaryRowBody(this.enemy.get(i)));}
@@ -3212,7 +3595,7 @@ public class BattleExDto extends AbstractDto {
         }
         int[][]supportStartHP = air1StartHP;
         if(phase.air != null){
-            JsonObject api_kouku = json.getJsonObject("api_kouku");
+            LinkedTreeMap api_kouku = (LinkedTreeMap)tree.get("api_kouku");
             supportStartHP =
                 this.AirRowBodyConstruct(
                     enemyRows,
@@ -3231,7 +3614,7 @@ public class BattleExDto extends AbstractDto {
         int[][]air2StartHP = this.createNextHP(openingRaigekiStartHP, phase.opening);
         int[][]hougeki1StartHP = air2StartHP;
         if(phase.air2 != null){
-            JsonObject api_kouku = json.getJsonObject("api_kouku2");
+            LinkedTreeMap api_kouku = (LinkedTreeMap)tree.get("api_kouku2");
             hougeki1StartHP =
                 this.AirRowBodyConstruct(
                         enemyRows,
@@ -3300,114 +3683,116 @@ public class BattleExDto extends AbstractDto {
             .forEach(s->header.add("防御艦."+s));
         return header;
     }
+
     private int[][] BaseAirRowBodyConstruct(
-        ArrayList<ArrayList<String>>enemyRows,
-        ArrayList<ArrayList<String>>friendSummaryRows,
-        AirBattleDto air,
-        JsonObject api_kouku,
-        int airIndex,
-        int[][]startHP,
-        ArrayList<ArrayList<String>> body)
-    {
-        int[][]prevHP = startHP;
-        if(!api_kouku.isNull("api_stage3")){
-            ArrayList<String> rowHead = this.DayPhaseRowBody();
-            rowHead.add(api_kouku.get("api_base_id").toString());
-            rowHead.add((new Integer(airIndex)).toString());
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendSummaryRows,
+            AirBattleDto air,
+            LinkedTreeMap api_kouku,
+            int airIndex,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body)
+        {
+            int[][]prevHP = startHP;
+            if(api_kouku.get("api_stage3")!=null){
+                ArrayList<String> rowHead = this.DayPhaseRowBody();
+                rowHead.add(GsonUtil.toIntString(api_kouku.get("api_base_id")));
+                rowHead.add(String.valueOf(airIndex));
 
-            String touch_plane0 = "";
-            String touch_plane1 = "";
-            if(!api_kouku.isNull("api_stage1")){
-                JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
-                if(!api_stage1.isNull("api_touch_plane")){
-                    JsonArray touch_plane = api_stage1.getJsonArray("api_touch_plane");
-                    ItemInfoDto info0 = Item.get(touch_plane.getInt(0));
-                    if(info0!=null){touch_plane0 = info0.getName();}
-                    ItemInfoDto info1 = Item.get(touch_plane.getInt(1));
-                    if(info1!=null){touch_plane1 = info1.getName();}
+                String touch_plane0 = "";
+                String touch_plane1 = "";
+                LinkedTreeMap api_stage1 = (LinkedTreeMap)api_kouku.get("api_stage1");
+                if(api_stage1!=null){
+                    int[] touch_plane = GsonUtil.toIntArray(api_stage1.get("api_touch_plane"));
+                    if(touch_plane!=null){
+                        ItemInfoDto info0 = Item.get(touch_plane[0]);
+                        if(info0!=null){touch_plane0 = info0.getName();}
+                        ItemInfoDto info1 = Item.get(touch_plane[1]);
+                        if(info1!=null){touch_plane1 = info1.getName();}
+                    }
+                }
+                rowHead.add(touch_plane0);
+                rowHead.add(touch_plane1);
+                List<Object> squadron_plane = (List<Object>)api_kouku.get("api_squadron_plane");
+                for(int i=0;i<4;++i){
+                    String basePlane = "";
+                    String count = "";
+                    if(squadron_plane != null && i < squadron_plane.size()){
+                        LinkedTreeMap plane = (LinkedTreeMap)squadron_plane.get(i);
+                        ItemInfoDto info = Item.get(GsonUtil.toInt(plane.get("api_mst_id")));
+                        if(info != null){ basePlane = info.getName(); }
+                        count = GsonUtil.toIntString(plane.get("api_count"));
+                    }
+                    rowHead.add(basePlane);
+                    rowHead.add(count);
+                }
+
+
+                String stage1_f_count = "";
+                String stage1_f_lostcount = "";
+                String stage1_e_count = "";
+                String stage1_e_lostcount = "";
+                if(api_stage1 != null){
+                    stage1_f_count = GsonUtil.toIntString(api_stage1.get("api_f_count"));
+                    stage1_f_lostcount = GsonUtil.toIntString(api_stage1.get("api_f_lostcount"));
+                    stage1_e_count = GsonUtil.toIntString(api_stage1.get("api_e_count"));
+                    stage1_e_lostcount = GsonUtil.toIntString(api_stage1.get("api_e_lostcount"));
+                }
+                rowHead.add(stage1_f_count);
+                rowHead.add(stage1_f_lostcount);
+                rowHead.add(stage1_e_count);
+                rowHead.add(stage1_e_lostcount);
+                String stage2_f_count = "";
+                String stage2_f_lostcount = "";
+                String stage2_e_count = "";
+                String stage2_e_lostcount = "";
+                LinkedTreeMap api_stage2 = (LinkedTreeMap)api_kouku.get("api_stage2");
+                if(api_stage2!=null){
+                    stage2_f_count = GsonUtil.toIntString(api_stage2.get("api_f_count"));
+                    stage2_f_lostcount = GsonUtil.toIntString(api_stage2.get("api_f_lostcount"));
+                    stage2_e_count = GsonUtil.toIntString(api_stage2.get("api_e_count"));
+                    stage2_e_lostcount = GsonUtil.toIntString(api_stage2.get("api_e_lostcount"));
+                }
+                rowHead.add(stage2_f_count);
+                rowHead.add(stage2_f_lostcount);
+                rowHead.add(stage2_e_count);
+                rowHead.add(stage2_e_lostcount);
+                LinkedTreeMap api_stage3 = (LinkedTreeMap)api_kouku.get("api_stage3");
+                if(api_stage3 != null){
+                    int[] erai_flag = GsonUtil.toIntArray(api_stage3.get("api_erai_flag"));
+                    int[] ebak_flag = GsonUtil.toIntArray(api_stage3.get("api_ebak_flag"));
+                    int[] ecl_flag = GsonUtil.toIntArray(api_stage3.get("api_ecl_flag"));
+                    double[] edam = GsonUtil.toDoubleArray(api_stage3.get("api_edam"));
+                    for(int i=1; i<=6; i++){
+                        int df = i;
+                        ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                        friendSummaryRows.stream().forEach(b->row.addAll(b));
+                        row.add(String.valueOf(erai_flag[i]));
+                        row.add(String.valueOf(ebak_flag[i]));
+                        row.add(String.valueOf(ecl_flag[i]));
+                        int damage = (int)edam[i];
+                        boolean kabau = edam[i] - (double)damage > 0.05;
+                        row.add(String.valueOf(damage));
+                        row.add((kabau)?"1" :"0");
+                        row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]):enemyRows.get(df-1));
+                        body.add(row);
+                    }
                 }
             }
-            rowHead.add(touch_plane0);
-            rowHead.add(touch_plane1);
-            JsonArray squadron_plane = null;
-            if(!api_kouku.isNull("api_squadron_plane")){ squadron_plane = api_kouku.getJsonArray("api_squadron_plane"); }
-            for(int i=0;i<4;++i){
-                String basePlane = "";
-                String count = "";
-                if(squadron_plane != null && i < squadron_plane.size()){
-                    JsonObject plane = squadron_plane.getJsonObject(i);
-                    ItemInfoDto info = Item.get(plane.getInt("api_mst_id"));
-                    if(info != null){ basePlane = info.getName(); }
-                    count = plane.get("api_count").toString();
-                }
-                rowHead.add(basePlane);
-                rowHead.add(count);
-            }
-
-
-            String stage1_f_count = "";
-            String stage1_f_lostcount = "";
-            String stage1_e_count = "";
-            String stage1_e_lostcount = "";
-            if(!api_kouku.isNull("api_stage1")){
-                JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
-                stage1_f_count = api_stage1.get("api_f_count").toString();
-                stage1_f_lostcount = api_stage1.get("api_f_lostcount").toString();
-                stage1_e_count = api_stage1.get("api_e_count").toString();
-                stage1_e_lostcount = api_stage1.get("api_e_lostcount").toString();
-            }
-            rowHead.add(stage1_f_count);
-            rowHead.add(stage1_f_lostcount);
-            rowHead.add(stage1_e_count);
-            rowHead.add(stage1_e_lostcount);
-            String stage2_f_count = "";
-            String stage2_f_lostcount = "";
-            String stage2_e_count = "";
-            String stage2_e_lostcount = "";
-            if(!api_kouku.isNull("api_stage2")){
-                JsonObject api_stage2 = api_kouku.getJsonObject("api_stage2");
-                stage2_f_count = api_stage2.get("api_f_count").toString();
-                stage2_f_lostcount = api_stage2.get("api_f_lostcount").toString();
-                stage2_e_count = api_stage2.get("api_e_count").toString();
-                stage2_e_lostcount = api_stage2.get("api_e_lostcount").toString();
-            }
-            rowHead.add(stage2_f_count);
-            rowHead.add(stage2_f_lostcount);
-            rowHead.add(stage2_e_count);
-            rowHead.add(stage2_e_lostcount);
-            if(!api_kouku.isNull("api_stage3")){
-                JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3");
-                JsonArray erai_flag = api_stage3.getJsonArray("api_erai_flag");
-                JsonArray ebak_flag = api_stage3.getJsonArray("api_ebak_flag");
-                JsonArray ecl_flag = api_stage3.getJsonArray("api_ecl_flag");
-                JsonArray edam = api_stage3.getJsonArray("api_edam");
-                for(int i=1; i<=6; i++){
-                    int df = i;
-                    ArrayList<String> row = (ArrayList<String>)rowHead.clone();
-                    friendSummaryRows.stream().forEach(b->row.addAll(b));
-                    row.add(erai_flag.get(i).toString());
-                    row.add(ebak_flag.get(i).toString());
-                    row.add(ecl_flag.get(i).toString());
-                    int damage = edam.getInt(i);
-                    boolean kabau = !(new Integer(damage)).toString().equals(edam.get(i).toString());
-                    row.add((new Integer(damage)).toString());
-                    row.add((kabau)?"1" :"0");
-                    row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]):enemyRows.get(df-1));
-                    body.add(row);
-                }
-            }
+            return createNextHPAir(prevHP, air);
         }
-        return createNextHPAir(prevHP, air);
-    }
 
-    private ArrayList<ArrayList<String>>BaseAirRowBody(Phase phase,JsonObject json){
+    private ArrayList<ArrayList<String>>BaseAirRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
         }
-        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
-        for(int i=0;i<this.enemy.size();i++){enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
-        for(int i=this.enemy.size();i<6;i++){enemyRows.add(this.ShipRowBodyBase(null,0, i));}
+        if(enemyRows == null){
+            enemyRows = new ArrayList<ArrayList<String>>();
+            for(int i=0;i<this.enemy.size();i++){
+                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+            }
+        }
         ArrayList<ArrayList<String>> friendSummaryRows = new ArrayList<ArrayList<String>>();
         if(this.getDock()!=null){
             List<ShipDto> ships = this.getDock().getShips();
@@ -3437,11 +3822,11 @@ public class BattleExDto extends AbstractDto {
         int[][]airBaseStartHP = phaseStartHP;
         int[][]air1StartHP = airBaseStartHP;
         if(phase.airBase != null){
-            JsonArray airBase = json.getJsonArray("api_air_base_attack");
+            List<Object> airBase = (List<Object>)tree.get("api_air_base_attack");
             int[][] prevHP = airBaseStartHP;
             for(int i=0;i<phase.airBase.size();i++){
                 AirBattleDto air = phase.airBase.get(i);
-                JsonObject api_kouku = airBase.getJsonObject(i);
+                LinkedTreeMap api_kouku = (LinkedTreeMap)airBase.get(i);
                 prevHP =
                     this.BaseAirRowBodyConstruct(
                         enemyRows,
@@ -3519,131 +3904,137 @@ public class BattleExDto extends AbstractDto {
         header.add("艦隊種類");
         return header;
     }
+
     private int[][] AirLostRowBodyConstruct(
-        ArrayList<ArrayList<String>>enemyRows,
-        ArrayList<ArrayList<String>>friendRows,
-        ArrayList<ArrayList<String>>combinedRows,
-        AirBattleDto air,
-        JsonObject api_kouku,
-        String combinedFlagString,
-        int[][]startHP,
-        ArrayList<ArrayList<String>> body)
-    {
-        int[][]prevHP = startHP;
-        ArrayList<String> row = this.DayPhaseRowBody();
-        String stage1_f_count = "";
-        String stage1_f_lostcount = "";
-        String stage1_e_count = "";
-        String stage1_e_lostcount = "";
-        if(!api_kouku.isNull("api_stage1")){
-            JsonObject api_stage1 = api_kouku.getJsonObject("api_stage1");
-            stage1_f_count = api_stage1.get("api_f_count").toString();
-            stage1_f_lostcount = api_stage1.get("api_f_lostcount").toString();
-            stage1_e_count = api_stage1.get("api_e_count").toString();
-            stage1_e_lostcount = api_stage1.get("api_e_lostcount").toString();
-            if(api_stage1.getInt("api_f_count")==0 && api_stage1.getInt("api_e_count")==0){
-                return createNextHPAir(prevHP, air);
-            }
-        }
-        row.add(stage1_f_count);
-        row.add(stage1_f_lostcount);
-        row.add(stage1_e_count);
-        row.add(stage1_e_lostcount);
-        String stage2_f_count = "";
-        String stage2_f_lostcount = "";
-        String stage2_e_count = "";
-        String stage2_e_lostcount = "";
-        String air_fire_idx = "";
-        String air_fire_kind = "";
-        String[] air_fire_use_item = new String[3];
-        for(int i=0;i<air_fire_use_item.length;i++){ air_fire_use_item[i] = ""; }
-        if(!api_kouku.isNull("api_stage2")){
-            JsonObject api_stage2 = api_kouku.getJsonObject("api_stage2");
-            stage2_f_count = api_stage2.get("api_f_count").toString();
-            stage2_f_lostcount = api_stage2.get("api_f_lostcount").toString();
-            stage2_e_count = api_stage2.get("api_e_count").toString();
-            stage2_e_lostcount = api_stage2.get("api_e_lostcount").toString();
-            if(api_stage2.containsKey("api_air_fire") && !api_stage2.isNull("api_air_fire")){
-                JsonObject api_air_fire = api_stage2.getJsonObject("api_air_fire");
-                air_fire_idx = (new Integer(api_air_fire.getInt("api_idx")+1)).toString();
-                air_fire_kind = api_air_fire.get("api_kind").toString();
-                JsonArray useItems = api_air_fire.getJsonArray("api_use_items");
-                for(int i=0;i<air_fire_use_item.length && i<useItems.size();i++){
-                    ItemInfoDto info = Item.get(useItems.getInt(i));
-                    if(info != null){ air_fire_use_item[i] = info.getName();}
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>combinedRows,
+            AirBattleDto air,
+            LinkedTreeMap api_kouku,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body)
+        {
+            int[][]prevHP = startHP;
+            ArrayList<String> row = this.DayPhaseRowBody();
+            String stage1_f_count = "";
+            String stage1_f_lostcount = "";
+            String stage1_e_count = "";
+            String stage1_e_lostcount = "";
+            LinkedTreeMap api_stage1 = (LinkedTreeMap)api_kouku.get("api_stage1");
+            if(api_stage1!=null){
+                stage1_f_count = GsonUtil.toIntString(api_stage1.get("api_f_count"));
+                stage1_f_lostcount = GsonUtil.toIntString(api_stage1.get("api_f_lostcount"));
+                stage1_e_count = GsonUtil.toIntString(api_stage1.get("api_e_count"));
+                stage1_e_lostcount = GsonUtil.toIntString(api_stage1.get("api_e_lostcount"));
+                if(GsonUtil.toInt(api_stage1.get("api_f_count"))==0 && GsonUtil.toInt(api_stage1.get("api_e_count"))==0){
+                    return createNextHPAir(prevHP, air);
                 }
             }
-        }
-        row.add(stage2_f_count);
-        row.add(stage2_f_lostcount);
-        row.add(stage2_e_count);
-        row.add(stage2_e_lostcount);
-        row.add(air_fire_idx);
-        row.add(air_fire_kind);
-        row.add(air_fire_use_item[0]);
-        row.add(air_fire_use_item[1]);
-        row.add(air_fire_use_item[2]);
-        int frai_count = 0;
-        int erai_count = 0;
-        int fbak_count = 0;
-        int ebak_count = 0;
-        if(!api_kouku.isNull("api_stage3")){
-            JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3");
-            JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
-            JsonArray erai_flag = api_stage3.getJsonArray("api_erai_flag");
-            JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
-            JsonArray ebak_flag = api_stage3.getJsonArray("api_ebak_flag");
-            for(int i=0;i<frai_flag.size();i++){
-                if(frai_flag.getInt(i)==1){frai_count++;}
-                if(erai_flag.getInt(i)==1){erai_count++;}
-                if(fbak_flag.getInt(i)==1){fbak_count++;}
-                if(ebak_flag.getInt(i)==1){ebak_count++;}
+            row.add(stage1_f_count);
+            row.add(stage1_f_lostcount);
+            row.add(stage1_e_count);
+            row.add(stage1_e_lostcount);
+            String stage2_f_count = "";
+            String stage2_f_lostcount = "";
+            String stage2_e_count = "";
+            String stage2_e_lostcount = "";
+            String air_fire_idx = "";
+            String air_fire_kind = "";
+            String[] air_fire_use_item = new String[3];
+            for(int i=0;i<air_fire_use_item.length;i++){ air_fire_use_item[i] = ""; }
+            LinkedTreeMap api_stage2 = (LinkedTreeMap)api_kouku.get("api_stage2");
+            if(api_stage2 != null){
+                stage2_f_count = GsonUtil.toIntString(api_stage2.get("api_f_count"));
+                stage2_f_lostcount = GsonUtil.toIntString(api_stage2.get("api_f_lostcount"));
+                stage2_e_count = GsonUtil.toIntString(api_stage2.get("api_e_count"));
+                stage2_e_lostcount = GsonUtil.toIntString(api_stage2.get("api_e_lostcount"));
+                LinkedTreeMap api_air_fire = (LinkedTreeMap)api_stage2.get("api_air_fire");
+                if(api_air_fire != null){
+                    air_fire_idx = String.valueOf(GsonUtil.toInt(api_air_fire.get("api_idx"))+1);
+                    air_fire_kind = GsonUtil.toIntString(api_air_fire.get("api_kind"));
+                    int[] useItems = GsonUtil.toIntArray(api_air_fire.get("api_use_items"));
+                    for(int i=0;i<air_fire_use_item.length && i<useItems.length;i++){
+                        ItemInfoDto info = Item.get(useItems[i]);
+                        if(info != null){ air_fire_use_item[i] = info.getName();}
+                    }
+                }
             }
-        }
-        if(api_kouku.containsKey("api_stage3_combined") && !api_kouku.isNull("api_stage3_combined")){
-            JsonObject api_stage3 = api_kouku.getJsonObject("api_stage3_combined");
-            JsonArray frai_flag = api_stage3.getJsonArray("api_frai_flag");
-            JsonArray fbak_flag = api_stage3.getJsonArray("api_fbak_flag");
-            for(int i=0;i<frai_flag.size();i++){
-                if(frai_flag.getInt(i)==1){frai_count++;}
-                if(fbak_flag.getInt(i)==1){fbak_count++;}
+            row.add(stage2_f_count);
+            row.add(stage2_f_lostcount);
+            row.add(stage2_e_count);
+            row.add(stage2_e_lostcount);
+            row.add(air_fire_idx);
+            row.add(air_fire_kind);
+            row.add(air_fire_use_item[0]);
+            row.add(air_fire_use_item[1]);
+            row.add(air_fire_use_item[2]);
+            int frai_count = 0;
+            int erai_count = 0;
+            int fbak_count = 0;
+            int ebak_count = 0;
+            LinkedTreeMap api_stage3 = (LinkedTreeMap)api_kouku.get("api_stage3");
+            if(api_stage3 != null){
+                int[] frai_flag = GsonUtil.toIntArray(api_stage3.get("api_frai_flag"));
+                int[] erai_flag = GsonUtil.toIntArray(api_stage3.get("api_erai_flag"));
+                int[] fbak_flag = GsonUtil.toIntArray(api_stage3.get("api_fbak_flag"));
+                int[] ebak_flag = GsonUtil.toIntArray(api_stage3.get("api_ebak_flag"));
+                for(int i=0;i<frai_flag.length;i++){
+                    if(frai_flag[i]==1){frai_count++;}
+                    if(erai_flag[i]==1){erai_count++;}
+                    if(fbak_flag[i]==1){fbak_count++;}
+                    if(ebak_flag[i]==1){ebak_count++;}
+                }
             }
+            LinkedTreeMap combined = (LinkedTreeMap)api_kouku.get("api_stage3_combined");
+            if(combined != null){
+                int[] frai_flag = GsonUtil.toIntArray(combined.get("api_frai_flag"));
+                int[] fbak_flag = GsonUtil.toIntArray(combined.get("api_fbak_flag"));
+                for(int i=0;i<frai_flag.length;i++){
+                    if(frai_flag[i]==1){frai_count++;}
+                    if(fbak_flag[i]==1){fbak_count++;}
+                }
+            }
+            row.add(String.valueOf(frai_count));
+            row.add(String.valueOf(fbak_count));
+            row.add(String.valueOf(erai_count));
+            row.add(String.valueOf(ebak_count));
+            for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(i),prevHP[0][i],this.maxEnemyHp[i]):enemyRows.get(i)); }
+            for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(i),prevHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
+            for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),prevHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
+            row.add(combinedFlagString);
+            body.add(row);
+            return createNextHPAir(prevHP, air);
         }
-        row.add((new Integer(frai_count)).toString());
-        row.add((new Integer(fbak_count)).toString());
-        row.add((new Integer(erai_count)).toString());
-        row.add((new Integer(ebak_count)).toString());
-        for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(i),prevHP[0][i],this.maxEnemyHp[i]):enemyRows.get(i)); }
-        for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(i),prevHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
-        for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),prevHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
-        row.add(combinedFlagString);
-        body.add(row);
-        return createNextHPAir(prevHP, air);
-    }
 
-    private ArrayList<ArrayList<String>>AirLostRowBody(Phase phase,JsonObject json){
+    private ArrayList<ArrayList<String>>AirLostRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
         }
-        ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
-        for(int i=0;i<this.enemy.size();i++){enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
-        for(int i=this.enemy.size();i<6;i++){enemyRows.add(this.ShipRowBodyBase(null,0, i));}
-        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
-        if(this.getDock()!=null){
-            List<ShipDto> ships = this.getDock().getShips();
-            for(int i=0;i<ships.size();i++){friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
-            for(int i=ships.size();i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
-        }else{
-            for(int i=0;i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        if(enemyRows == null){
+            enemyRows = new ArrayList<ArrayList<String>>();
+            for(int i=0;i<this.enemy.size();i++){
+                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+            }
         }
-        ArrayList<ArrayList<String>> combinedRows = new ArrayList<ArrayList<String>>();
-        if(this.isCombined() && this.getDockCombined()!=null){
-            List<ShipDto> ships = this.getDockCombined().getShips();
-            for(int i=0;i<ships.size();i++){combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
-            for(int i=ships.size();i<6;i++){combinedRows.add(this.ShipRowBodyBase(null,0,i));}
-        }else{
-            for(int i=0;i<6;i++){combinedRows.add(this.ShipRowBodyBase(null,0,i));}
+        if(friendRows == null){
+            friendRows = new ArrayList<ArrayList<String>>();
+            if(this.getDock()!=null){
+                List<ShipDto> ships = this.getDock().getShips();
+                for(int i=0;i<ships.size();i++){
+                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+                }
+            }
+        }
+        if(combinedRows == null && this.isCombined()){
+            combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isCombined() && this.getDockCombined()!=null){
+                List<ShipDto> ships = this.getDockCombined().getShips();
+                for(int i=0;i<ships.size();i++){
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                }
+            }
         }
 
         int combinedFlag = this.getCombinedFlag();
@@ -3674,7 +4065,7 @@ public class BattleExDto extends AbstractDto {
         }
         int[][]supportStartHP = air1StartHP;
         if(phase.air != null){
-            JsonObject api_kouku = json.getJsonObject("api_kouku");
+            LinkedTreeMap api_kouku = (LinkedTreeMap)tree.get("api_kouku");
             supportStartHP =
                 this.AirLostRowBodyConstruct(
                     enemyRows,
@@ -3692,7 +4083,7 @@ public class BattleExDto extends AbstractDto {
         int[][]air2StartHP = this.createNextHP(openingRaigekiStartHP, phase.opening);
         int[][]hougeki1StartHP = air2StartHP;
         if(phase.air2 != null){
-            JsonObject api_kouku = json.getJsonObject("api_kouku2");
+            LinkedTreeMap api_kouku = (LinkedTreeMap)tree.get("api_kouku2");
             hougeki1StartHP =
                 this.AirLostRowBodyConstruct(
                         enemyRows,
@@ -3724,7 +4115,6 @@ public class BattleExDto extends AbstractDto {
         return body;
     }
 
-
     static public ArrayList<String> HenseiRowHeader(){
         ArrayList<String> header = DayPhaseRowHeader();
         header.add("昼戦|夜戦");
@@ -3739,15 +4129,17 @@ public class BattleExDto extends AbstractDto {
         }
         return header;
     }
-    private ArrayList<ArrayList<String>>HenseiRowBody(Phase phase,JsonObject json){
+
+    private ArrayList<ArrayList<String>>HenseiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
-        ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
-        if(this.getDock()!=null){
-            List<ShipDto> ships = this.getDock().getShips();
-            for(int i=0;i<ships.size();i++){friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
-            for(int i=ships.size();i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
-        }else{
-            for(int i=0;i<6;i++){friendRows.add(this.ShipRowBodyBase(null,0,i));}
+        if(friendRows == null){
+            friendRows = new ArrayList<ArrayList<String>>();
+            if(this.getDock()!=null){
+                List<ShipDto> ships = this.getDock().getShips();
+                for(int i=0;i<ships.size();i++){
+                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
+                }
+            }
         }
         int[][]phaseStartHP = new int[3][];
         if(phase == this.getPhase1()){
@@ -3774,6 +4166,7 @@ public class BattleExDto extends AbstractDto {
         body.add(row);
         return body;
     }
+
     public static ArrayList<String> BuiltinScriptKeys(){
         ArrayList<String> list = new ArrayList<String>();
         list.add("砲撃戦");
@@ -3836,15 +4229,15 @@ public class BattleExDto extends AbstractDto {
      * 初期化終わってるやつからBody取得
      * @return keyに対応する出力Body
      */
-    public String[][] BuiltinScriptBodyWithKey(String key,JsonObject[] jsonArray,String dateString){
+    public String[][] BuiltinScriptBodyWithKey(String key,LinkedTreeMap[] treeArray,String dateString,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
         try{
             if (this.exVersion >= 2) {
-                if(dateString == null){dateString = new DateTimeString(this.battleDate).toStringRed();}
-                if(jsonArray == null){ jsonArray = this.phaseList.stream().map(p->p.getJson()).collect(Collectors.toList()).toArray(new JsonObject[0]); }
+                if(dateString == null){dateString = DateTimeString.toString(this.battleDate);}
+                if(treeArray == null){ treeArray = this.phaseList.stream().map(p->getGson().fromJson(p.json,LinkedTreeMap.class)).collect(Collectors.toList()).toArray(new LinkedTreeMap[0]); }
                 switch(key){
                     case"砲撃戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.HougekiRowBody(this.getPhase1(),jsonArray[0]);
+                            ArrayList<ArrayList<String>> body = this.HougekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -3858,10 +4251,10 @@ public class BattleExDto extends AbstractDto {
                         try{
                             ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
                             if(this.getPhase1() != null && this.getPhase1().isNight){
-                                body.addAll(this.YasenRowBody(this.getPhase1(),jsonArray[0]));
+                                body.addAll(this.YasenRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows));
                             }
                             if(this.getPhase2() != null && this.getPhase2().isNight){
-                                body.addAll(this.YasenRowBody(this.getPhase2(),jsonArray[1]));
+                                body.addAll(this.YasenRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,combinedRows));
                             }
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
@@ -3874,7 +4267,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"雷撃戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.RaigekiRowBody(this.getPhase1(),jsonArray[0]);
+                            ArrayList<ArrayList<String>> body = this.RaigekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -3886,7 +4279,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"航空戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.AirRowBody(this.getPhase1(),jsonArray[0]);
+                            ArrayList<ArrayList<String>> body = this.AirRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -3898,7 +4291,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"航空戦撃墜":
                         try{
-                            ArrayList<ArrayList<String>> body = this.AirLostRowBody(this.getPhase1(),jsonArray[0]);
+                            ArrayList<ArrayList<String>> body = this.AirLostRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -3910,7 +4303,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"基地航空戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.BaseAirRowBody(this.getPhase1(),jsonArray[0]);
+                            ArrayList<ArrayList<String>> body = this.BaseAirRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -3924,10 +4317,10 @@ public class BattleExDto extends AbstractDto {
                         try{
                             ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
                             if(this.getPhase1() != null){
-                                body.addAll(this.HenseiRowBody(this.getPhase1(),jsonArray[0]));
+                                body.addAll(this.HenseiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows));
                             }
                             if(this.getPhase2() != null){
-                                body.addAll(this.HenseiRowBody(this.getPhase2(),jsonArray[1]));
+                                body.addAll(this.HenseiRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,combinedRows));
                             }
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
@@ -3950,32 +4343,65 @@ public class BattleExDto extends AbstractDto {
             return new String[0][];
         }
     }
+
+    public Map<String,String[][]> BuiltinScriptBody(){
+        return this.BuiltinScriptBody(false);
+    }
     /**
      * json読んで初期化と同時にスクリプト実行してBody取得
      * @return 各スクリプトの出力Body
      */
-    public Map<String,String[][]> BuiltinScriptBody(){
+    public Map<String,String[][]> BuiltinScriptBody(boolean readJson){
         try{
             HashMap<String,String[][]>result = new HashMap<String,String[][]>();
             if (this.exVersion >= 2) {
-                String dateString = new DateTimeString(this.battleDate).toStringRed();
-                JsonObject[] jsonArray = new JsonObject[this.phaseList.size()];
+                String dateString = DateTimeString.toString(this.battleDate);
+                LinkedTreeMap[] treeArray = new LinkedTreeMap[this.phaseList.size()];
                 //初期化
-                {
+                if(readJson){
                     Phase[] phaseCopy = this.phaseList.toArray(new Phase[0]);
                     this.enemy.clear();
                     this.phaseList.clear();
                     for (int i=0;i<phaseCopy.length;i++) {
                         Phase phase = phaseCopy[i];
-                        JsonObject json = phase.getJson();
-                        jsonArray[i] = json;
-                        this.addPhase(json, phase.getKind());
+                        String json = phase.json;
+                        LinkedTreeMap tree = getGson().fromJson(json, LinkedTreeMap.class);
+                        treeArray[i] = tree;
+                        this.addPhase2(tree,json, phase.getKind());
                     }
-                    this.readResultJson(JsonUtils.fromString(this.resultJson));
+                    this.readResultJson2(getGson().fromJson(this.resultJson,LinkedTreeMap.class));
+                }else{
+                    for (int i=0;i<this.phaseList.size();i++) {
+                        Phase phase = this.phaseList.get(i);
+                        String json = phase.json;
+                        LinkedTreeMap tree = getGson().fromJson(json, LinkedTreeMap.class);
+                        treeArray[i] = tree;
+                    }
                 }
+
+                ArrayList<ArrayList<String>> enemyRows = new ArrayList<ArrayList<String>>();
+                for(int i=0;i<this.enemy.size();i++){ enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
+                for(int i=this.enemy.size();i<6;i++){ enemyRows.add(this.ShipRowBodyBase(null,0, i));}
+                ArrayList<ArrayList<String>> friendRows = new ArrayList<ArrayList<String>>();
+                if(this.getDock()!=null){
+                    List<ShipDto> ships = this.getDock().getShips();
+                    for(int i=0;i<ships.size();i++){ friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
+                    for(int i=ships.size();i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
+                }else{
+                    for(int i=0;i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
+                }
+                ArrayList<ArrayList<String>> combinedRows = new ArrayList<ArrayList<String>>();
+                if(this.isCombined() && this.getDockCombined()!=null){
+                    List<ShipDto> ships = this.getDockCombined().getShips();
+                    for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
+                    for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                }else{
+                    for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                }
+
                 BuiltinScriptKeys()
                     .stream()
-                    .forEach(key->result.put(key, BuiltinScriptBodyWithKey(key,jsonArray,dateString)));
+                    .forEach(key->result.put(key, BuiltinScriptBodyWithKey(key,treeArray,dateString,enemyRows,friendRows,combinedRows)));
             }
             return result;
         }

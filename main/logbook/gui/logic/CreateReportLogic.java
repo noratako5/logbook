@@ -255,7 +255,7 @@ public final class CreateReportLogic {
             if(item.getBuiltinCombatDataRowCount(title) == 0){ continue; }
             BattleExDto detail = BattleResultServer.get().getBattleDetail(item);
             if(detail == null){continue;}
-            Comparable[][] itemBody = detail.BuiltinScriptBodyWithKey(title,null,null);
+            Comparable[][] itemBody = detail.BuiltinScriptBodyWithKey(title,null,null,null,null,null);
             if(itemBody!=null){
                 for (Comparable[] body : itemBody) {
                     allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++i, item) }, body));

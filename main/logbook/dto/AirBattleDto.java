@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.dto;
 
@@ -9,10 +9,12 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
-import logbook.internal.Item;
-import logbook.util.JsonUtils;
-
 import com.dyuproject.protostuff.Tag;
+import com.google.gson.internal.LinkedTreeMap;
+
+import logbook.internal.Item;
+import logbook.util.GsonUtil;
+import logbook.util.JsonUtils;
 
 /**
  * @author Nekopanda
@@ -52,6 +54,14 @@ public class AirBattleDto {
                 stage.getInt("api_e_count")
         };
     }
+    private static int[] readPlaneCount(LinkedTreeMap stage) {
+        return new int[] {
+                GsonUtil.toInt(stage.get("api_f_lostcount")),
+                GsonUtil.toInt(stage.get("api_f_count")),
+                GsonUtil.toInt(stage.get("api_e_lostcount")),
+                GsonUtil.toInt(stage.get("api_e_count"))
+        };
+    }
 
     public AirBattleDto(JsonObject kouku, boolean isCombined, boolean isBase) {
         JsonValue jsonStage1 = kouku.get("api_stage1");
@@ -86,6 +96,35 @@ public class AirBattleDto {
                 kouku.get("api_plane_from"),
                 kouku.get("api_stage3"),
                 isCombined ? kouku.get("api_stage3_combined") : null,
+                isBase);
+    }
+
+    public AirBattleDto(LinkedTreeMap kouku, boolean isCombined, boolean isBase) {
+        LinkedTreeMap jsonStage1 = (LinkedTreeMap)kouku.get("api_stage1");
+        if (jsonStage1 != null) {
+            this.stage1 = readPlaneCount(jsonStage1);
+            int[] jsonTouchPlane = GsonUtil.toIntArray(jsonStage1.get("api_touch_plane"));
+            this.touchPlane = jsonTouchPlane;
+            this.seiku = toSeiku(GsonUtil.toInt(jsonStage1.get("api_disp_seiku")));
+        }
+
+        LinkedTreeMap jsonStage2 = (LinkedTreeMap)kouku.get("api_stage2");
+        if (jsonStage2 != null) {
+            this.stage2 = readPlaneCount(jsonStage2);
+            LinkedTreeMap jsonAirFire = (LinkedTreeMap)jsonStage2.get("api_air_fire");
+            if (jsonAirFire != null) {
+                this.airFire = new int[] {
+                        GsonUtil.toInt(jsonAirFire.get("api_idx")),
+                        GsonUtil.toInt(jsonAirFire.get("api_kind"))
+                };
+                this.airFireItems = GsonUtil.toIntArray(jsonAirFire.get("api_use_items"));
+            }
+        }
+
+        this.atacks = BattleAtackDto.makeAir(
+                GsonUtil.toIntArrayArray(kouku.get("api_plane_from")),
+                (LinkedTreeMap)kouku.get("api_stage3"),
+                isCombined ? (LinkedTreeMap)kouku.get("api_stage3_combined") : null,
                 isBase);
     }
 
@@ -232,7 +271,7 @@ public class AirBattleDto {
     public String[] getTouchPlane() {
         return toTouchPlaneString(this.touchPlane);
     }
-    
+
     /**
      * 基地艦載機表示を生成
      * @return String

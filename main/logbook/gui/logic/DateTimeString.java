@@ -3,9 +3,9 @@
  */
 package logbook.gui.logic;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.apache.commons.lang3.time.FastDateFormat;
 
 import logbook.constants.AppConstants;
 
@@ -14,7 +14,7 @@ import logbook.constants.AppConstants;
  * @author Nekopanda
  */
 public class DateTimeString implements Comparable<DateTimeString> {
-    private static DateFormat format = new SimpleDateFormat(AppConstants.DATE_FORMAT);
+    private static FastDateFormat format = FastDateFormat.getInstance(AppConstants.DATE_FORMAT);
     private final Date date;
 
     public DateTimeString(Date date) {
@@ -29,12 +29,8 @@ public class DateTimeString implements Comparable<DateTimeString> {
         return format.format(this.date);
     }
 
-    /**
-     * マルチスレッドで呼ぶときはこっち
-     * @return
-     */
-    public String toStringRed(){
-        return new SimpleDateFormat(AppConstants.DATE_FORMAT).format(this.date);
+    public static String toString(Date date){
+        return format.format(date);
     }
 
     @Override

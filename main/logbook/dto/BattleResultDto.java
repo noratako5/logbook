@@ -56,7 +56,7 @@ public class BattleResultDto extends AbstractDto {
     /** 戦闘スクリプトサポート */
     private final Map<String,Integer> allBuiltinCombatExtDataRowCount;
 
-    public BattleResultDto(BattleExDto dto, Comparable[] extData, Map<String, Comparable[][]> allCombatExtData) {
+    public BattleResultDto(BattleExDto dto, Comparable[] extData,Map<String,String[][]> builtinCombatExtData, Map<String, Comparable[][]> allCombatExtData) {
         this.battleDate = dto.getBattleDate();
         this.questName = dto.getQuestName();
         this.rank = dto.getRank();
@@ -80,9 +80,10 @@ public class BattleResultDto extends AbstractDto {
         }
         {
             Map<String,Integer> count = new HashMap<String,Integer>();
-            Map<String,String[][]> log = dto.BuiltinScriptBody();
-            for(String key : log.keySet()){
-                count.put(key,log.get(key).length);
+            if(builtinCombatExtData != null){
+                for(String key : builtinCombatExtData.keySet()){
+                    count.put(key,builtinCombatExtData.get(key).length);
+                }
             }
             this.allBuiltinCombatExtDataRowCount = count;
         }

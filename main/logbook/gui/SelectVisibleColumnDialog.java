@@ -1,6 +1,7 @@
 package logbook.gui;
 
-import logbook.util.SwtUtils;
+import java.util.Arrays;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ShellAdapter;
@@ -8,9 +9,13 @@ import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+
+import logbook.util.SwtUtils;
 
 /**
  * テーブルの列を表示・非表示選択するダイアログ
@@ -65,8 +70,20 @@ public final class SelectVisibleColumnDialog extends WindowBase {
         // カラム設定を取得
         boolean[] visibles = this.dialog.getConfig().getVisibleColumn();
 
-        Tree tree = new Tree(this.shell, SWT.BORDER | SWT.CHECK);
-
+        Tree tree = new Tree(this.shell, SWT.BORDER | SWT.CHECK | SWT.MULTI);
+        tree.addListener(SWT.Selection, new Listener() {
+            public void handleEvent(Event event) {
+                if(event.detail == SWT.CHECK && event.item instanceof TreeItem){
+                    boolean checked = ((TreeItem)event.item).getChecked();
+                    List<TreeItem> items = Arrays.asList(tree.getSelection());
+                    if(items.contains(event.item)){
+                        for(TreeItem item:items){
+                            item.setChecked(checked);
+                        }
+                    }
+                }
+            }
+        });
         for (int i = 0; i < header.length; i++) {
             TreeItem column = new TreeItem(tree, SWT.CHECK);
             column.setText(header[i]);

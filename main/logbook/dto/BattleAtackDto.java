@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.dto;
 
@@ -12,6 +12,9 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import com.dyuproject.protostuff.Tag;
+import com.google.gson.internal.LinkedTreeMap;
+
+import logbook.util.GsonUtil;
 
 /**
  * 攻撃シーケンス
@@ -94,6 +97,54 @@ public class BattleAtackDto {
 
         return result;
     }
+    private static List<BattleAtackDto> makeHougeki(int[] at_list,int[] at_type,int[][] df_list,int[][] cl_list,int[][] damage_list) {
+        ArrayList<BattleAtackDto> result = new ArrayList<BattleAtackDto>();
+        ArrayList<Integer> flatten_df_list = new ArrayList<Integer>();
+        ArrayList<Integer> flatten_damage_list = new ArrayList<Integer>();
+        ArrayList<Integer> flatten_cl_list = new ArrayList<Integer>();
+
+        for (int i = 1; i < at_list.length; ++i) {
+            int at = at_list[i];
+            int[] df = df_list[i];
+            int[] damage = damage_list[i];
+            int[] cl = cl_list[i];
+            for (int d = 0; d < damage.length; ++d) {
+                int dfd = df[d];
+                int damd = damage[d];
+                int cld = cl[d];
+                if (dfd != -1) {
+                    flatten_df_list.add((dfd - 1) % 6);
+                    flatten_damage_list.add(damd);
+                    flatten_cl_list.add(cld);
+                }
+            }
+            int length = flatten_df_list.size();
+            if (length > 0) {
+                BattleAtackDto dto = new BattleAtackDto();
+                dto.kind = AtackKind.HOUGEKI;
+                dto.friendAtack = (at <= 6);
+                if (at_type != null) {
+                    dto.type = at_type[i];
+                }
+                dto.origin = new int[] { (at - 1) % 6 };
+                dto.target = new int[length];
+                dto.damage = new int[length];
+                dto.critical = new int[length];
+                for (int c = 0; c < length; ++c) {
+                    dto.target[c] = flatten_df_list.get(c);
+                    dto.damage[c] = flatten_damage_list.get(c);
+                    dto.critical[c] = flatten_cl_list.get(c);
+                }
+                result.add(dto);
+            }
+            flatten_df_list.clear();
+            flatten_damage_list.clear();
+            flatten_cl_list.clear();
+        }
+
+        return result;
+    }
+
 
     private static BattleAtackDto makeRaigeki(boolean friendAtack,
             JsonArray rai_list, JsonArray dam_list, JsonArray cl_list, JsonArray ydam_list) {
@@ -145,6 +196,57 @@ public class BattleAtackDto {
 
         return dto;
     }
+
+    private static BattleAtackDto makeRaigeki(boolean friendAtack,int[] rai_list, int[] dam_list, int[] cl_list, int[] ydam_list) {
+        int[] originMap = new int[6];
+        int[] targetMap = new int[6];
+        boolean[] targetEnabled = new boolean[6];
+        BattleAtackDto dto = new BattleAtackDto();
+        dto.kind = AtackKind.RAIGEKI;
+        dto.friendAtack = friendAtack;
+
+        int idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int rai = rai_list[i + 1];
+            if (rai > 0) {
+                originMap[i] = idx++;
+                targetEnabled[rai - 1] = true;
+            }
+        }
+        dto.origin = new int[idx];
+        dto.ydam = new int[idx];
+        dto.critical = new int[idx];
+        dto.ot = new int[idx];
+
+        idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            if (targetEnabled[i]) {
+                targetMap[i] = idx++;
+            }
+        }
+        dto.target = new int[idx];
+        dto.damage = new int[idx];
+
+        for (int i = 0; i < 6; ++i) {
+            int rai = rai_list[i + 1];
+            int dam = dam_list[i + 1];
+            int cl = cl_list[i + 1];
+            int ydam = ydam_list[i + 1];
+            if (rai > 0) {
+                dto.origin[originMap[i]] = i;
+                dto.ydam[originMap[i]] = ydam;
+                dto.critical[originMap[i]] = cl;
+                dto.ot[originMap[i]] = targetMap[rai - 1];
+            }
+            if (targetEnabled[i]) {
+                dto.target[targetMap[i]] = i;
+                dto.damage[targetMap[i]] = dam;
+            }
+        }
+
+        return dto;
+    }
+
 
     private static BattleAtackDto makeAir(boolean friendAtack,
             JsonArray plane_from, JsonArray dam_list, JsonArray cdam_list, JsonArray cl_list, JsonArray ccl_list,
@@ -209,7 +311,64 @@ public class BattleAtackDto {
 
         return dto;
     }
+    private static BattleAtackDto makeAir(boolean friendAtack,int[] plane_from,int[] dam_list,int[] cdam_list,int[] cl_list,int[] ccl_list,
+            boolean isBase) {
+        BattleAtackDto dto = new BattleAtackDto();
+        dto.kind = isBase ? AtackKind.AIRBASE : AtackKind.AIR;
+        dto.friendAtack = friendAtack;
 
+        int idx = 0;
+        for (int i = 0; i < plane_from.length; ++i) {
+            if (plane_from[i] != -1){ ++idx; }
+        }
+        dto.origin = new int[idx];
+        idx = 0;
+        for (int i = 0; i < plane_from.length; ++i) {
+            if (plane_from[i] != -1)
+                dto.origin[idx++] = (plane_from[i] - 1) % 6;
+        }
+        idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int dam = dam_list[i + 1];
+            if (dam > 0) { idx++; }
+        }
+        if (cdam_list != null) {
+            for (int i = 0; i < 6; ++i) {
+                int dam = cdam_list[i + 1];
+                if (dam > 0) { idx++; }
+            }
+        }
+        dto.target = new int[idx];
+        dto.damage = new int[idx];
+        dto.critical = new int[idx];
+        idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int dam = dam_list[i + 1];
+            int cl = cl_list[i + 1];
+            if (dam > 0) {
+                dto.target[idx] = i;
+                dto.damage[idx] = dam;
+                //クリティカルフラグを砲撃と合わせる(オリジナル版で+1無いのは多分バグ?)
+                dto.critical[idx] = cl + 1;
+                idx++;
+            }
+        }
+        if (cdam_list != null) {
+            for (int i = 0; i < 6; ++i) {
+                int dam = cdam_list[i + 1];
+                int cl = ccl_list[i + 1];
+                if (dam > 0) {
+                    dto.target[idx] = i + 6;
+                    dto.damage[idx] = dam;
+                    //クリティカルフラグを砲撃と合わせる
+                    dto.critical[idx] = cl + 1;
+                    idx++;
+                }
+            }
+        }
+
+        return dto;
+    }
     private void makeOriginCombined() {
         for (int i = 0; i < this.origin.length; ++i) {
             this.origin[i] += 6;
@@ -266,6 +425,49 @@ public class BattleAtackDto {
 
         return Arrays.asList(new BattleAtackDto[] { fatack, eatack });
     }
+    /**
+     * 航空戦を読み込むGson版
+     * @param plane_from
+     * @param stage3
+     * @param combined
+     * @return
+     */
+    public static List<BattleAtackDto> makeAir(int[][] plane_from,LinkedTreeMap stage3,LinkedTreeMap combined,
+            boolean isBase) {
+        if (stage3 == null || plane_from == null){
+            return null;
+        }
+
+        int[] fdamCombined = null;
+        int[] fclCombined = null;
+        if (combined != null) {
+            fdamCombined = GsonUtil.toIntArray(combined.get("api_fdam"));
+            fclCombined = GsonUtil.toIntArray(combined.get("api_fcl_flag"));
+        }
+
+        BattleAtackDto fatack = makeAir(
+                true,
+                plane_from[0],
+                GsonUtil.toIntArray(stage3.get("api_edam")),
+                null,
+                GsonUtil.toIntArray(stage3.get("api_ecl_flag")),
+                null,
+                isBase);
+
+        if (isBase) {
+            return Arrays.asList(new BattleAtackDto[] { fatack });
+        }
+
+        BattleAtackDto eatack = makeAir(
+                false,
+                plane_from[1],
+                GsonUtil.toIntArray(stage3.get("api_fdam")),
+                fdamCombined,
+                GsonUtil.toIntArray(stage3.get("api_fcl_flag")),
+                fclCombined,
+                false);
+        return Arrays.asList(new BattleAtackDto[] { fatack, eatack });
+    }
 
     /**
      * 雷撃戦を読み込む
@@ -296,6 +498,40 @@ public class BattleAtackDto {
                 raigeki_obj.getJsonArray("api_fdam"),
                 raigeki_obj.getJsonArray("api_ecl"),
                 raigeki_obj.getJsonArray("api_eydam"));
+
+        if (second) {
+            eatack.makeTargetCombined();
+        }
+
+        return Arrays.asList(new BattleAtackDto[] { fatack, eatack });
+    }
+
+    /**
+     * 雷撃戦を読み込む
+     * @param raigeki
+     * @param second
+     * @return
+     */
+    public static List<BattleAtackDto> makeRaigeki(LinkedTreeMap raigeki, boolean second) {
+        if (raigeki == null){return null;}
+
+        BattleAtackDto fatack = makeRaigeki(
+                true,
+                GsonUtil.toIntArray(raigeki.get("api_frai")),
+                GsonUtil.toIntArray(raigeki.get("api_edam")),
+                GsonUtil.toIntArray(raigeki.get("api_fcl")),
+                GsonUtil.toIntArray(raigeki.get("api_fydam")));
+
+        if (second) {
+            fatack.makeOriginCombined();
+        }
+
+        BattleAtackDto eatack = makeRaigeki(
+                false,
+                GsonUtil.toIntArray(raigeki.get("api_erai")),
+                GsonUtil.toIntArray(raigeki.get("api_fdam")),
+                GsonUtil.toIntArray(raigeki.get("api_ecl")),
+                GsonUtil.toIntArray(raigeki.get("api_eydam")));
 
         if (second) {
             eatack.makeTargetCombined();
@@ -337,6 +573,33 @@ public class BattleAtackDto {
     }
 
     /**
+     * api_hougeki* を読み込む
+     * @param hougeki
+     */
+    public static List<BattleAtackDto> makeHougeki(LinkedTreeMap hougeki, boolean second) {
+        if (hougeki == null){ return null; }
+
+        List<BattleAtackDto> seq = makeHougeki(
+                GsonUtil.toIntArray(hougeki.get("api_at_list")),
+                GsonUtil.toIntArray(hougeki.get("api_at_type")),
+                GsonUtil.toIntArrayArray(hougeki.get("api_df_list")),
+                GsonUtil.toIntArrayArray(hougeki.get("api_cl_list")),
+                GsonUtil.toIntArrayArray(hougeki.get("api_damage")));
+        //連合艦隊を反映
+        if (second) {
+            for (BattleAtackDto dto : seq) {
+                if (dto.friendAtack) {
+                    dto.makeOriginCombined();
+                }
+                else {
+                    dto.makeTargetCombined();
+                }
+            }
+        }
+        return seq;
+    }
+
+    /**
      * 支援艦隊の攻撃を読み込む
      * @param dam_list
      * @return
@@ -368,6 +631,71 @@ public class BattleAtackDto {
         return Arrays.asList(new BattleAtackDto[] { dto });
     }
 
+    /**
+     * 支援艦隊の攻撃を読み込む
+     * @param dam_list
+     * @param cl_list
+     * @return
+     */
+    public static List<BattleAtackDto> makeSupport(int[] dam_list,int[] cl_list) {
+        BattleAtackDto dto = new BattleAtackDto();
+        dto.kind = AtackKind.SUPPORT;
+        dto.friendAtack = true;
+
+        int idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int dam = dam_list[i + 1];
+            if (dam > 0) {
+                idx++;
+            }
+        }
+        dto.target = new int[idx];
+        dto.damage = new int[idx];
+        if(cl_list!=null){//元実装で参照してなかったので存在しないケースあるのかも?
+            dto.critical = new int[idx];
+        }
+        idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int dam = dam_list[i + 1];
+            if (dam > 0) {
+                dto.target[idx] = i;
+                dto.damage[idx] = dam;
+                if(cl_list != null){
+                    dto.critical[idx] = cl_list[i+1];
+                }
+                idx++;
+            }
+        }
+        return Arrays.asList(new BattleAtackDto[] { dto });
+    }
+
+    public static List<BattleAtackDto> makeSupportAir(int[] dam_list,int[] cl_list) {
+        BattleAtackDto dto = new BattleAtackDto();
+        dto.kind = AtackKind.SUPPORT;
+        dto.friendAtack = true;
+
+        int idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int dam = dam_list[i + 1];
+            if (dam > 0) {
+                idx++;
+            }
+        }
+        dto.target = new int[idx];
+        dto.damage = new int[idx];
+        dto.critical = new int[idx];
+        idx = 0;
+        for (int i = 0; i < 6; ++i) {
+            int dam = dam_list[i + 1];
+            if (dam > 0) {
+                dto.target[idx] = i;
+                dto.damage[idx] = dam;
+                dto.critical[idx] = cl_list[i+1] + 1;
+                idx++;
+            }
+        }
+        return Arrays.asList(new BattleAtackDto[] { dto });
+    }
     public String getHougekiTypeString() {
         switch (this.type) {
         case -1:
