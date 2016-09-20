@@ -419,7 +419,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
     /**
      * テーブルヘッダーをセットする
      */
-    private void setTableHeader() {
+    protected void setTableHeader() {
         this.getConfig();
         SelectionListener listener = this.getHeaderSelectionListener();
         for (int i = 0; i < this.header.length; i++) {
@@ -435,8 +435,12 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             }
         }
         if (this.config.getColumnOrder() != null) {
-            this.table.setColumnOrder(this.config.getColumnOrder());
+            this.setColumnOrder(this.config.getColumnOrder());
         }
+    }
+
+    protected void setColumnOrder(int[] order){
+        this.table.setColumnOrder(order);
     }
 
     /**
@@ -524,12 +528,12 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         return columnOrder;
     }
 
-    private void resetColumnOrder() {
+    protected void resetColumnOrder() {
         int[] columnOrder = this.defaultColumnOrder();
         if (this.config != null) {
             this.config.setColumnOrder(columnOrder);
         }
-        this.table.setColumnOrder(columnOrder);
+        this.setColumnOrder(columnOrder);
     }
 
     private void resetSortKeys() {
@@ -537,7 +541,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         this.reloadTable();
     }
 
-    private static void renumberColumnPosision(Column[] columns) {
+    protected static void renumberColumnPosision(Column[] columns) {
         Arrays.sort(columns, comparePosition);
         int next = 0;
         for (Column col : columns) {
@@ -545,14 +549,14 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         }
     }
 
-    private static Comparator<Column> comparePosition = new Comparator<Column>() {
+    protected static Comparator<Column> comparePosition = new Comparator<Column>() {
         @Override
         public int compare(Column arg0, Column arg1) {
             return Integer.compare(arg0.pos, arg1.pos);
         }
     };
 
-    private void updateConfig() {
+    protected void updateConfig() {
 
         Map<String, Column> columns = this.config.getColumns();
         String[] oldIds = this.config.getHeaderNames();
@@ -698,8 +702,9 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             TableColumn[] columns = this.table.getColumns();
             for (int i = 0; i < columns.length; i++) {
                 int cur = columns[i].getWidth();
+                int index = ((Number)columns[i].getData()).intValue();
                 if (cur >= 5) {
-                    widths[i] = cur;
+                    widths[index] = cur;
                 }
             }
             this.config.setColumnWidth(widths);
@@ -871,7 +876,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         this.table.setRedraw(true);
     }
 
-    private void setSortDirectionToHeader() {
+    protected void setSortDirectionToHeader() {
         TableConfigBean.SortKey[] sortKeys = this.getConfig().getSortKeys();
         if ((sortKeys != null) && (sortKeys[0] != null)) {
             TableColumn headerColumn = this.table.getColumn(sortKeys[0].index);
