@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -246,7 +247,11 @@ public final class CreateReportLogic {
      * @return 内容
      */
     public static List<Comparable[]> getBuiltinCombatResultBody(String title, BattleResultFilter filter) {
-        List<BattleResultDto> results = BattleResultServer.get().getFilteredList(filter);
+        List<BattleResultDto> results = 
+            BattleResultServer.get().getFilteredList(filter)
+                .stream()
+                .sorted((r1,r2)->r2.getBattleDate().compareTo(r1.getBattleDate()))
+                .collect(Collectors.toList());
         List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
         int limit = AppConfig.get().getMaxPrintItems();
         int i = 0;
