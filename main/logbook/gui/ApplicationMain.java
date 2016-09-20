@@ -591,7 +591,7 @@ public final class ApplicationMain extends WindowBase {
                             @Override
                             public void run() {
                                 ApplicationMain.logPrint("出撃ログ読み込み開始");
-                                BattleResultServer.writeCsvRed(new String[] { AppConfig.get().getBattleLogPath() }, path);
+                                BattleResultServer.writeBuiltinCsv(new String[] { AppConfig.get().getBattleLogPath() }, path);
                                 ApplicationMain.logPrint("CSVファイルを保存しました");
                             }
                         }).start();

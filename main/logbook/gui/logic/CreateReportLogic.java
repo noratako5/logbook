@@ -247,26 +247,22 @@ public final class CreateReportLogic {
      * @return 内容
      */
     public static List<Comparable[]> getBuiltinCombatResultBody(String title, BattleResultFilter filter) {
-        List<BattleResultDto> results = 
+        List<BattleResultDto> results =
             BattleResultServer.get().getFilteredList(filter)
                 .stream()
                 .sorted((r1,r2)->r2.getBattleDate().compareTo(r1.getBattleDate()))
                 .collect(Collectors.toList());
-        List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
         int limit = AppConfig.get().getMaxPrintItems();
-        int i = 0;
+        List<BattleResultDto> targets = new ArrayList<>();
+        int count = 0;
         for (BattleResultDto item : results) {
-            if(i >= limit){ break; }
-            if(item.getBuiltinCombatDataRowCount(title) == 0){ continue; }
-            BattleExDto detail = BattleResultServer.get().getBattleDetail(item);
-            if(detail == null){continue;}
-            Comparable[][] itemBody = detail.BuiltinScriptBodyWithKey(title,null,null,null,null,null);
-            if(itemBody!=null){
-                for (Comparable[] body : itemBody) {
-                    allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++i, item) }, body));
-                }
-            }
+            if(count >= limit){break;}
+            int c = item.getBuiltinCombatDataRowCount(title);
+            if(c == 0){ continue; }
+            targets.add(item);
+            count += c;
         }
+        List<Comparable[]> allBodies = BattleResultServer.loadBuiltinBattleResultsBody(title, targets);
         return allBodies;
     }
 

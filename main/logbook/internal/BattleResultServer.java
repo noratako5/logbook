@@ -636,7 +636,7 @@ public class BattleResultServer {
     public int getFailCount() {
         return this.failCount;
     }
-    public static void writeCsvRed(String[] sourcePaths, String targetPath) {
+    public static void writeBuiltinCsv(String[] sourcePaths, String targetPath) {
         Set<Date> resultDateSet = Collections.synchronizedSet(new HashSet<Date>());
         int n = 0;
         BattleResultServer self = new BattleResultServer();
@@ -649,23 +649,23 @@ public class BattleResultServer {
                     files.put(file.getPath(), file);
                 }
                 for (File file : files.values()) {
-                    n = writeCsvRed(self, file, targetPath, resultDateSet, n);
+                    n = writeBuiltinCsv(self, file, targetPath, resultDateSet, n);
                 }
             }
             else if (sourceFile.isFile()) {
-                n = writeCsvRed(self, sourceFile, targetPath, resultDateSet, n);
+                n = writeBuiltinCsv(self, sourceFile, targetPath, resultDateSet, n);
             }
         }
         BattleLogProxy.get().end();
     }
-    private static int writeCsvRed(DataFile file, String targetPath, Set<Date> resultDateSet, int n) {
-        return writeCsvRed(loadBattleResultsRed(file, resultDateSet), targetPath, n);
+    private static int writeBuiltinCsv(DataFile file, String targetPath, Set<Date> resultDateSet, int n) {
+        return writeBuiltinCsv(loadBuiltinBattleResults(file, resultDateSet), targetPath, n);
     }
-    private static int writeCsvRed(BattleResultServer self, File file, String targetPath, Set<Date> resultDateSet, int n) {
+    private static int writeBuiltinCsv(BattleResultServer self, File file, String targetPath, Set<Date> resultDateSet, int n) {
         try {
             if (file.getName().endsWith(".dat")) {
                 DataFile dataFile = self.new NormalDataFile(file);
-                n = writeCsvRed(dataFile, targetPath, resultDateSet, n);
+                n = writeBuiltinCsv(dataFile, targetPath, resultDateSet, n);
             }
             else if (file.getName().endsWith(".zip")) {
                 try (ZipFile zipFile = new ZipFile(file)) {
@@ -673,7 +673,7 @@ public class BattleResultServer {
                     while (enumeration.hasMoreElements()) {
                         ZipEntry entry = enumeration.nextElement();
                         DataFile dataFile = self.new ZipDataFile(file, entry.getName());
-                        n = writeCsvRed(dataFile, targetPath, resultDateSet, n);
+                        n = writeBuiltinCsv(dataFile, targetPath, resultDateSet, n);
                     }
                 }
             }
@@ -683,7 +683,7 @@ public class BattleResultServer {
             return n;
         }
     }
-    private static int writeCsvRed(List<Map<String,String[][]>> resultList, String targetPath, int n) {
+    private static int writeBuiltinCsv(List<Map<String,String[][]>> resultList, String targetPath, int n) {
         try {
             boolean append = n > 0;
             Map<String,String[]> header = BattleExDto.BuiltinScriptHeader();
@@ -704,7 +704,7 @@ public class BattleResultServer {
             return n;
         }
     }
-    private static List<Map<String,String[][]>> loadBattleResultsRed(DataFile file,Set<Date> resultDateSet) {
+    private static List<Map<String,String[][]>> loadBuiltinBattleResults(DataFile file,Set<Date> resultDateSet) {
         try {
             List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
             battleAll
@@ -730,6 +730,70 @@ public class BattleResultServer {
         }
     }
 
+    public static List<Comparable[]> loadBuiltinBattleResultsBody(String key,List<BattleResultDto> targets){
+        DataFile nowFile = null;
+        List<BattleResult> resultList = new ArrayList<>();
+        List<Comparable[][]>bodyList = new ArrayList<>();
+        for(BattleResultDto item:targets){
+            if(item instanceof BattleResult){
+                BattleResult result = (BattleResult)item;
+                if(nowFile == null || !nowFile.file.equals(result.file.file)){
+                    if(resultList.size() > 0){
+                        bodyList.addAll(loadBuiltinBattleResults(key, nowFile, resultList));
+                    }
+                    resultList.clear();
+                    nowFile = result.file;
+                }
+                resultList.add(result);
+            }
+        }
+        if(resultList.size() > 0){
+            bodyList.addAll(loadBuiltinBattleResults(key, nowFile, resultList));
+        }
+        List<Comparable[]>body = new ArrayList<>();
+        for(Comparable[][] item:bodyList){
+            for(Comparable[] line:item){
+                body.add(line);
+            }
+        }
+        for(int i=0;i<body.size();i++){
+            TableRowHeader header = (TableRowHeader)body.get(i)[0];
+            header.setNumber(i+1);
+        }
+        return body;
+    }
+    private static List<Comparable[][]> loadBuiltinBattleResults(String key,DataFile file,List<BattleResult> resultList) {
+        try {
+            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
+            Map<Date,BattleResult> map = new HashMap<>();
+            for(BattleResult item:resultList){
+                map.put(item.getBattleDate(), item);
+            }
+            for(BattleExDto b : battleAll){
+                if (b.isCompleteResult() && map.containsKey(b.getBattleDate())) {
+                    battle.add(b);
+                }
+            }
+            List<Comparable[][]> result=
+                battle
+                .parallelStream()
+                .map(b->{
+                    b.readFromJson();
+                    BattleResult item = map.get(b.getBattleDate());
+                    String[][] body = b.BuiltinScriptBodyWithKey(key, null, null, null, null, null);
+                    List<Comparable[]> list = new ArrayList<>();
+                    for(String[] line:body){
+                        list.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(0, item) },line));
+                    }
+                    return list.toArray(new Comparable[0][]);
+                })
+                .collect(Collectors.toList());
+            return result;
+        } catch (Exception e) {
+            return new ArrayList<Comparable[][]>();
+        }
+    }
 
 
 
