@@ -4014,26 +4014,27 @@ public class BattleExDto extends AbstractDto {
         }
         if(enemyRows == null){
             enemyRows = new ArrayList<ArrayList<String>>();
-            for(int i=0;i<this.enemy.size();i++){
-                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
-            }
+            for(int i=0;i<this.enemy.size();i++){ enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
+            for(int i=this.enemy.size();i<6;i++){ enemyRows.add(this.ShipRowBodyBase(null,0, i));}
         }
         if(friendRows == null){
             friendRows = new ArrayList<ArrayList<String>>();
             if(this.getDock()!=null){
                 List<ShipDto> ships = this.getDock().getShips();
-                for(int i=0;i<ships.size();i++){
-                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
-                }
+                for(int i=0;i<ships.size();i++){ friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
+                for(int i=ships.size();i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
+            }else{
+                for(int i=0;i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
             }
         }
-        if(combinedRows == null && this.isCombined()){
-            combinedRows = (this.isCombined()) ?new ArrayList<ArrayList<String>>() :null;
+        if(combinedRows == null){
+            combinedRows = new ArrayList<ArrayList<String>>();
             if(this.isCombined() && this.getDockCombined()!=null){
                 List<ShipDto> ships = this.getDockCombined().getShips();
-                for(int i=0;i<ships.size();i++){
-                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
-                }
+                for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
+                for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+            }else{
+                for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
             }
         }
 
