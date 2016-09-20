@@ -24,6 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -167,8 +171,11 @@ public class BattleResultServer {
             throw new UnsupportedOperationException();
         }
 
-        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
+        public List<BattleExDto> readAllWithoutReadFromJson(LinkedBuffer buffer) throws IOException {
             throw new UnsupportedOperationException();
+        }
+        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
+            return readAllWithoutReadFromJson(BattleResultServer.this.buffer);
         }
 
         public String getPath() {
@@ -191,8 +198,11 @@ public class BattleResultServer {
         }
 
         List<BattleExDto> loadWithoutReadFromJson(InputStream input) throws IOException {
-            List<BattleExDto> result = BattleResultServer.this.loadFromInputStreamWithoutReadFromJson(input,
-                    BattleResultServer.this.buffer);
+            return loadWithoutReadFromJson(input, BattleResultServer.this.buffer);
+        }
+
+        List<BattleExDto> loadWithoutReadFromJson(InputStream input, LinkedBuffer buffer) throws IOException {
+            List<BattleExDto> result = BattleResultServer.this.loadFromInputStreamWithoutReadFromJson(input,buffer);
             this.numRecords = result.size();
             return result;
         }
@@ -212,9 +222,9 @@ public class BattleResultServer {
         }
 
         @Override
-        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
+        public List<BattleExDto> readAllWithoutReadFromJson(LinkedBuffer buffer) throws IOException {
             try (InputStream input = new FileInputStream(this.file)) {
-                return this.loadWithoutReadFromJson(input);
+                return this.loadWithoutReadFromJson(input,buffer);
             }
         }
 
@@ -255,10 +265,10 @@ public class BattleResultServer {
         }
 
         @Override
-        public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
+        public List<BattleExDto> readAllWithoutReadFromJson(LinkedBuffer buffer) throws IOException {
             try (ZipFile zipFile = new ZipFile(this.file)) {
                 try (InputStream input = zipFile.getInputStream(zipFile.getEntry(this.zipName))) {
-                    return this.loadWithoutReadFromJson(input);
+                    return this.loadWithoutReadFromJson(input,buffer);
                 }
             }
         }
@@ -365,9 +375,35 @@ public class BattleResultServer {
             .stream()
             .sorted((f1,f2)->f2.file.getName().compareTo(f1.file.getName()))
             .collect(Collectors.toList());
-        for (DataFile file : sortedFileList) {
-            this.resultList.addAll(loadBattleResults(file, this.isLoadCombatLog, this.resultDateSet));
+
+        List<CompletableFuture<List<BattleResult>>> futures = new ArrayList<>();
+        ConcurrentLinkedQueue<LinkedBuffer> bufferQueue = new ConcurrentLinkedQueue<>();
+        final int parallel = 2;
+        ExecutorService executer = Executors.newFixedThreadPool(parallel);
+        for(int i=0;i<parallel;i++){
+            bufferQueue.add(LinkedBuffer.allocate(128*1024));
         }
+        for (DataFile file:sortedFileList) {
+            CompletableFuture<List<BattleResult>> future = CompletableFuture.supplyAsync(
+                () -> {
+                    LinkedBuffer buffer = bufferQueue.poll();
+                    if(buffer == null){
+                        buffer = LinkedBuffer.allocate(128*1024);
+                    }
+                    List<BattleResult> list = loadBattleResults(file, this.isLoadCombatLog, this.resultDateSet, buffer);
+                    bufferQueue.add(buffer);
+                    return list;
+                },
+                executer
+            );
+            futures.add(future);
+        }
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executer.shutdown();
+        for(CompletableFuture<List<BattleResult>> result: futures){
+            this.resultList.addAll(result.join());
+        }
+
         CombatLogProxy.endAll();
         battleLogScript.end();
 
@@ -749,9 +785,9 @@ public class BattleResultServer {
         return writeCsv(loadBattleResultsWriteCsv(file,resultDateSet), targetPath, n);
     }
 
-    private static List<BattleResult> loadBattleResults(DataFile file, boolean isLoadCombatLog, Set<Date> resultDateSet) {
+    private static List<BattleResult> loadBattleResults(DataFile file, boolean isLoadCombatLog, Set<Date> resultDateSet,LinkedBuffer buffer) {
         try {
-            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson(buffer);
             battleAll
                 .parallelStream()
                 .forEach(b->b.readFromJson());
