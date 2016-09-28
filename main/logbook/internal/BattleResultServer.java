@@ -55,6 +55,7 @@ import logbook.gui.logic.IntegerPair;
 import logbook.gui.logic.TableRowHeader;
 import logbook.scripting.BattleLogListener;
 import logbook.scripting.BattleLogProxy;
+import logbook.scripting.BuiltinScriptFilter;
 import logbook.scripting.CombatLogProxy;
 import logbook.util.ReportUtils;
 
@@ -636,6 +637,98 @@ public class BattleResultServer {
     public int getFailCount() {
         return this.failCount;
     }
+    public static void writeBuiltinCsvWithFilter(String[] sourcePaths, String targetPath, BuiltinScriptFilter filter) {
+        Set<Date> resultDateSet = Collections.synchronizedSet(new HashSet<Date>());
+        int n = 0;
+        BattleResultServer self = new BattleResultServer();
+        BattleLogProxy.get().begin();
+        for (String sourcePath : sourcePaths) {
+            File sourceFile = new File(sourcePath);
+            if (sourceFile.isDirectory()) {
+                Map<String, File> files = new TreeMap<String, File>();
+                for (File file : FileUtils.listFiles(sourceFile, new String[] { "dat", "zip" }, true)) {
+                    files.put(file.getPath(), file);
+                }
+                for (File file : files.values()) {
+                    n = writeBuiltinCsvWithFilter(self, file, targetPath, resultDateSet, n,filter);
+                }
+            }
+            else if (sourceFile.isFile()) {
+                n = writeBuiltinCsv(self, sourceFile, targetPath, resultDateSet, n);
+            }
+        }
+        BattleLogProxy.get().end();
+    }
+    private static int writeBuiltinCsvWithFilter(DataFile file, String targetPath, Set<Date> resultDateSet, int n, BuiltinScriptFilter filter) {
+        return writeBuiltinCsvWithFilter(loadBuiltinBattleResultsWithFilter(file, resultDateSet,filter), targetPath, n,filter);
+    }
+    private static int writeBuiltinCsvWithFilter(BattleResultServer self, File file, String targetPath, Set<Date> resultDateSet, int n, BuiltinScriptFilter filter) {
+        try {
+            if (file.getName().endsWith(".dat")) {
+                DataFile dataFile = self.new NormalDataFile(file);
+                n = writeBuiltinCsvWithFilter(dataFile,targetPath ,resultDateSet,n ,filter);
+            }
+            else if (file.getName().endsWith(".zip")) {
+                try (ZipFile zipFile = new ZipFile(file)) {
+                    Enumeration<? extends ZipEntry> enumeration = zipFile.entries();
+                    while (enumeration.hasMoreElements()) {
+                        ZipEntry entry = enumeration.nextElement();
+                        DataFile dataFile = self.new ZipDataFile(file, entry.getName());
+                        n = writeBuiltinCsvWithFilter(dataFile, targetPath, resultDateSet,n ,filter);
+                    }
+                }
+            }
+            return n;
+        } catch (IOException e) {
+            LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
+            return n;
+        }
+    }
+    private static List<String[][]> loadBuiltinBattleResultsWithFilter(DataFile file,Set<Date> resultDateSet,BuiltinScriptFilter filter) {
+        try {
+            List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
+            battleAll
+                .parallelStream()
+                .forEach(b->b.readFromJson());
+            ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
+            for(BattleExDto b : battleAll){
+                if (b.isCompleteResult() && !resultDateSet.contains(b.getBattleDate())) {
+                    resultDateSet.add(b.getBattleDate());
+                    battle.add(b);
+                }
+            }
+            List<String[][]> result=
+                battle
+                .parallelStream()
+                .map(b->b.BodyWithFilter(filter))
+                .collect(Collectors.toList());
+            ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
+            return result;
+        } catch (Exception e) {
+            LOG.get().warn("出撃ログの読み込みに失敗しました (" + file.getPath() + ")", e);
+            return new ArrayList<String[][]>();
+        }
+    }
+    private static int writeBuiltinCsvWithFilter(List<String[][]> resultList, String targetPath, int n,BuiltinScriptFilter filter) {
+        try {
+            boolean append = n > 0;
+            String[] header = BattleExDto.BuiltinScriptHeaderWithKey(filter.key);
+            List<String[]> allBodies = new ArrayList<String[]>();
+            for (String[][] item : resultList) {
+                for (String[] body : item) {
+                    allBodies.add(ArrayUtils.addAll(new String[] { (new Integer(++n)).toString() }, body));
+                }
+            }
+            String[] headerArray = header;
+            CreateReportLogic.writeCsvRed(new File(targetPath), ArrayUtils.addAll(new String[] { "No." }, headerArray), allBodies, append);
+
+            return n;
+        } catch (IOException e) {
+            LOG.get().warn("出撃ログの書き込みに失敗しました", e);
+            return n;
+        }
+    }
+
     public static void writeBuiltinCsv(String[] sourcePaths, String targetPath) {
         Set<Date> resultDateSet = Collections.synchronizedSet(new HashSet<Date>());
         int n = 0;

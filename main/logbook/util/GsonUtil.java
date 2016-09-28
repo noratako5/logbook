@@ -51,6 +51,16 @@ public class GsonUtil {
             return null;
         }
     }
+    /**nullなら-1、NumberならintValue()、その他ならparseInt(toString())、整数でない文字列で落ちる*/
+    public static long toLong(Object object){
+        if(object == null){
+            return -1;
+        }else if(object instanceof Number){
+            return ((Number)object).longValue();
+        }else{
+            return Long.parseLong(object.toString());
+        }
+    }
     /**nullなら-1、NumberならdoubleValue()、その他ならparseDouble(toString())、変換できない文字列で落ちる*/
     public static double toDouble(Object object){
         if(object == null){

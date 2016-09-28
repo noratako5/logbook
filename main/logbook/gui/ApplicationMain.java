@@ -10,7 +10,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -18,6 +21,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.swt.SWT;
@@ -45,6 +49,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
@@ -56,7 +61,10 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tray;
 import org.eclipse.swt.widgets.TrayItem;
 import org.eclipse.wb.swt.SWTResourceManager;
+import org.hjson.JsonValue;
 
+import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.melloware.jintellitype.HotkeyListener;
 
 import logbook.config.AppConfig;
@@ -90,6 +98,7 @@ import logbook.internal.LoggerHolder;
 import logbook.internal.MasterData;
 import logbook.internal.Ship;
 import logbook.internal.ShipParameterRecord;
+import logbook.scripting.BuiltinScriptFilter;
 import logbook.scripting.CombatLogProxy;
 import logbook.scripting.ScriptData;
 import logbook.server.proxy.DatabaseClient;
@@ -599,13 +608,62 @@ public final class ApplicationMain extends WindowBase {
                 }
             }
         });
+        MenuItem filtercsv = new MenuItem(cmdcombat, SWT.NONE);
+        filtercsv.setText("フィルタ適用CSV保存");
+        filtercsv.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                BattleResultServer battleResultServer = BattleResultServer.get();
+                if (battleResultServer != null && battleResultServer.isLoaded()) {
+                    FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+                    String [] exts = {"*.hjson"};
+                    dialog.setFilterExtensions(exts);
+                    String [] filterNames = {"hjsonファイル(*.hjson)"};
+                    dialog.setFilterNames(filterNames);
+                    String path = dialog.open();
+                    if(path == null){
+                        return;
+                    }
+                    String hjson;
+                    try {
+                        hjson = Files.lines(Paths.get(path), Charset.forName("UTF-8"))
+                                .collect(Collectors.joining(System.getProperty("line.separator")));
+                    }
+                    catch (IOException ex) { return; }
+
+                    BuiltinScriptFilter filter;
+                    try{
+                        String json = JsonValue.readHjson(hjson).toString();
+                        Gson gson = new Gson();
+                        LinkedTreeMap tree = gson.fromJson(json,LinkedTreeMap.class);
+                        filter = BuiltinScriptFilter.create(tree);
+                    }catch (Exception ex) { return; }
+
+                    int point = path.lastIndexOf(".");
+                    String tmp = path;
+                    if (point != -1) {
+                        tmp = path.substring(0, point);
+                    }
+                    final String targetPath = tmp + ".csv";
+                    
+                    (new Thread() {
+                        @Override
+                        public void run() {
+                            ApplicationMain.logPrint("出撃ログ読み込み開始");
+                            BattleResultServer.writeBuiltinCsvWithFilter(new String[] { AppConfig.get().getBattleLogPath() }, targetPath,filter);
+                            ApplicationMain.logPrint("CSVファイルを保存しました");
+                        }
+                    }).start();
+                }
+            }
+        });
         new MenuItem(cmdcombat, SWT.SEPARATOR);
         BattleExDto.BuiltinScriptKeys()
             .stream()
             .forEach(key->{
                 MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);
                 cmdcombatItem.setText(key);
-                String prefix = "Builtin"+key; 
+                String prefix = "Builtin"+key;
                 this.allBuiltinCombatReportWindows.add(new BuiltinCombatReportTable(this.subwindowHost, cmdcombatItem,
                         prefix, key));
             });
@@ -1608,7 +1666,7 @@ public final class ApplicationMain extends WindowBase {
     }
 
     public WindowBase[] getWindowList() {
-        return 
+        return
             (WindowBase[]) ArrayUtils.addAll(
                 (WindowBase[]) ArrayUtils.addAll(
                     (WindowBase[]) ArrayUtils.addAll(
