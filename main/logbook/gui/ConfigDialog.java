@@ -9,18 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import logbook.config.AppConfig;
-import logbook.constants.AppConstants;
-import logbook.data.context.GlobalContext;
-import logbook.gui.logic.ColorManager;
-import logbook.gui.logic.LayoutLogic;
-import logbook.gui.logic.PushNotify;
-import logbook.internal.EvaluateExp;
-import logbook.internal.SeaExp;
-import logbook.util.JIntellitypeWrapper;
-import logbook.util.SwtUtils;
-import logbook.util.SwtUtils.TableDragAndDropListener;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -53,6 +41,18 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+
+import logbook.config.AppConfig;
+import logbook.constants.AppConstants;
+import logbook.data.context.GlobalContext;
+import logbook.gui.logic.ColorManager;
+import logbook.gui.logic.LayoutLogic;
+import logbook.gui.logic.PushNotify;
+import logbook.internal.EvaluateExp;
+import logbook.internal.SeaExp;
+import logbook.util.JIntellitypeWrapper;
+import logbook.util.SwtUtils;
+import logbook.util.SwtUtils.TableDragAndDropListener;
 
 /**
  * 設定画面
@@ -412,7 +412,7 @@ public final class ConfigDialog extends Dialog {
         loadCombatLog.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
         loadCombatLog.setText("戦闘報告書を読み込む*");
         loadCombatLog.setSelection(AppConfig.get().isLoadCombatLog());
-        
+
         Label maxPrintItemsLabel = new Label(compositeReport, SWT.NONE);
         maxPrintItemsLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         maxPrintItemsLabel.setText("最大表示件数");
@@ -425,6 +425,18 @@ public final class ConfigDialog extends Dialog {
         gdMaxPrintItemsSpinner.widthHint = 55;
         maxPrintItemsSpinner.setLayoutData(gdMaxPrintItemsSpinner);
         new Label(compositeReport, SWT.NONE);
+
+        Label labelDateFormat = new Label(compositeReport, SWT.NONE);
+        labelDateFormat.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        labelDateFormat.setText("出力日付形式*");
+
+        final Text dateFormat = new Text(compositeReport, SWT.BORDER);
+        GridData gdDateFormat = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+        gdDateFormat.widthHint = SwtUtils.DPIAwareWidth(180);
+        dateFormat.setLayoutData(gdDateFormat);
+        dateFormat.setText(AppConfig.get().getBuiltinDateFormat());
+
+
 
         // 艦隊タブ タブ
         compositeFleetTab.setLayout(new GridLayout(2, false));
@@ -1130,6 +1142,7 @@ public final class ConfigDialog extends Dialog {
                 AppConfig.get().setLoadMissionLog(loadMissionLog.getSelection());
                 AppConfig.get().setLoadCombatLog(loadCombatLog.getSelection());
                 AppConfig.get().setMaxPrintItems(maxPrintItemsSpinner.getSelection());
+                AppConfig.get().setBuiltinDateFormat(dateFormat.getText());
                 if (JIntellitypeWrapper.getInstance() != null) {
                     AppConfig.get().setSystemWideHotKey(systemWideShortcutKey.getSelectionIndex());
                 }

@@ -348,9 +348,12 @@ public final class AppConfigBean {
 
     /** 戦闘報告書を読みこむか */
     private boolean loadCombatLog = true;
-    
+
     /** 最大表示件数 */
     private int maxPrintItems = 2000;
+
+    /** 最大表示件数 */
+    private String builtinDateFormat = "yyyy-MM-dd HH:mm:ss";
 
     /** システムワイドホットキー (Windowsのみ対応) 0:なし, 1:Ctrl+Shift+z, 2:Win+Z */
     private int systemWideHotKey = 0;
@@ -1861,6 +1864,20 @@ public final class AppConfigBean {
      */
     public void setMaxPrintItems(int maxPrintItems) {
         this.maxPrintItems = maxPrintItems;
+    }
+
+    /**
+     * @return builtinDateFormat
+     */
+    public String getBuiltinDateFormat() {
+        return builtinDateFormat;
+    }
+
+    /**
+     * @param builtinDateFormat セットする builtinDateFormat
+     */
+    public void setBuiltinDateFormat(String builtinDateFormat) {
+        this.builtinDateFormat = builtinDateFormat;
     }
 
     /**
