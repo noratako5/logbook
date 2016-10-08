@@ -4172,18 +4172,30 @@ public class BattleExDto extends AbstractDto {
                     .collect(Collectors.toList())
             );
         }
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipSummaryRowHeader()
+                .stream()
+                .forEach(s->header.add("敵軍"+index+"."+s));
+        }
         return header;
     }
 
     private ArrayList<ArrayList<String>>HenseiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+
+        ArrayList<ArrayList<String>> enemySummaryRows = new ArrayList<ArrayList<String>>();
+        for(int i=0;i<this.enemy.size();i++){enemySummaryRows.add(this.ShipSummaryRowBody(this.enemy.get(i)));}
+        for(int i=this.enemy.size();i<6;i++){enemySummaryRows.add(this.ShipSummaryRowBody(null));}
+
         if(friendRows == null){
             friendRows = new ArrayList<ArrayList<String>>();
             if(this.getDock()!=null){
                 List<ShipDto> ships = this.getDock().getShips();
-                for(int i=0;i<ships.size();i++){
-                    friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));
-                }
+                for(int i=0;i<ships.size();i++){ friendRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHp[i], i));}
+                for(int i=ships.size();i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
+            }else{
+                for(int i=0;i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
             }
         }
         int[][]phaseStartHP = new int[3][];
@@ -4208,6 +4220,7 @@ public class BattleExDto extends AbstractDto {
             row.add("昼戦");
         }
         for (int i = 0; i < 6; ++i) { row.addAll((i<this.maxFriendHp.length)?this.ShipRowBodyUpdate(friendRows.get(i),phaseStartHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
+        for (int i = 0; i < 6; ++i) { row.addAll(enemySummaryRows.get(i)); }
         if(filter.filterOutput(row)){
             body.add(row);
         }
