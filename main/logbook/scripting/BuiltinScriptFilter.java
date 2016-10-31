@@ -1033,6 +1033,28 @@ public class BuiltinScriptFilter {
                 battle.getDock().getShips().get(df-1);
         return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
     }
+    public boolean filterHougekiAttackDefenceECNight(BattleExDto battle,int at,int df,boolean isSecond,boolean enemyIsSecond){
+        ShipBaseDto attack =
+                (at >= 7)
+                    ?((enemyIsSecond)?battle.getEnemyCombined().get(at-7):battle.getEnemy().get(at-7))
+                    :((isSecond)?battle.getDockCombined().getShips().get(at-1):battle.getDock().getShips().get(at-1));
+        ShipBaseDto defence =
+                (df >= 7)
+                    ?((enemyIsSecond)?battle.getEnemyCombined().get(df-7):battle.getEnemy().get(df-7))
+                    :((isSecond)?battle.getDockCombined().getShips().get(df-1):battle.getDock().getShips().get(df-1));
+        return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
+    }
+    public boolean filterHougekiAttackDefenceEC(BattleExDto battle,int at,int df,int eflag){
+        ShipBaseDto attack =
+            (eflag == 0)?((at < 7)?battle.getDock().getShips().get(at-1):battle.getDockCombined().getShips().get(at-7))
+            :((at < 7)?battle.getEnemy().get(at-1):battle.getEnemyCombined().get(at-7));
+
+
+        ShipBaseDto defence =
+            (eflag == 0)?((df < 7)?battle.getEnemy().get(df-1):battle.getEnemyCombined().get(df-7))
+            :((df < 7)?battle.getDock().getShips().get(df-1):battle.getDockCombined().getShips().get(df-7));
+        return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
+    }
     public boolean filterRaigekiAttackDefence(BattleExDto battle,int at,int df,boolean isSecond,boolean toEnemy){
         ShipBaseDto attack =
                 (!toEnemy)?battle.getEnemy().get(at-1):
