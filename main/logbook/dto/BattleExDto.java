@@ -400,21 +400,21 @@ public class BattleExDto extends AbstractDto {
         }
 
         public Phase(BattleExDto battle, LinkedTreeMap tree,String json, BattlePhaseKind kind,
-                int[] beforeFriendHp, int[] beforeFriendHpCombined, int[] beforeEnemyHp)
+                int[] beforeFriendHp, int[] beforeFriendHpCombined, int[] beforeEnemyHp, int[] beforeEnemyHpCombined)
         {
-            boolean isCombined = (beforeFriendHpCombined != null);
+            boolean isFriendCombined = (beforeFriendHpCombined != null);
+            boolean isEnemyCombined = (beforeEnemyHpCombined != null);
+
+            // 敵は連合艦隊の第二艦隊か？（敵連合艦隊夜戦で第二艦隊が相手の場合のみ）
+            this.isEnemySecond = (tree.containsKey("api_active_deck")) ?(GsonUtil.toIntArray(tree.get("api_active_deck"))[1] == 2) : false;
 
             this.kind = kind;
             this.isNight = kind.isNight();
 
             this.nowFriendHp = beforeFriendHp.clone();
             this.nowEnemyHp = beforeEnemyHp.clone();
-            if (isCombined) {
-                this.nowFriendHpCombined = beforeFriendHpCombined.clone();
-            }
-            else {
-                this.nowFriendHpCombined = null;
-            }
+            this.nowFriendHpCombined = isFriendCombined ? beforeFriendHpCombined.clone() : null;
+            this.nowEnemyHpCombined = isEnemyCombined ? beforeEnemyHpCombined.clone() : null;
 
             // 夜間触接
             int[] jsonTouchPlane = GsonUtil.toIntArray(tree.get("api_touch_plane"));
@@ -431,14 +431,14 @@ public class BattleExDto extends AbstractDto {
             if (air_base_attack instanceof List) {
                 this.airBase = new ArrayList<>();
                 for (Object item : (List)air_base_attack) {
-                    this.airBase.add(new AirBattleDto((LinkedTreeMap)item, isCombined, true));
+                    this.airBase.add(new AirBattleDto((LinkedTreeMap)item, isFriendCombined || isEnemyCombined, true));
                 }
             }
 
             // 航空戦（通常）
             LinkedTreeMap kouku = (LinkedTreeMap)tree.get("api_kouku");
             if (kouku != null) {
-                this.air = new AirBattleDto(kouku, isCombined, false);
+                this.air = new AirBattleDto(kouku, isFriendCombined || isEnemyCombined, false);
                 // 昼戦の触接はここ
                 this.touchPlane = this.air.touchPlane;
                 // 制空はここから取る
@@ -473,20 +473,25 @@ public class BattleExDto extends AbstractDto {
             //航空戦
             LinkedTreeMap kouku2 = (LinkedTreeMap)tree.get("api_kouku2");
             if (kouku2 != null){
-                this.air2 = new AirBattleDto(kouku2, isCombined, false);
+                this.air2 = new AirBattleDto(kouku2, isFriendCombined || isEnemyCombined, false);
             }
 
             // 開幕対潜
-            this.openingTaisen = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_opening_taisen"), kind.isOpeningSecond());
+            this.openingTaisen = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_opening_taisen"), kind.isOpeningSecond(),
+                    this.isEnemySecond);
 
             // 開幕
             this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_opening_atack"), kind.isOpeningSecond());
 
             // 砲撃
-            this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), kind.isHougekiSecond()); // 夜戦
-            this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki1"), kind.isHougeki1Second());
-            this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki2"), kind.isHougeki2Second());
-            this.hougeki3 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki3"), kind.isHougeki3Second());
+            this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), kind.isHougekiSecond(),
+                    this.isEnemySecond); // 夜戦
+            this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki1"), kind.isHougeki1Second(),
+                    this.isEnemySecond);
+            this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki2"), kind.isHougeki2Second(),
+                    this.isEnemySecond);
+            this.hougeki3 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki3"), kind.isHougeki3Second(),
+                    this.isEnemySecond);
 
             // 雷撃
             this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_raigeki"), kind.isRaigekiSecond());
@@ -1483,11 +1488,13 @@ public class BattleExDto extends AbstractDto {
         if (this.phaseList.size() > 0) {
             Phase phase = this.phaseList.get(0);
             this.completeDamageAndAddPhase(new Phase(this, tree, json, kind,
-                    phase.getNowFriendHp(), phase.getNowFriendHpCombined(), phase.getNowEnemyHp()), kind);
+                    phase.getNowFriendHp(), phase.getNowFriendHpCombined(),
+                    phase.getNowEnemyHp(), phase.getNowEnemyHpCombined()), kind);
         }
         else {
             this.completeDamageAndAddPhase(new Phase(this, tree, json, kind,
-                    this.startFriendHp, this.startFriendHpCombined, this.startEnemyHp), kind);
+                    this.startFriendHp, this.startFriendHpCombined,
+                    this.startEnemyHp, this.startEnemyHpCombined), kind);
         }
         return this.phaseList.get(this.phaseList.size() - 1);
     }
@@ -2748,14 +2755,18 @@ public class BattleExDto extends AbstractDto {
             int[] enemy = prevHP[0].clone();
             int[] friend = prevHP[1].clone();
             int[] combined = (this.isCombined()) ?prevHP[2].clone() :null;
-
+            int[] enemyCombined = (this.isEnemyCombined()) ?prevHP[3].clone() :null;
             for(int i=0;i<attackList.size();i++){
                 BattleAtackDto attack = attackList.get(i);
                 for(int j=0;j<attack.target.length;j++){
                     int t = attack.target[j];
                     int damage = attack.damage[j];
                     if(attack.friendAtack){
-                        enemy[t] = Math.max(0, enemy[t]-damage);
+                        if(t<6){
+                            enemy[t] = Math.max(0, enemy[t]-damage);
+                        }else{
+                            enemyCombined[t-6] = Math.max(0, enemyCombined[t-6]-damage);
+                        }
                     }else{
                         if(t<6){
                             friend[t] = Math.max(0, friend[t]-damage);
@@ -2765,10 +2776,11 @@ public class BattleExDto extends AbstractDto {
                     }
                 }
             }
-            int [][] result = new int[3][];
+            int [][] result = new int[4][];
             result[0] = enemy;
             result[1] = friend;
             result[2] = combined;
+            result[3] = enemyCombined;
             return result;
         }
         else{
@@ -2795,22 +2807,24 @@ public class BattleExDto extends AbstractDto {
     private ArrayList<ArrayList<int[][]>> createNextHPHougeki(int[][] prevHP,List<BattleAtackDto> attackList){
         int[] enemy = prevHP[0].clone();
         int[] friend = prevHP[1].clone();
-        int[] combined = null;
-        if(this.isCombined()){
-            combined = prevHP[2].clone();
-        }
+        int[] combined = (this.isCombined())?prevHP[2].clone():null;
+        int[] enemyCombined = (this.isEnemyCombined())?prevHP[3].clone():null;
         ArrayList<ArrayList<int[][]>>result = new ArrayList<ArrayList<int[][]>>();
         for(int i=0;i<attackList.size();i++){
             ArrayList<int[][]> array = new ArrayList<int[][]>();
 
             BattleAtackDto attack = attackList.get(i);
             for(int j=0;j<attack.target.length;j++){
-                int[][] next = new int[3][];
+                int[][] next = new int[4][];
 
                 int t = attack.target[j];
                 int damage = attack.damage[j];
                 if(attack.friendAtack){
-                    enemy[t] = Math.max(0, enemy[t]-damage);
+                    if(t<6){
+                        enemy[t] = Math.max(0, enemy[t]-damage);
+                    }else{
+                        enemyCombined[t-6] = Math.max(0, enemyCombined[t]-damage);
+                    }
                 }else{
                     if(t<6){
                         friend[t] = Math.max(0, friend[t]-damage);
@@ -2822,6 +2836,7 @@ public class BattleExDto extends AbstractDto {
                 next[0] = enemy.clone();
                 next[1] = friend.clone();
                 next[2] = (this.isCombined())?combined.clone():null;
+                next[3] = (this.isEnemyCombined())?enemyCombined.clone():null;
                 array.add(next);
             }
 
@@ -2880,8 +2895,6 @@ public class BattleExDto extends AbstractDto {
                 int[][] api_si_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_si_list"));
                 int[][] api_cl_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_cl_list"));
                 double[][] api_damage = GsonUtil.toDoubleArrayArray(api_hougeki.get("api_damage"));
-                List<EnemyShipDto> enemyLisy = this.getEnemy();
-                List<ShipDto> friendList = (isSecond)? this.getDockCombined().getShips() :this.getDock().getShips();
                 ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
                 for(int i=1;i<api_at_list.length;++i){
                     int at = api_at_list[i];
@@ -2901,7 +2914,6 @@ public class BattleExDto extends AbstractDto {
                         }
                     }
 
-                    List<ItemInfoDto> itemInfoList = (at<7)? friendList.get(at-1).getItem() :enemyLisy.get(at-7).getItem();
                     for(int j=0;j<dfList.length;++j){
                         int df = dfList[j];
                         int damage = (int)damageList[j];
@@ -2935,8 +2947,92 @@ public class BattleExDto extends AbstractDto {
             }
             return prevHP;
         }
+    private int[][] HougekiRowBodyConstructEC(
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>enemyCombinedRows,
+            ArrayList<ArrayList<String>>friendCombinedRows,
+            List<BattleAtackDto>attackList,
+            LinkedTreeMap api_hougeki,
+            String hougekiCount,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body,
+            BuiltinScriptFilter filter)
+        {
+            int[][]prevHP = startHP;
+            if(attackList != null){
+                String fleetName = "通常艦隊";//後で対応が必要
+                ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
+                int[] api_at_eflag = GsonUtil.toIntArray(api_hougeki.get("api_at_eflag"));
+                int[] api_at_list = GsonUtil.toIntArray(api_hougeki.get("api_at_list"));
+                int[] api_at_type = GsonUtil.toIntArray(api_hougeki.get("api_at_type"));
+                int[][] api_df_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_df_list"));
+                int[][] api_si_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_si_list"));
+                int[][] api_cl_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_cl_list"));
+                double[][] api_damage = GsonUtil.toDoubleArrayArray(api_hougeki.get("api_damage"));
+                ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
+                for(int i=1;i<api_at_list.length;++i){
+                    int eflag = api_at_eflag[i];
+                    int at = api_at_list[i];
+                    int atType = api_at_type[i];
+                    int[] dfList = api_df_list[i];
+                    int[] siList = api_si_list[i];
+                    int[] clList = api_cl_list[i];
+                    double[] damageList = api_damage[i];
 
-    private ArrayList<ArrayList<String>> HougekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+                    String attackFleetName = (eflag==0)?"自軍" :"敵軍";
+                    String[] itemName = new String[3];
+                    for(int j=0;j<itemName.length;j++){
+                        if(j < siList.length && siList[j] > 0){
+                            itemName[j]=Item.get(siList[j]).getName();
+                        }else{
+                            itemName[j]="";
+                        }
+                    }
+
+                    for(int j=0;j<dfList.length;++j){
+                        int df = dfList[j];
+                        int damage = (int)damageList[j];
+                        boolean kabau = (damageList[j] - (double)damage) > 0.05;
+                        int cl = clList[j];
+                        ArrayList<String> row = (ArrayList<String>) dayPhaseRow.clone();
+                        row.add("砲撃戦");
+                        row.add(fleetName);
+                        row.add(hougekiCount);
+                        row.add(attackFleetName);
+                        row.add(String.valueOf(atType));
+                        row.add(itemName[0]);
+                        row.add(itemName[1]);
+                        row.add(itemName[2]);
+                        row.add(String.valueOf(cl));
+                        row.add(String.valueOf(damage));
+                        row.add(kabau?"1" :"0");
+                        if(eflag == 0){
+                            if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[1][at-1],this.maxFriendHp[at-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(at-7), prevHP[2][at-7],this.maxFriendHpCombined[at-7]));}
+                            if(df < 7){row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(df-7), prevHP[3][df-7],this.maxEnemyHpCombined[df-7]));}
+                        }else{
+                            if(at < 7){row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-1), prevHP[0][at-1],this.maxEnemyHp[at-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(at-7), prevHP[3][at-7],this.maxEnemyHpCombined[at-7]));}
+                            if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(df-7), prevHP[2][df-7],this.maxFriendHpCombined[df-7]));}
+                        }
+                        row.add(combinedFlagString);
+                        if(filter.filterHougekiAttackDefenceEC(this, at, df, eflag) && filter.filterOutput(row)){
+                            body.add(row);
+                        }
+                        if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
+                            prevHP = hougekiHP.get(i-1).get(j);
+                        }
+                    }
+                }
+            }
+            return prevHP;
+        }
+
+    private ArrayList<ArrayList<String>> HougekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
@@ -2965,6 +3061,14 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
+        if(enemyCombinedRows == null && this.isEnemyCombined()){
+            enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isEnemyCombined()){
+                for(int i=0;i<this.enemyCombined.size();i++){
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                }
+            }
+        }
         int combinedFlag = this.getCombinedFlag();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
@@ -2973,17 +3077,20 @@ public class BattleExDto extends AbstractDto {
             (combinedFlag == 3)?"輸送部隊":
             "不明";
 
-        int[][]phaseStartHP = new int[3][];
+        int[][]phaseStartHP = new int[4][];
         if(phase == this.getPhase1()){
+            //敵、味方、味方、敵、順番がひどい
             phaseStartHP[0] = this.startEnemyHp.clone();
             phaseStartHP[1] = this.startFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ? this.startEnemyHpCombined.clone() : null;
         }
         else{
             Phase phase1 = this.getPhase1();
             phaseStartHP[0] = phase1.nowEnemyHp.clone();
             phaseStartHP[1] = phase1.nowFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
         int[][]airBaseStartHP = phaseStartHP;
         int[][]air1StartHP = airBaseStartHP;
@@ -3070,7 +3177,66 @@ public class BattleExDto extends AbstractDto {
                         filter
                     );
             }
-        }else{
+        }
+        else if(this.isEnemyCombined()){
+            raigekiStartHP = hougeki1StartHP;
+            if(phase.hougeki1 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki1");
+                raigekiStartHP =
+                    //引数の順番の一貫性の無さがやばいので後で直す
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki1,
+                        api_hougeki,
+                        "1",
+                        combinedFlagString,
+                        hougeki1StartHP,
+                        body,
+                        filter
+                    );
+            }
+            hougeki2StartHP = this.createNextHP(raigekiStartHP, phase.raigeki);
+            hougeki3StartHP = hougeki2StartHP;
+            if(phase.hougeki2 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki2");
+                hougeki3StartHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki2,
+                        api_hougeki,
+                        "2",
+                        combinedFlagString,
+                        hougeki2StartHP,
+                        body,
+                        filter
+                    );
+            }
+            endHP = hougeki3StartHP;
+            if(phase.hougeki3 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki3");
+                endHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki3,
+                        api_hougeki,
+                        "3",
+                        combinedFlagString,
+                        hougeki3StartHP,
+                        body,
+                        filter
+                    );
+            }
+        }
+        else{
             hougeki2StartHP = hougeki1StartHP;
             if(phase.hougeki1 != null){
                 LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki1");
@@ -3237,7 +3403,100 @@ public class BattleExDto extends AbstractDto {
             return prevHP;
         }
 
-    private ArrayList<ArrayList<String>> YasenRowBody(Phase phase, LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    private int[][] YasenRowBodyConstructEC(
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>enemyCombinedRows,
+            ArrayList<ArrayList<String>>friendCombinedRows,
+            int[]activeDeck,
+            List<BattleAtackDto>attackList,
+            LinkedTreeMap api_hougeki,
+            String spMidnightString,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body,
+            BuiltinScriptFilter filter
+            )
+        {
+            int[][]prevHP = startHP;
+            if(attackList != null){
+                boolean isSecond = this.isCombined();
+                boolean enemyIsSecond = (activeDeck[1]==2);
+                String fleetName =
+                    (!this.isCombined())?"通常艦隊"
+                    :(isSecond)?"連合第2艦隊"
+                    :"連合第1艦隊";
+                ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
+
+                int[] api_at_list = GsonUtil.toIntArray(api_hougeki.get("api_at_list"));
+                int[] api_sp_list = GsonUtil.toIntArray(api_hougeki.get("api_sp_list"));
+                int[][] api_df_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_df_list"));
+                int[][] api_si_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_si_list"));
+                int[][] api_cl_list = GsonUtil.toIntArrayArray(api_hougeki.get("api_cl_list"));
+                double[][] api_damage = GsonUtil.toDoubleArrayArray(api_hougeki.get("api_damage"));
+                ArrayList<String> nightPhaseRow = this.NightPhaseRowBody();
+                for(int i=1;i<api_at_list.length;++i){
+                    int at = api_at_list[i];
+                    int sp = api_sp_list[i];
+                    int[] dfList = api_df_list[i];
+                    int[] siList = api_si_list[i];
+                    int[] clList = api_cl_list[i];
+                    double[] damageList = api_damage[i];
+
+                    String attackFleetName = (at<7)?"自軍" :"敵軍";
+                    String[] itemName = new String[3];
+                    for(int j=0;j<itemName.length;j++){
+                        if(j < siList.length && siList[j] > 0){
+                            itemName[j]=Item.get(siList[j]).getName();
+                        }else{
+                            itemName[j]="";
+                        }
+                    }
+                    for(int j=0;j<dfList.length;++j){
+                        int cl = clList[j];
+                        if(cl >= 0){
+                            int df = dfList[j];
+                            int damage = (int)damageList[j];
+                            boolean kabau = damageList[j] - (double)damage > 0.05;
+                            ArrayList<String> row = (ArrayList<String>) nightPhaseRow.clone();
+                            row.add("夜戦");
+                            row.add(fleetName);
+                            row.add(spMidnightString);
+                            row.add(attackFleetName);
+                            row.add(String.valueOf(sp));
+                            row.add(itemName[0]);
+                            row.add(itemName[1]);
+                            row.add(itemName[2]);
+                            row.add(String.valueOf(cl));
+                            row.add(String.valueOf(damage));
+                            row.add(kabau?"1" :"0");
+                            if(!enemyIsSecond){
+                                if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                                else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
+                                if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                                else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
+                            }
+                            else{
+                                if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                                else{row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(at-7), prevHP[0][at-7],this.maxEnemyHpCombined[at-7]));}
+                                if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                                else{row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(df-7), prevHP[0][df-7],this.maxEnemyHpCombined[df-7]));}
+                            }
+                            row.add(combinedFlagString);
+                            if(filter.filterHougekiAttackDefenceECNight(this, at, df, isSecond,enemyIsSecond) && filter.filterOutput(row)){
+                                body.add(row);
+                            }
+                            if(i-1<hougekiHP.size() && j<hougekiHP.get(i-1).size()){
+                                prevHP = hougekiHP.get(i-1).get(j);
+                            }
+                        }
+                    }
+                }
+            }
+            return prevHP;
+        }
+
+    private ArrayList<ArrayList<String>> YasenRowBody(Phase phase, LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(!phase.isNight){
             return body;
@@ -3266,6 +3525,14 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
+        if(enemyCombinedRows == null && this.isEnemyCombined()){
+            enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isEnemyCombined()){
+                for(int i=0;i<this.enemyCombined.size();i++){
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                }
+            }
+        }
         int combinedFlag = this.getCombinedFlag();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
@@ -3274,33 +3541,51 @@ public class BattleExDto extends AbstractDto {
             (combinedFlag == 3)?"輸送部隊":
             "不明";
 
-        int[][]phaseStartHP = new int[3][];
+        int[][]phaseStartHP = new int[4][];
         if(phase == this.getPhase1()){
+            //敵、味方、味方、敵、順番がひどい
             phaseStartHP[0] = this.startEnemyHp.clone();
             phaseStartHP[1] = this.startFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ? this.startEnemyHpCombined.clone() : null;
         }
         else{
             Phase phase1 = this.getPhase1();
             phaseStartHP[0] = phase1.nowEnemyHp.clone();
             phaseStartHP[1] = phase1.nowFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
         int[][]endHP = phaseStartHP;
         if(phase.hougeki != null){
             LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki");
             endHP =
-                this.YasenRowBodyConstruct(
-                    enemyRows,
-                    (this.isCombined())?combinedRows :friendRows,
-                    phase.hougeki,
-                    api_hougeki,
-                    (phase == this.getPhase1())?"夜戦開始" :"昼戦開始",
-                    combinedFlagString,
-                    phaseStartHP,
-                    body,
-                    filter
-                );
+                (tree.containsKey("api_active_deck"))
+                    ?this.YasenRowBodyConstructEC(
+                            enemyRows,
+                            friendRows,
+                            enemyCombinedRows,
+                            combinedRows,
+                            GsonUtil.toIntArray(tree.get("api_active_deck")),
+                            phase.hougeki,
+                            api_hougeki,
+                            (phase == this.getPhase1())?"夜戦開始" :"昼戦開始",
+                            combinedFlagString,
+                            phaseStartHP,
+                            body,
+                            filter
+                        )
+                    :this.YasenRowBodyConstruct(
+                        enemyRows,
+                        (this.isCombined())?combinedRows :friendRows,
+                        phase.hougeki,
+                        api_hougeki,
+                        (phase == this.getPhase1())?"夜戦開始" :"昼戦開始",
+                        combinedFlagString,
+                        phaseStartHP,
+                        body,
+                        filter
+                    );
         }
         return body;
     }
@@ -3416,7 +3701,104 @@ public class BattleExDto extends AbstractDto {
             return createNextHP(prevHP, attackList);
         }
 
-    private ArrayList<ArrayList<String>>RaigekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    private int[][] RaigekiRowBodyConstructEC(
+            ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>enemyCombinedRows,
+            ArrayList<ArrayList<String>>friendCombinedRows,
+            List<BattleAtackDto>attackList,
+            LinkedTreeMap api_raigeki,
+            String stage,
+            String combinedFlagString,
+            int[][]startHP,
+            ArrayList<ArrayList<String>> body,
+            BuiltinScriptFilter filter)
+        {
+            int[][]prevHP = startHP;
+
+            int[] api_frai = GsonUtil.toIntArray(api_raigeki.get("api_frai"));
+            int[] api_erai = GsonUtil.toIntArray(api_raigeki.get("api_erai"));
+            double[] api_fdam = GsonUtil.toDoubleArray(api_raigeki.get("api_fdam"));
+            double[] api_edam = GsonUtil.toDoubleArray(api_raigeki.get("api_edam"));
+            int[] api_fydam = GsonUtil.toIntArray(api_raigeki.get("api_fydam"));
+            int[] api_eydam = GsonUtil.toIntArray(api_raigeki.get("api_eydam"));
+            int[] api_fcl = GsonUtil.toIntArray(api_raigeki.get("api_fcl"));
+            int[] api_ecl = GsonUtil.toIntArray(api_raigeki.get("api_ecl"));
+            ArrayList<String> dayPhaseRow = this.DayPhaseRowBody();
+
+            for(int i=1;i<=12;++i){
+                int at = i;
+                int df = api_frai[i];
+                boolean isSecond = at >= 7;
+                boolean enemyIsSecond = df >= 7;
+                String fleetName =
+                    (!this.isCombined())?"通常艦隊"
+                    :(isSecond)?"連合第2艦隊"
+                    :"連合第1艦隊";
+                if(df <= 0){ continue; }
+                int cl = api_fcl[i];
+                int ydam = api_fydam[i];
+                boolean kabau = ((int)(api_edam[df]*100))%100 > 5;
+                ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
+                row.add("雷撃戦");
+                row.add(fleetName);
+                row.add(stage);
+                row.add("自軍");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add(String.valueOf(cl));
+                row.add(String.valueOf(ydam));
+                row.add((kabau)?"1" :"0");
+                if(isSecond){ row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(at-7), prevHP[2][at-7],this.maxFriendHpCombined[at-7])); }
+                else{ row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[1][at-1],this.maxFriendHp[at-1])); }
+                if(enemyIsSecond){row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(df-7), prevHP[3][df-7],this.maxEnemyHpCombined[df-7]));}
+                else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));}
+                row.add(combinedFlagString);
+                if(filter.filterRaigekiAttackDefence(this, at, df, isSecond, true) && filter.filterOutput(row)){
+                    body.add(row);
+                }
+            }
+            for(int i=1;i<=12;++i){
+                int at = i;
+                int df = api_erai[i];
+                boolean isSecond = at >= 7;
+                boolean enemyIsSecond = df >= 7;
+                String fleetName =
+                    (!this.isCombined())?"通常艦隊"
+                    :(isSecond)?"連合第2艦隊"
+                    :"連合第1艦隊";
+                if(df <= 0){ continue; }
+                int cl = api_ecl[i];
+                int ydam = api_eydam[i];
+                boolean kabau = ((int)(api_fdam[df]*100))%100 > 5;
+                ArrayList<String> row = (ArrayList<String>)dayPhaseRow.clone();
+                row.add("雷撃戦");
+                row.add(fleetName);
+                row.add(stage);
+                row.add("敵軍");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add("");
+                row.add(String.valueOf(cl));
+                row.add(String.valueOf(ydam));
+                row.add((kabau)?"1" :"0");
+                if(enemyIsSecond){row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(at-7), prevHP[3][at-7],this.maxEnemyHpCombined[at-7]));}
+                else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-1), prevHP[0][at-1],this.maxEnemyHp[at-1]));}
+                if(isSecond){ row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(df-7), prevHP[2][df-7],this.maxFriendHpCombined[df-7])); }
+                else{ row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1])); }
+                row.add(combinedFlagString);
+                if(filter.filterRaigekiAttackDefence(this, at, df, isSecond, false) && filter.filterOutput(row)){
+                    body.add(row);
+                }
+            }
+            return createNextHP(prevHP, attackList);
+        }
+
+
+    private ArrayList<ArrayList<String>>RaigekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
@@ -3445,6 +3827,14 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
+        if(enemyCombinedRows == null && this.isEnemyCombined()){
+            enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isEnemyCombined()){
+                for(int i=0;i<this.enemyCombined.size();i++){
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                }
+            }
+        }
         int combinedFlag = this.getCombinedFlag();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
@@ -3453,17 +3843,19 @@ public class BattleExDto extends AbstractDto {
             (combinedFlag == 3)?"輸送部隊":
             "不明";
 
-        int[][]phaseStartHP = new int[3][];
+        int[][]phaseStartHP = new int[4][];
         if(phase == this.getPhase1()){
             phaseStartHP[0] = this.startEnemyHp.clone();
             phaseStartHP[1] = this.startFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ? this.startEnemyHpCombined.clone() : null;
         }
         else{
             Phase phase1 = this.getPhase1();
             phaseStartHP[0] = phase1.nowEnemyHp.clone();
             phaseStartHP[1] = phase1.nowFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
         int[][]airBaseStartHP = phaseStartHP;
         int[][]air1StartHP = airBaseStartHP;
@@ -3478,17 +3870,31 @@ public class BattleExDto extends AbstractDto {
         if(phase.opening != null){
             LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_opening_atack");
             air2StartHP =
-                this.RaigekiRowBodyConstruct(
-                    enemyRows,
-                    (this.isCombined()?combinedRows :friendRows),
-                    phase.opening,
-                    api_raigeki,
-                    "開幕",
-                    combinedFlagString,
-                    openingRaigekiStartHP,
-                    body,
-                    filter
-                );
+                (this.isEnemyCombined())
+                    ?this.RaigekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.opening,
+                        api_raigeki,
+                        "開幕",
+                        combinedFlagString,
+                        openingRaigekiStartHP,
+                        body,
+                        filter
+                    )
+                    :this.RaigekiRowBodyConstruct(
+                        enemyRows,
+                        (this.isCombined()?combinedRows :friendRows),
+                        phase.opening,
+                        api_raigeki,
+                        "開幕",
+                        combinedFlagString,
+                        openingRaigekiStartHP,
+                        body,
+                        filter
+                    );
         }
         int[][]hougeki1StartHP = this.createNextHPAir(air2StartHP, phase.air2);
 
@@ -3502,17 +3908,31 @@ public class BattleExDto extends AbstractDto {
             if(phase.raigeki != null){
                 LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_raigeki");
                 hougeki2StartHP =
-                    this.RaigekiRowBodyConstruct(
-                        enemyRows,
-                        (this.isCombined()?combinedRows :friendRows),
-                        phase.raigeki,
-                        api_raigeki,
-                        "閉幕",
-                        combinedFlagString,
-                        raigekiStartHP,
-                        body,
-                        filter
-                    );
+                    (this.isEnemyCombined())
+                        ?this.RaigekiRowBodyConstructEC(
+                            enemyRows,
+                            friendRows,
+                            enemyCombinedRows,
+                            combinedRows,
+                            phase.raigeki,
+                            api_raigeki,
+                            "閉幕",
+                            combinedFlagString,
+                            raigekiStartHP,
+                            body,
+                            filter
+                        )
+                        :this.RaigekiRowBodyConstruct(
+                            enemyRows,
+                            (this.isCombined()?combinedRows :friendRows),
+                            phase.raigeki,
+                            api_raigeki,
+                            "閉幕",
+                            combinedFlagString,
+                            raigekiStartHP,
+                            body,
+                            filter
+                        );
             }
             hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
             endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
@@ -3524,17 +3944,31 @@ public class BattleExDto extends AbstractDto {
             if(phase.raigeki != null){
                 LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_raigeki");
                 endHP =
-                    this.RaigekiRowBodyConstruct(
-                        enemyRows,
-                        (this.isCombined()?combinedRows :friendRows),
-                        phase.raigeki,
-                        api_raigeki,
-                        "閉幕",
-                        combinedFlagString,
-                        raigekiStartHP,
-                        body,
-                        filter
-                    );
+                    (this.isEnemyCombined())
+                        ?this.RaigekiRowBodyConstructEC(
+                            enemyRows,
+                            friendRows,
+                            enemyCombinedRows,
+                            combinedRows,
+                            phase.raigeki,
+                            api_raigeki,
+                            "閉幕",
+                            combinedFlagString,
+                            raigekiStartHP,
+                            body,
+                            filter
+                        )
+                        :this.RaigekiRowBodyConstruct(
+                            enemyRows,
+                            (this.isCombined()?combinedRows :friendRows),
+                            phase.raigeki,
+                            api_raigeki,
+                            "閉幕",
+                            combinedFlagString,
+                            raigekiStartHP,
+                            body,
+                            filter
+                        );
             }
         }
         return body;
@@ -3576,6 +4010,7 @@ public class BattleExDto extends AbstractDto {
     private int[][] AirRowBodyConstruct(
             ArrayList<ArrayList<String>>enemyRows,
             ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>enemyCombinedRows,
             ArrayList<ArrayList<String>>combinedRows,
             ArrayList<ArrayList<String>>enemySummaryRows,
             ArrayList<ArrayList<String>>friendSummaryRows,
@@ -3683,23 +4118,47 @@ public class BattleExDto extends AbstractDto {
                 LinkedTreeMap combined = (LinkedTreeMap)api_kouku.get("api_stage3_combined");
                 if(combined != null){
                     int[] frai_flag = GsonUtil.toIntArray(combined.get("api_frai_flag"));
+                    int[] erai_flag = GsonUtil.toIntArray(combined.get("api_erai_flag"));
                     int[] fbak_flag = GsonUtil.toIntArray(combined.get("api_fbak_flag"));
+                    int[] ebak_flag = GsonUtil.toIntArray(combined.get("api_ebak_flag"));
                     int[] fcl_flag = GsonUtil.toIntArray(combined.get("api_fcl_flag"));
+                    int[] ecl_flag = GsonUtil.toIntArray(combined.get("api_ecl_flag"));
                     double[] fdam = GsonUtil.toDoubleArray(combined.get("api_fdam"));
-                    for(int i=1; i<=6; i++){
-                        int df = i;
-                        ArrayList<String> row = (ArrayList<String>)rowHead.clone();
-                        enemySummaryRows.stream().forEach(b->row.addAll(b));
-                        row.add(String.valueOf(frai_flag[i]));
-                        row.add(String.valueOf(fbak_flag[i]));
-                        row.add(String.valueOf(fcl_flag[i]));
-                        int damage = (int)fdam[i];
-                        boolean kabau = fdam[i] - (double)damage > 0.05;
-                        row.add(String.valueOf(damage));
-                        row.add((kabau)?"1" :"0");
-                        row.addAll((df-1)<this.maxFriendHpCombined.length?this.ShipRowBodyUpdate(combinedRows.get(df-1), prevHP[2][df-1],this.maxFriendHpCombined[df-1]) :combinedRows.get(df-1));
-                        if(filter.filterDefenceCountItem(this.getDockCombined().getShips().get(df-1))&&filter.filterOutput(row)){
-                            body.add(row);
+                    double[] edam = GsonUtil.toDoubleArray(combined.get("api_edam"));
+                    if(frai_flag != null){
+                        for(int i=1; i<=6; i++){
+                            int df = i;
+                            ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                            enemySummaryRows.stream().forEach(b->row.addAll(b));
+                            row.add(String.valueOf(frai_flag[i]));
+                            row.add(String.valueOf(fbak_flag[i]));
+                            row.add(String.valueOf(fcl_flag[i]));
+                            int damage = (int)fdam[i];
+                            boolean kabau = fdam[i] - (double)damage > 0.05;
+                            row.add(String.valueOf(damage));
+                            row.add((kabau)?"1" :"0");
+                            row.addAll((df-1)<this.maxFriendHpCombined.length?this.ShipRowBodyUpdate(combinedRows.get(df-1), prevHP[2][df-1],this.maxFriendHpCombined[df-1]) :combinedRows.get(df-1));
+                            if(filter.filterDefenceCountItem(this.getDockCombined().getShips().get(df-1))&&filter.filterOutput(row)){
+                                body.add(row);
+                            }
+                        }
+                    }
+                    if(erai_flag != null){
+                        for(int i=1; i<=6; i++){
+                            int df = i;
+                            ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                            friendSummaryRows.stream().forEach(b->row.addAll(b));
+                            row.add(String.valueOf(erai_flag[i]));
+                            row.add(String.valueOf(ebak_flag[i]));
+                            row.add(String.valueOf(ecl_flag[i]));
+                            int damage = (int)edam[i];
+                            boolean kabau = edam[i] - (double)damage > 0.05;
+                            row.add(String.valueOf(damage));
+                            row.add((kabau)?"1" :"0");
+                            row.addAll((df-1)<this.maxEnemyHpCombined.length?this.ShipRowBodyUpdate(enemyCombinedRows.get(df-1), prevHP[3][df-1],this.maxEnemyHpCombined[df-1]) :enemyCombinedRows.get(df-1));
+                            if(filter.filterDefenceCountItem(this.getEnemyCombined().get(df-1))&&filter.filterOutput(row)){
+                                body.add(row);
+                            }
                         }
                     }
                 }
@@ -3707,7 +4166,7 @@ public class BattleExDto extends AbstractDto {
             return createNextHPAir(prevHP, air);
         }
 
-    private ArrayList<ArrayList<String>>AirRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    private ArrayList<ArrayList<String>>AirRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
@@ -3736,6 +4195,14 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
+        if(enemyCombinedRows == null && this.isEnemyCombined()){
+            enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isEnemyCombined()){
+                for(int i=0;i<this.enemyCombined.size();i++){
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                }
+            }
+        }
         ArrayList<ArrayList<String>> enemySummaryRows = new ArrayList<ArrayList<String>>();
         for(int i=0;i<this.enemy.size();i++){enemySummaryRows.add(this.ShipSummaryRowBody(this.enemy.get(i)));}
         for(int i=this.enemy.size();i<6;i++){enemySummaryRows.add(this.ShipSummaryRowBody(null));}
@@ -3753,17 +4220,19 @@ public class BattleExDto extends AbstractDto {
             (combinedFlag == 3)?"輸送部隊":
             "不明";
 
-        int[][]phaseStartHP = new int[3][];
+        int[][]phaseStartHP = new int[4][];
         if(phase == this.getPhase1()){
             phaseStartHP[0] = this.startEnemyHp.clone();
             phaseStartHP[1] = this.startFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ? this.startEnemyHpCombined.clone() : null;
         }
         else{
             Phase phase1 = this.getPhase1();
             phaseStartHP[0] = phase1.nowEnemyHp.clone();
             phaseStartHP[1] = phase1.nowFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
         int[][]airBaseStartHP = phaseStartHP;
         int[][]air1StartHP = airBaseStartHP;
@@ -3778,6 +4247,7 @@ public class BattleExDto extends AbstractDto {
                 this.AirRowBodyConstruct(
                     enemyRows,
                     friendRows,
+                    enemyCombinedRows,
                     combinedRows,
                     enemySummaryRows,
                     friendSummaryRows,
@@ -3798,6 +4268,7 @@ public class BattleExDto extends AbstractDto {
                 this.AirRowBodyConstruct(
                         enemyRows,
                         friendRows,
+                        enemyCombinedRows,
                         combinedRows,
                         enemySummaryRows,
                         friendSummaryRows,
@@ -3866,6 +4337,7 @@ public class BattleExDto extends AbstractDto {
 
     private int[][] BaseAirRowBodyConstruct(
             ArrayList<ArrayList<String>>enemyRows,
+            ArrayList<ArrayList<String>>enemyCombinedRows,
             ArrayList<ArrayList<String>>friendSummaryRows,
             AirBattleDto air,
             LinkedTreeMap api_kouku,
@@ -3960,11 +4432,34 @@ public class BattleExDto extends AbstractDto {
                         }
                     }
                 }
+                LinkedTreeMap combined = (LinkedTreeMap)api_kouku.get("api_stage3_combined");
+                if(combined != null){
+                    int[] erai_flag = GsonUtil.toIntArray(combined.get("api_erai_flag"));
+                    int[] ebak_flag = GsonUtil.toIntArray(combined.get("api_ebak_flag"));
+                    int[] ecl_flag = GsonUtil.toIntArray(combined.get("api_ecl_flag"));
+                    double[] edam = GsonUtil.toDoubleArray(combined.get("api_edam"));
+                    for(int i=1; i<=6; i++){
+                        int df = i;
+                        ArrayList<String> row = (ArrayList<String>)rowHead.clone();
+                        friendSummaryRows.stream().forEach(b->row.addAll(b));
+                        row.add(String.valueOf(erai_flag[i]));
+                        row.add(String.valueOf(ebak_flag[i]));
+                        row.add(String.valueOf(ecl_flag[i]));
+                        int damage = (int)edam[i];
+                        boolean kabau = edam[i] - (double)damage > 0.05;
+                        row.add(String.valueOf(damage));
+                        row.add((kabau)?"1" :"0");
+                        row.addAll((df-1)<this.maxEnemyHpCombined.length?this.ShipRowBodyUpdate(enemyCombinedRows.get(df-1), prevHP[3][df-1],this.maxEnemyHpCombined[df-1]):enemyCombinedRows.get(df-1));
+                        if(filter.filterDefenceCountItem(this.enemyCombined.get(df-1)) && filter.filterOutput(row)){
+                            body.add(row);
+                        }
+                    }
+                }
             }
             return createNextHPAir(prevHP, air);
         }
 
-    private ArrayList<ArrayList<String>>BaseAirRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    private ArrayList<ArrayList<String>>BaseAirRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
@@ -3973,6 +4468,14 @@ public class BattleExDto extends AbstractDto {
             enemyRows = new ArrayList<ArrayList<String>>();
             for(int i=0;i<this.enemy.size();i++){
                 enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
+            }
+        }
+        if(enemyCombinedRows == null && this.isEnemyCombined()){
+            enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
+            if(this.isEnemyCombined()){
+                for(int i=0;i<this.enemyCombined.size();i++){
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                }
             }
         }
         ArrayList<ArrayList<String>> friendSummaryRows = new ArrayList<ArrayList<String>>();
@@ -3989,17 +4492,19 @@ public class BattleExDto extends AbstractDto {
             (combinedFlag == 3)?"輸送部隊":
             "不明";
 
-        int[][]phaseStartHP = new int[3][];
+        int[][]phaseStartHP = new int[4][];
         if(phase == this.getPhase1()){
             phaseStartHP[0] = this.startEnemyHp.clone();
             phaseStartHP[1] = this.startFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ? this.startEnemyHpCombined.clone() : null;
         }
         else{
             Phase phase1 = this.getPhase1();
             phaseStartHP[0] = phase1.nowEnemyHp.clone();
             phaseStartHP[1] = phase1.nowFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
         int[][]airBaseStartHP = phaseStartHP;
         int[][]air1StartHP = airBaseStartHP;
@@ -4012,6 +4517,7 @@ public class BattleExDto extends AbstractDto {
                 prevHP =
                     this.BaseAirRowBodyConstruct(
                         enemyRows,
+                        enemyCombinedRows,
                         friendSummaryRows,
                         air,
                         api_kouku,
@@ -4082,7 +4588,13 @@ public class BattleExDto extends AbstractDto {
             String index = (new Integer(i)).toString();
             ShipRowHeader()
                 .stream()
-                .forEach(s->header.add("連合第二艦隊艦"+index+"."+s));
+                .forEach(s->header.add("敵連合第二艦隊"+index+"."+s));
+        }
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipRowHeader()
+                .stream()
+                .forEach(s->header.add("味方連合第二艦隊"+index+"."+s));
         }
         header.add("艦隊種類");
         return header;
@@ -4091,6 +4603,7 @@ public class BattleExDto extends AbstractDto {
     private int[][] AirLostRowBodyConstruct(
             ArrayList<ArrayList<String>>enemyRows,
             ArrayList<ArrayList<String>>friendRows,
+            ArrayList<ArrayList<String>>enemyCombinedRows,
             ArrayList<ArrayList<String>>combinedRows,
             AirBattleDto air,
             LinkedTreeMap api_kouku,
@@ -4174,9 +4687,17 @@ public class BattleExDto extends AbstractDto {
             if(combined != null){
                 int[] frai_flag = GsonUtil.toIntArray(combined.get("api_frai_flag"));
                 int[] fbak_flag = GsonUtil.toIntArray(combined.get("api_fbak_flag"));
+                int[] erai_flag = GsonUtil.toIntArray(combined.get("api_erai_flag"));
+                int[] ebak_flag = GsonUtil.toIntArray(combined.get("api_ebak_flag"));
                 for(int i=0;i<frai_flag.length;i++){
                     if(frai_flag[i]==1){frai_count++;}
                     if(fbak_flag[i]==1){fbak_count++;}
+                }
+                if(erai_flag!=null){
+                    for(int i=0;i<erai_flag.length;i++){
+                        if(erai_flag[i]==1){erai_count++;}
+                        if(ebak_flag[i]==1){ebak_count++;}
+                    }
                 }
             }
             row.add(String.valueOf(frai_count));
@@ -4185,6 +4706,7 @@ public class BattleExDto extends AbstractDto {
             row.add(String.valueOf(ebak_count));
             for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(i),prevHP[0][i],this.maxEnemyHp[i]):enemyRows.get(i)); }
             for (int i = 0; i < 6; ++i) { row.addAll(i<this.maxFriendHp.length?this.ShipRowBodyUpdate(friendRows.get(i),prevHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
+            for (int i = 0; i < 6; ++i) { row.addAll((this.isEnemyCombined() && i<this.maxEnemyHpCombined.length)?this.ShipRowBodyUpdate(enemyCombinedRows.get(i),prevHP[3][i],this.maxEnemyHpCombined[i]):enemyCombinedRows.get(i)); }
             for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),prevHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
             row.add(combinedFlagString);
             if(filter.filterOutput(row)){
@@ -4193,7 +4715,7 @@ public class BattleExDto extends AbstractDto {
             return createNextHPAir(prevHP, air);
         }
 
-    private ArrayList<ArrayList<String>>AirLostRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    private ArrayList<ArrayList<String>>AirLostRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
         if(phase.isNight){
             return body;
@@ -4223,7 +4745,15 @@ public class BattleExDto extends AbstractDto {
                 for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
             }
         }
-
+        if(enemyCombinedRows == null){
+            enemyCombinedRows = new ArrayList<ArrayList<String>>();
+            if(this.isCombined() && this.getDockCombined()!=null){
+                for(int i=0;i<this.enemyCombined.size();i++){ enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));}
+                for(int i=this.enemyCombined.size();i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+            }else{
+                for(int i=0;i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+            }
+        }
         int combinedFlag = this.getCombinedFlag();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
@@ -4232,17 +4762,19 @@ public class BattleExDto extends AbstractDto {
             (combinedFlag == 3)?"輸送部隊":
             "不明";
 
-        int[][]phaseStartHP = new int[3][];
+        int[][]phaseStartHP = new int[4][];
         if(phase == this.getPhase1()){
             phaseStartHP[0] = this.startEnemyHp.clone();
             phaseStartHP[1] = this.startFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?this.startFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ? this.startEnemyHpCombined.clone() : null;
         }
         else{
             Phase phase1 = this.getPhase1();
             phaseStartHP[0] = phase1.nowEnemyHp.clone();
             phaseStartHP[1] = phase1.nowFriendHp.clone();
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
+            phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
         int[][]airBaseStartHP = phaseStartHP;
         int[][]air1StartHP = airBaseStartHP;
@@ -4257,6 +4789,7 @@ public class BattleExDto extends AbstractDto {
                 this.AirLostRowBodyConstruct(
                     enemyRows,
                     friendRows,
+                    enemyCombinedRows,
                     combinedRows,
                     phase.air,
                     api_kouku,
@@ -4276,6 +4809,7 @@ public class BattleExDto extends AbstractDto {
                 this.AirLostRowBodyConstruct(
                         enemyRows,
                         friendRows,
+                        enemyCombinedRows,
                         combinedRows,
                         phase.air2,
                         api_kouku,
@@ -4325,7 +4859,7 @@ public class BattleExDto extends AbstractDto {
         return header;
     }
 
-    private ArrayList<ArrayList<String>>HenseiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    private ArrayList<ArrayList<String>>HenseiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
 
         ArrayList<ArrayList<String>> enemySummaryRows = new ArrayList<ArrayList<String>>();
@@ -4438,10 +4972,10 @@ public class BattleExDto extends AbstractDto {
      * 初期化終わってるやつからBody取得
      * @return keyに対応する出力Body
      */
-    public String[][] BuiltinScriptBodyWithKey(String key,LinkedTreeMap[] treeArray,String dateString,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows){
-        return BuiltinScriptBodyWithKey(key,treeArray,dateString,enemyRows,friendRows,combinedRows,BuiltinScriptFilter.createTrueFilter());
+    public String[][] BuiltinScriptBodyWithKey(String key,LinkedTreeMap[] treeArray,String dateString,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows){
+        return BuiltinScriptBodyWithKey(key,treeArray,dateString,enemyRows,friendRows,enemyCombinedRows,combinedRows,BuiltinScriptFilter.createTrueFilter());
     }
-    public String[][] BuiltinScriptBodyWithKey(String key,LinkedTreeMap[] treeArray,String dateString,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+    public String[][] BuiltinScriptBodyWithKey(String key,LinkedTreeMap[] treeArray,String dateString,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
         try{
             if (this.exVersion >= 2) {
                 if(dateString == null){
@@ -4456,7 +4990,7 @@ public class BattleExDto extends AbstractDto {
                 switch(key){
                     case"砲撃戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.HougekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter);
+                            ArrayList<ArrayList<String>> body = this.HougekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -4470,10 +5004,10 @@ public class BattleExDto extends AbstractDto {
                         try{
                             ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
                             if(this.getPhase1() != null && this.getPhase1().isNight){
-                                body.addAll(this.YasenRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter));
+                                body.addAll(this.YasenRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                             }
                             if(this.getPhase2() != null && this.getPhase2().isNight){
-                                body.addAll(this.YasenRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,combinedRows,filter));
+                                body.addAll(this.YasenRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                             }
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
@@ -4489,16 +5023,16 @@ public class BattleExDto extends AbstractDto {
                             ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
                             if(this.getPhase1() != null){
                                 if(this.getPhase1().isNight){
-                                    body.addAll(this.YasenRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter));
+                                    body.addAll(this.YasenRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                                 }else{
-                                    body.addAll(this.HougekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter));
+                                    body.addAll(this.HougekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                                 }
                             }
                             if(this.getPhase2() != null){
                                 if(this.getPhase2().isNight){
-                                    body.addAll(this.YasenRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,combinedRows,filter));
+                                    body.addAll(this.YasenRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                                 }else{
-                                    body.addAll(this.HougekiRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,combinedRows,filter));
+                                    body.addAll(this.HougekiRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                                 }
                             }
                             String[][]array = new String[body.size()][];
@@ -4512,7 +5046,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"雷撃戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.RaigekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter);
+                            ArrayList<ArrayList<String>> body = this.RaigekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -4524,7 +5058,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"航空戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.AirRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter);
+                            ArrayList<ArrayList<String>> body = this.AirRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -4536,7 +5070,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"航空戦撃墜":
                         try{
-                            ArrayList<ArrayList<String>> body = this.AirLostRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter);
+                            ArrayList<ArrayList<String>> body = this.AirLostRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -4548,7 +5082,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     case"基地航空戦":
                         try{
-                            ArrayList<ArrayList<String>> body = this.BaseAirRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter);
+                            ArrayList<ArrayList<String>> body = this.BaseAirRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter);
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
                                 array[i] = body.get(i).toArray(new String[0]);
@@ -4562,10 +5096,10 @@ public class BattleExDto extends AbstractDto {
                         try{
                             ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
                             if(this.getPhase1() != null){
-                                body.addAll(this.HenseiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,combinedRows,filter));
+                                body.addAll(this.HenseiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                             }
                             if(this.getPhase2() != null){
-                                body.addAll(this.HenseiRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,combinedRows,filter));
+                                body.addAll(this.HenseiRowBody(this.getPhase2(),treeArray[1],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
                             }
                             String[][]array = new String[body.size()][];
                             for(int i=0;i<array.length;i++){
@@ -4642,6 +5176,13 @@ public class BattleExDto extends AbstractDto {
                 }else{
                     for(int i=0;i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
                 }
+                ArrayList<ArrayList<String>> combinedEnemyRows = new ArrayList<ArrayList<String>>();
+                if(this.isEnemyCombined()){
+                    for(int i=0;i<this.enemyCombined.size();i++){ combinedEnemyRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));}
+                    for(int i=this.enemyCombined.size();i<6;i++){ combinedEnemyRows.add(this.ShipRowBodyBase(null,0, i));}
+                }else{
+                    for(int i=0;i<6;i++){ combinedEnemyRows.add(this.ShipRowBodyBase(null, 0, i));}
+                }
                 ArrayList<ArrayList<String>> combinedRows = new ArrayList<ArrayList<String>>();
                 if(this.isCombined() && this.getDockCombined()!=null){
                     List<ShipDto> ships = this.getDockCombined().getShips();
@@ -4650,10 +5191,9 @@ public class BattleExDto extends AbstractDto {
                 }else{
                     for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
                 }
-
                 BuiltinScriptKeys()
                     .stream()
-                    .forEach(key->result.put(key, BuiltinScriptBodyWithKey(key,treeArray,dateString,enemyRows,friendRows,combinedRows)));
+                    .forEach(key->result.put(key, BuiltinScriptBodyWithKey(key,treeArray,dateString,enemyRows,friendRows,combinedEnemyRows,combinedRows)));
             }
             return result;
         }
@@ -4664,7 +5204,7 @@ public class BattleExDto extends AbstractDto {
 
     public String[][] BodyWithFilter(BuiltinScriptFilter filter){
         if(filter.filterDateTime(this.getBattleDate())){
-            return this.BuiltinScriptBodyWithKey(filter.key, null, null, null, null, null,filter);
+            return this.BuiltinScriptBodyWithKey(filter.key, null, null, null, null,null, null,filter);
         }else{
             return new String[0][];
         }

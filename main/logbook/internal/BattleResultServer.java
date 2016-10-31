@@ -874,7 +874,7 @@ public class BattleResultServer {
                 .map(b->{
                     b.readFromJson();
                     BattleResult item = map.get(b.getBattleDate());
-                    String[][] body = b.BuiltinScriptBodyWithKey(key, null, null, null, null, null);
+                    String[][] body = b.BuiltinScriptBodyWithKey(key, null, null,null, null, null, null);
                     List<Comparable[]> list = new ArrayList<>();
                     for(String[] line:body){
                         list.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(0, item) },line));

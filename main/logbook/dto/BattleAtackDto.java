@@ -102,11 +102,12 @@ public class BattleAtackDto {
 
         return result;
     }
-    private static List<BattleAtackDto> makeHougeki(int[] at_list,int[] at_type,int[][] df_list,int[][] cl_list,int[][] damage_list) {
+    private static List<BattleAtackDto> makeHougeki(int[] at_efalg,int[] at_list,int[] at_type,int[][] df_list,int[][] cl_list,int[][] damage_list) {
         ArrayList<BattleAtackDto> result = new ArrayList<BattleAtackDto>();
         ArrayList<Integer> flatten_df_list = new ArrayList<Integer>();
         ArrayList<Integer> flatten_damage_list = new ArrayList<Integer>();
         ArrayList<Integer> flatten_cl_list = new ArrayList<Integer>();
+        boolean hasEflag = (at_efalg != null);
 
         for (int i = 1; i < at_list.length; ++i) {
             int at = at_list[i];
@@ -118,7 +119,7 @@ public class BattleAtackDto {
                 int damd = damage[d];
                 int cld = cl[d];
                 if (dfd != -1) {
-                    flatten_df_list.add((dfd - 1) % 6);
+                    flatten_df_list.add(hasEflag ? (dfd - 1) : ((dfd - 1) % 6));
                     flatten_damage_list.add(damd);
                     flatten_cl_list.add(cld);
                 }
@@ -127,11 +128,11 @@ public class BattleAtackDto {
             if (length > 0) {
                 BattleAtackDto dto = new BattleAtackDto();
                 dto.kind = AtackKind.HOUGEKI;
-                dto.friendAtack = (at <= 6);
+                dto.friendAtack = hasEflag ? (at_efalg[i] == 0) : (at <= 6);
                 if (at_type != null) {
                     dto.type = at_type[i];
                 }
-                dto.origin = new int[] { (at - 1) % 6 };
+                dto.origin = new int[] { hasEflag ? (at - 1) : ((at - 1) % 6) };
                 dto.target = new int[length];
                 dto.damage = new int[length];
                 dto.critical = new int[length];
@@ -208,6 +209,7 @@ public class BattleAtackDto {
     }
 
     private static BattleAtackDto makeRaigeki(boolean friendAtack,int[] rai_list, int[] dam_list, int[] cl_list, int[] ydam_list) {
+        int elems = rai_list.length - 1; // 6 or 12
         int[] originMap = new int[6];
         int[] targetMap = new int[6];
         boolean[] targetEnabled = new boolean[6];
@@ -216,7 +218,7 @@ public class BattleAtackDto {
         dto.friendAtack = friendAtack;
 
         int idx = 0;
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < elems; ++i) {
             int rai = rai_list[i + 1];
             if (rai > 0) {
                 originMap[i] = idx++;
@@ -237,7 +239,7 @@ public class BattleAtackDto {
         dto.target = new int[idx];
         dto.damage = new int[idx];
 
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < elems; ++i) {
             int rai = rai_list[i + 1];
             int dam = dam_list[i + 1];
             int cl = cl_list[i + 1];
@@ -253,7 +255,9 @@ public class BattleAtackDto {
                 dto.damage[targetMap[i]] = dam;
             }
         }
-
+        // 連合艦隊を考慮した配列構成になっているか
+        // （6-5敵連合艦隊実装まで連合艦隊の雷撃は随伴艦隊だけが受けることになっていたのでelems==6だったが6-5敵連合艦隊では敵の全艦が攻撃を受ける対象となったのでelems==12になった）
+        dto.combineEnabled = (elems == 12);
         return dto;
     }
 
@@ -359,7 +363,7 @@ public class BattleAtackDto {
             if (dam > 0) {
                 dto.target[idx] = i;
                 dto.damage[idx] = dam;
-                //クリティカルフラグを砲撃と合わせる(オリジナル版で+1無いのは多分バグ?)
+                //クリティカルフラグを砲撃と合わせる
                 dto.critical[idx] = cl + 1;
                 idx++;
             }
@@ -460,18 +464,22 @@ public class BattleAtackDto {
 
         int[] fdamCombined = null;
         int[] fclCombined = null;
+        int[] edamCombined = null;
+        int[] eclCombined = null;
         if (combined != null) {
             fdamCombined = GsonUtil.toIntArray(combined.get("api_fdam"));
             fclCombined = GsonUtil.toIntArray(combined.get("api_fcl_flag"));
+            edamCombined = GsonUtil.toIntArray(combined.get("api_edam"));
+            eclCombined = GsonUtil.toIntArray(combined.get("api_ecl_flag"));
         }
 
         BattleAtackDto fatack = makeAir(
                 true,
                 plane_from[0],
                 GsonUtil.toIntArray(stage3.get("api_edam")),
-                null,
+                edamCombined,
                 GsonUtil.toIntArray(stage3.get("api_ecl_flag")),
-                null,
+                eclCombined,
                 isBase);
 
         if (isBase) {
@@ -538,7 +546,7 @@ public class BattleAtackDto {
      * @param second
      * @return
      */
-    public static List<BattleAtackDto> makeRaigeki(LinkedTreeMap raigeki, boolean second) {
+    public static List<BattleAtackDto> makeRaigeki(LinkedTreeMap raigeki, boolean isFriendSecond) {
         if (raigeki == null){return null;}
 
         BattleAtackDto fatack = makeRaigeki(
@@ -548,8 +556,11 @@ public class BattleAtackDto {
                 GsonUtil.toIntArray(raigeki.get("api_fcl")),
                 GsonUtil.toIntArray(raigeki.get("api_fydam")));
 
-        if (second) {
-            fatack.makeOriginCombined();
+        if (fatack.combineEnabled == false) {
+            // 味方の随伴艦のみが雷撃を行う場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
+            if (isFriendSecond) {
+                fatack.makeOriginCombined();
+            }
         }
 
         BattleAtackDto eatack = makeRaigeki(
@@ -559,8 +570,11 @@ public class BattleAtackDto {
                 GsonUtil.toIntArray(raigeki.get("api_ecl")),
                 GsonUtil.toIntArray(raigeki.get("api_eydam")));
 
-        if (second) {
-            eatack.makeTargetCombined();
+        if (fatack.combineEnabled == false) {
+            // 味方の随伴艦のみが雷撃を受ける場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
+            if (isFriendSecond) {
+                eatack.makeTargetCombined();
+            }
         }
 
         return Arrays.asList(new BattleAtackDto[] { fatack, eatack });
@@ -614,19 +628,31 @@ public class BattleAtackDto {
      * api_hougeki* を読み込む
      * @param hougeki
      */
-    public static List<BattleAtackDto> makeHougeki(LinkedTreeMap hougeki, boolean second) {
+    public static List<BattleAtackDto> makeHougeki(LinkedTreeMap hougeki, boolean isFriendSecond, boolean isEnemySecond) {
         if (hougeki == null){ return null; }
 
         List<BattleAtackDto> seq = makeHougeki(
+                GsonUtil.toIntArray(hougeki.get("api_at_eflag")),
                 GsonUtil.toIntArray(hougeki.get("api_at_list")),
                 GsonUtil.toIntArray(hougeki.get("api_at_type")),
                 GsonUtil.toIntArrayArray(hougeki.get("api_df_list")),
                 GsonUtil.toIntArrayArray(hougeki.get("api_cl_list")),
                 GsonUtil.toIntArrayArray(hougeki.get("api_damage")));
-        //連合艦隊を反映
-        if (second) {
+        // 味方連合艦隊を反映
+        if (isFriendSecond) {
             for (BattleAtackDto dto : seq) {
                 if (dto.friendAtack) {
+                    dto.makeOriginCombined();
+                }
+                else {
+                    dto.makeTargetCombined();
+                }
+            }
+        }
+        // 敵連合艦隊を反映（現状夜戦のみに適用）
+        if (isEnemySecond) {
+            for (BattleAtackDto dto : seq) {
+                if (!dto.friendAtack) {
                     dto.makeOriginCombined();
                 }
                 else {
