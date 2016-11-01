@@ -210,9 +210,9 @@ public class BattleAtackDto {
 
     private static BattleAtackDto makeRaigeki(boolean friendAtack,int[] rai_list, int[] dam_list, int[] cl_list, int[] ydam_list) {
         int elems = rai_list.length - 1; // 6 or 12
-        int[] originMap = new int[6];
-        int[] targetMap = new int[6];
-        boolean[] targetEnabled = new boolean[6];
+        int[] originMap = new int[elems];
+        int[] targetMap = new int[elems];
+        boolean[] targetEnabled = new boolean[elems];
         BattleAtackDto dto = new BattleAtackDto();
         dto.kind = AtackKind.RAIGEKI;
         dto.friendAtack = friendAtack;
@@ -231,7 +231,7 @@ public class BattleAtackDto {
         dto.ot = new int[idx];
 
         idx = 0;
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < elems; ++i) {
             if (targetEnabled[i]) {
                 targetMap[i] = idx++;
             }

@@ -1367,7 +1367,8 @@ public class BattleExDto extends AbstractDto {
             int[] maxhps = GsonUtil.toIntArray(tree.get("api_maxhps"));
             int[] nowhpsCombined = GsonUtil.toIntArray(tree.get("api_nowhps_combined"));
             int[] maxhpsCombined = GsonUtil.toIntArray(tree.get("api_maxhps_combined"));
-            boolean isCombined = (nowhpsCombined != null);
+            boolean isFriendCombined = tree.containsKey("api_fParam_combined");
+            boolean isEnemyCombined = tree.containsKey("api_eParam_combined");
 
             int numFships = 6;
             int numFshipsCombined = 0;
@@ -1407,18 +1408,40 @@ public class BattleExDto extends AbstractDto {
                     this.enemy.add(new EnemyShipDto(id, slot, param, eLevel[i]));
                 }
             }
+            if (isEnemyCombined) {
+                int[] shipKeCombined = GsonUtil.toIntArray(tree.get("api_ship_ke_combined"));
+                int[][] eSlotsCombined = GsonUtil.toIntArrayArray(tree.get("api_eSlot_combined"));
+                int[][] eParamsCombined = GsonUtil.toIntArrayArray(tree.get("api_eParam_combined"));
+                int[] eLevelCombined = GsonUtil.toIntArray(tree.get("api_ship_lv_combined"));
+                for (int i = 1; i < shipKeCombined.length; i++) {
+                    int id = shipKeCombined[i];
+                    if (id != -1) {
+                        int[] slot = eSlotsCombined[i - 1];
+                        int[] param = eParamsCombined[i - 1];
+                        this.enemyCombined.add(new EnemyShipDto(id, slot, param, eLevelCombined[i]));
+                    }
+                }
+            }
             int numEships = this.enemy.size();
+            int numEshipsCombined = this.enemyCombined.size();
 
             this.startFriendHp = new int[numFships];
             this.startEnemyHp = new int[numEships];
             this.maxFriendHp = new int[numFships];
             this.maxEnemyHp = new int[numEships];
-            if (isCombined) {
+            if (isFriendCombined) {
                 this.startFriendHpCombined = new int[numFshipsCombined];
                 this.maxFriendHpCombined = new int[numFshipsCombined];
             }
             else {
                 this.maxFriendHpCombined = null;
+            }
+            if (isEnemyCombined) {
+                this.startEnemyHpCombined = new int[numEshipsCombined];
+                this.maxEnemyHpCombined = new int[numEshipsCombined];
+            }
+            else {
+                this.maxEnemyHpCombined = null;
             }
 
             // 陣形
@@ -1455,28 +1478,34 @@ public class BattleExDto extends AbstractDto {
                     }
                 }
             }
-            if (isCombined) {
+            if (isFriendCombined || isEnemyCombined) {
                 for (int i = 1; i < nowhpsCombined.length; i++) {
                     int hp = nowhpsCombined[i];
                     int maxHp = maxhpsCombined[i];
-                    if (i <= numFshipsCombined) {
-                        this.maxFriendHpCombined[i - 1] = maxHp;
-                        this.friendGaugeMax += this.startFriendHpCombined[i - 1] = hp;
+                    if (i <= 6) {
+                        if (i <= numFshipsCombined) {
+                            this.maxFriendHpCombined[i - 1] = maxHp;
+                            this.friendGaugeMax += this.startFriendHpCombined[i - 1] = hp;
+                        }
+                    } else {
+                        if ((i - 6) <= numEshipsCombined) {
+                            this.maxEnemyHpCombined[i - 1 - 6] = maxHp;
+                            this.enemyGaugeMax += this.startEnemyHpCombined[i - 1 - 6] = hp;
+                        }
                     }
                 }
-
+            }
+            if (isFriendCombined) {
                 // 退避
                 this.escaped = new boolean[12];
-                int[] escape1 = GsonUtil.toIntArray(tree.get("api_escape_idx"));
-                if(escape1 != null){
-                    for(int index:escape1){
-                        this.escaped[index - 1] = true;
+                if (tree.containsKey("api_escape_idx")) {
+                    for (int jsonShip : GsonUtil.toIntArray(tree.get("api_escape_idx"))) {
+                        this.escaped[jsonShip - 1] = true;
                     }
                 }
-                int[] escape2 = GsonUtil.toIntArray(tree.get("api_escape_idx_combined"));
-                if(escape2 != null){
-                    for(int index:escape2){
-                        this.escaped[index - 1 + 6] = true;
+                if (tree.containsKey("api_escape_idx_combined")) {
+                    for (int jsonShip : GsonUtil.toIntArray(tree.get("api_escape_idx_combined"))) {
+                        this.escaped[jsonShip - 1 + 6] = true;
                     }
                 }
                 for (int i = 0; i < 2; ++i) {
@@ -2466,7 +2495,7 @@ public class BattleExDto extends AbstractDto {
             phase = this.getPhase2();
         }else{
             ArrayList<String> body = this.PhaseRowBody();
-            int length = this.NightPhaseRowHeader().size();
+            int length = NightPhaseRowHeader().size();
             for(int i=body.size();i<length;i++){
                 body.add("");
             }
@@ -2823,7 +2852,7 @@ public class BattleExDto extends AbstractDto {
                     if(t<6){
                         enemy[t] = Math.max(0, enemy[t]-damage);
                     }else{
-                        enemyCombined[t-6] = Math.max(0, enemyCombined[t]-damage);
+                        enemyCombined[t-6] = Math.max(0, enemyCombined[t-6]-damage);
                     }
                 }else{
                     if(t<6){
@@ -4125,7 +4154,7 @@ public class BattleExDto extends AbstractDto {
                     int[] ecl_flag = GsonUtil.toIntArray(combined.get("api_ecl_flag"));
                     double[] fdam = GsonUtil.toDoubleArray(combined.get("api_fdam"));
                     double[] edam = GsonUtil.toDoubleArray(combined.get("api_edam"));
-                    if(frai_flag != null){
+                    if(this.isCombined() && frai_flag != null){
                         for(int i=1; i<=6; i++){
                             int df = i;
                             ArrayList<String> row = (ArrayList<String>)rowHead.clone();
@@ -4143,7 +4172,7 @@ public class BattleExDto extends AbstractDto {
                             }
                         }
                     }
-                    if(erai_flag != null){
+                    if(this.isEnemyCombined() && erai_flag != null){
                         for(int i=1; i<=6; i++){
                             int df = i;
                             ArrayList<String> row = (ArrayList<String>)rowHead.clone();
