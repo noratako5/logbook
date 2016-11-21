@@ -1066,4 +1066,13 @@ public class BuiltinScriptFilter {
                 battle.getDock().getShips().get(df-1);
         return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
     }
+    public boolean filterRaigekiAttackDefenceEC(BattleExDto battle,int at,int df,boolean toEnemy){
+        ShipBaseDto attack =
+                (!toEnemy)?((at<7)?battle.getEnemy().get(at-1):battle.getEnemyCombined().get(at-7))
+                :((at<7)?battle.getDock().getShips().get(at-1):battle.getDockCombined().getShips().get(at-7));
+        ShipBaseDto defence =
+                (toEnemy)?((df<7)?battle.getEnemy().get(df-1):battle.getEnemyCombined().get(df-7))
+                :((df<7)?battle.getDock().getShips().get(df-1):battle.getDockCombined().getShips().get(df-7));
+        return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
+    }
 }

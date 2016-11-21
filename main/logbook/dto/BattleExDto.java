@@ -367,7 +367,7 @@ public class BattleExDto extends AbstractDto {
 
             // 砲撃
             this.hougeki = BattleAtackDto.makeHougeki(object.get("api_hougeki"),
-                    kind.isHougekiSecond(), this.isEnemySecond); // 夜戦
+                    isCombined(), this.isEnemySecond); // 夜戦
             this.hougeki1 = BattleAtackDto.makeHougeki(object.get("api_hougeki1"),
                     kind.isHougeki1Second(), this.isEnemySecond);
             this.hougeki2 = BattleAtackDto.makeHougeki(object.get("api_hougeki2"),
@@ -484,7 +484,7 @@ public class BattleExDto extends AbstractDto {
             this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_opening_atack"), kind.isOpeningSecond());
 
             // 砲撃
-            this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), kind.isHougekiSecond(),
+            this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), isCombined(),
                     this.isEnemySecond); // 夜戦
             this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki1"), kind.isHougeki1Second(),
                     this.isEnemySecond);
@@ -2238,10 +2238,10 @@ public class BattleExDto extends AbstractDto {
         if(phase.isNight()){
             return -1;
         }
-        else if(phase.getApi().equals(DataType.COMBINED_BATTLE_WATER.getApiName())){
+        else if(phase.getApi().equals(DataType.COMBINED_BATTLE_WATER.getApiName())||phase.getApi().equals(DataType.COMBINED_EACH_BATTLE_WATER.getApiName())){
             return 2;
         }
-        else if(phase.getApi().equals(DataType.COMBINED_BATTLE.getApiName())){
+        else if(phase.getApi().equals(DataType.COMBINED_BATTLE.getApiName())||phase.getApi().equals(DataType.COMBINED_EACH_BATTLE.getApiName())){
             //輸送と機動の区別は編成条件によるゴリ押し消去法しかない?
             //空き枠は轟沈考慮
             if(this.getDock() == null || this.getDockCombined() == null){
@@ -3207,6 +3207,120 @@ public class BattleExDto extends AbstractDto {
                     );
             }
         }
+        else if(this.isCombined() && this.isEnemyCombined() && phase.getKind().isHougeki2Second()){
+            hougeki2StartHP = hougeki1StartHP;
+            if(phase.hougeki1 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki1");
+                hougeki2StartHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki1,
+                        api_hougeki,
+                        "1",
+                        combinedFlagString,
+                        hougeki1StartHP,
+                        body,
+                        filter
+                    );
+            }
+            raigekiStartHP = hougeki2StartHP;
+            if(phase.hougeki2 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki2");
+                raigekiStartHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki2,
+                        api_hougeki,
+                        "2",
+                        combinedFlagString,
+                        hougeki2StartHP,
+                        body,
+                        filter
+                    );
+            }
+            hougeki3StartHP = this.createNextHP(raigekiStartHP, phase.raigeki);
+            endHP = hougeki3StartHP;
+            if(phase.hougeki3 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki3");
+                endHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki3,
+                        api_hougeki,
+                        "3",
+                        combinedFlagString,
+                        hougeki3StartHP,
+                        body,
+                        filter
+                    );
+            }
+        }
+        else if(this.isCombined() && this.isEnemyCombined() && phase.getKind().isHougeki3Second()){
+            hougeki2StartHP = hougeki1StartHP;
+            if(phase.hougeki1 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki1");
+                hougeki2StartHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki1,
+                        api_hougeki,
+                        "1",
+                        combinedFlagString,
+                        hougeki1StartHP,
+                        body,
+                        filter
+                    );
+            }
+            hougeki3StartHP = hougeki2StartHP;
+            if(phase.hougeki2 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki2");
+                hougeki3StartHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki2,
+                        api_hougeki,
+                        "2",
+                        combinedFlagString,
+                        hougeki2StartHP,
+                        body,
+                        filter
+                    );
+            }
+            raigekiStartHP = hougeki3StartHP;
+            if(phase.hougeki3 != null){
+                LinkedTreeMap api_hougeki = (LinkedTreeMap)tree.get("api_hougeki3");
+                raigekiStartHP =
+                    this.HougekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.hougeki3,
+                        api_hougeki,
+                        "3",
+                        combinedFlagString,
+                        hougeki3StartHP,
+                        body,
+                        filter
+                    );
+            }
+            endHP = this.createNextHP(raigekiStartHP, phase.raigeki);
+        }
         else if(this.isEnemyCombined()){
             raigekiStartHP = hougeki1StartHP;
             if(phase.hougeki1 != null){
@@ -3785,15 +3899,15 @@ public class BattleExDto extends AbstractDto {
                 if(enemyIsSecond){row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(df-7), prevHP[3][df-7],this.maxEnemyHpCombined[df-7]));}
                 else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));}
                 row.add(combinedFlagString);
-                if(filter.filterRaigekiAttackDefence(this, at, df, isSecond, true) && filter.filterOutput(row)){
+                if(filter.filterRaigekiAttackDefenceEC(this, at, df, true) && filter.filterOutput(row)){
                     body.add(row);
                 }
             }
             for(int i=1;i<=12;++i){
                 int at = i;
                 int df = api_erai[i];
-                boolean isSecond = at >= 7;
-                boolean enemyIsSecond = df >= 7;
+                boolean isSecond = df >= 7;
+                boolean enemyIsSecond = at >= 7;
                 String fleetName =
                     (!this.isCombined())?"通常艦隊"
                     :(isSecond)?"連合第2艦隊"
@@ -3819,7 +3933,7 @@ public class BattleExDto extends AbstractDto {
                 if(isSecond){ row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(df-7), prevHP[2][df-7],this.maxFriendHpCombined[df-7])); }
                 else{ row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1])); }
                 row.add(combinedFlagString);
-                if(filter.filterRaigekiAttackDefence(this, at, df, isSecond, false) && filter.filterOutput(row)){
+                if(filter.filterRaigekiAttackDefenceEC(this, at, df, false) && filter.filterOutput(row)){
                     body.add(row);
                 }
             }
@@ -3931,7 +4045,10 @@ public class BattleExDto extends AbstractDto {
         int[][]hougeki3StartHP;
         int[][]raigekiStartHP;
         int[][]endHP;
-        if(phase.getKind().isHougeki1Second()){
+        if(this.isEnemyCombined()){
+            int x = 0;
+        }
+        if(phase.getKind().isHougeki1Second() || (!this.isCombined() && this.isEnemyCombined())){
             raigekiStartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
             hougeki2StartHP = raigekiStartHP;
             if(phase.raigeki != null){
@@ -3965,7 +4082,54 @@ public class BattleExDto extends AbstractDto {
             }
             hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
             endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
-        }else{
+        }
+        else if(this.isCombined() && this.isEnemyCombined() && phase.getKind().isHougeki2Second()){
+            hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            raigekiStartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
+            hougeki3StartHP = raigekiStartHP;
+            if(phase.raigeki != null){
+                LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_raigeki");
+                hougeki3StartHP =
+                    this.RaigekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.raigeki,
+                        api_raigeki,
+                        "閉幕",
+                        combinedFlagString,
+                        raigekiStartHP,
+                        body,
+                        filter
+                    );
+            }
+            endHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+        }
+        else if(this.isCombined() && this.isEnemyCombined() && phase.getKind().isHougeki3Second()){
+            hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
+            hougeki3StartHP = createNextHP(hougeki2StartHP, phase.hougeki2);
+            raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);
+            endHP = raigekiStartHP;
+            if(phase.raigeki != null){
+                LinkedTreeMap api_raigeki = (LinkedTreeMap)tree.get("api_raigeki");
+                endHP =
+                    this.RaigekiRowBodyConstructEC(
+                        enemyRows,
+                        friendRows,
+                        enemyCombinedRows,
+                        combinedRows,
+                        phase.raigeki,
+                        api_raigeki,
+                        "閉幕",
+                        combinedFlagString,
+                        raigekiStartHP,
+                        body,
+                        filter
+                    );
+            }
+        }
+        else{
             hougeki2StartHP = createNextHP(hougeki1StartHP,phase.hougeki1);
             hougeki3StartHP = createNextHP(hougeki2StartHP,phase.hougeki2);
             raigekiStartHP = createNextHP(hougeki3StartHP,phase.hougeki3);

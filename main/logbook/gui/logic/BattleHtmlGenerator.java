@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.gui.logic;
 
@@ -8,6 +8,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 import logbook.constants.AppConstants;
 import logbook.dto.AirBattleDto;
@@ -20,8 +22,6 @@ import logbook.dto.BattleResultDto;
 import logbook.dto.ItemDto;
 import logbook.dto.ShipBaseDto;
 import logbook.dto.ShipDto;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author Nekopanda
@@ -734,6 +734,15 @@ public class BattleHtmlGenerator extends HTMLGenerator {
     private static boolean isCombinedMidRaigekiBattle(BattlePhaseKind kind) {
         return (kind == BattlePhaseKind.COMBINED_BATTLE) || (kind == BattlePhaseKind.COMBINED_EC_BATTLE);
     }
+    /**
+     * 2回目の砲撃の後、雷撃を行う戦闘か？
+     * 水上でない連合対敵連合艦隊戦の昼戦
+     * @param kind
+     * @return
+     */
+    private static boolean isCombinedMidRaigekiBattle2(BattlePhaseKind kind) {
+        return kind == BattlePhaseKind.COMBINED_EACH_BATTLE;
+    }
 
     /**
      * フェイズを生成
@@ -852,10 +861,14 @@ public class BattleHtmlGenerator extends HTMLGenerator {
                 this.genRaigekiBattle(phase.getRaigeki(), "雷撃戦",
                         friendShips, enemyShips, friendHp, enemyHp);
             }
+            if ((i == 1) && isCombinedMidRaigekiBattle2(phase.getKind())){
+                this.genRaigekiBattle(phase.getRaigeki(), "雷撃戦",
+                        friendShips, enemyShips, friendHp, enemyHp);
+            }
         }
 
         // 空母機動部隊の昼戦以外の雷撃
-        if (isCombinedMidRaigekiBattle(phase.getKind()) == false) {
+        if ((isCombinedMidRaigekiBattle(phase.getKind())||isCombinedMidRaigekiBattle2(phase.getKind())) == false) {
             this.genRaigekiBattle(phase.getRaigeki(), "雷撃戦",
                     friendShips, enemyShips, friendHp, enemyHp);
         }

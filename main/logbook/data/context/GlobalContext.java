@@ -23,6 +23,11 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.ToolTip;
+
 import logbook.config.AppConfig;
 import logbook.config.UserDataConfig;
 import logbook.constants.AppConstants;
@@ -64,11 +69,6 @@ import logbook.internal.Ship;
 import logbook.internal.ShipParameterRecord.UpdateShipParameter;
 import logbook.scripting.EventListenerProxy;
 import logbook.util.JsonUtils;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.ToolTip;
 
 /**
  * ゲームのユーザ情報を管理します
@@ -766,6 +766,12 @@ public final class GlobalContext {
         case COMBINED_EC_BATTLE_MIDNIGHT:
             doBattle(data, apidata, BattlePhaseKind.COMBINED_EC_BATTLE_MIDNIGHT);
             break;
+        case COMBINED_EACH_BATTLE:
+            doBattle(data, apidata, BattlePhaseKind.COMBINED_EACH_BATTLE);
+            break;
+        case COMBINED_EACH_BATTLE_WATER:
+            doBattle(data, apidata, BattlePhaseKind.COMBINED_EACH_BATTLE_WATER);
+            break;
         // 海戦結果
         case BATTLE_RESULT:
             doBattleresult(data, apidata);
@@ -826,7 +832,7 @@ public final class GlobalContext {
         case PRACTICE:
             doPractice(data, apidata);
             break;
-        // 演習情報 
+        // 演習情報
         case PRACTICE_ENEMYINFO:
             doPracticeEnemyinfo(data, apidata);
             break;
@@ -871,7 +877,7 @@ public final class GlobalContext {
         }
     }
 
-    /** 
+    /**
      * updateContext()が呼ばれた数
      * @return updateContext()が呼ばれた数
      */
@@ -1766,7 +1772,7 @@ public final class GlobalContext {
 
     /**
      * 艦隊と遠征の状態を更新します
-     * 
+     *
      * @param apidata
      */
     private static void doDeck(JsonArray apidata) {
@@ -1958,7 +1964,7 @@ public final class GlobalContext {
 
     /**
      * 艦娘ロックを更新する
-     * 
+     *
      * @param data
      */
     private static void doLockShip(Data data, JsonValue json) {
@@ -1983,7 +1989,7 @@ public final class GlobalContext {
 
     /**
      * 装備ロックを更新する
-     * 
+     *
      * @param data
      */
     private static void doLockSlotitem(Data data, JsonValue json) {
@@ -2479,7 +2485,7 @@ public final class GlobalContext {
 
     /**
      * マップ情報を処理します
-     * 
+     *
      * @param data
      */
     private static void doMapInfo(Data data, JsonValue json) {
@@ -2523,7 +2529,7 @@ public final class GlobalContext {
 
     /**
      * 任務情報を処理します
-     * 
+     *
      * @param data
      */
     private static void doMission(Data data, JsonValue json) {
@@ -2540,7 +2546,7 @@ public final class GlobalContext {
 
     /**
      * 演習情報を処理します
-     * 
+     *
      * @param data
      */
     private static void doPractice(Data data, JsonValue json) {
@@ -2591,7 +2597,7 @@ public final class GlobalContext {
 
     /**
      * 連合艦隊操作を処理します
-     * 
+     *
      * @param data
      */
     private static void doCombined(Data data, JsonValue json) {

@@ -599,7 +599,7 @@ public class BattleAtackDto {
                 hougeki_obj.getJsonArray("api_damage"));
 
         // 味方連合艦隊を反映
-        if (isFriendSecond) {
+        if (isFriendSecond && !hougeki_obj.containsKey("api_at_eflag")) {
             for (BattleAtackDto dto : seq) {
                 if (dto.friendAtack) {
                     dto.makeOriginCombined();
@@ -639,7 +639,7 @@ public class BattleAtackDto {
                 GsonUtil.toIntArrayArray(hougeki.get("api_cl_list")),
                 GsonUtil.toIntArrayArray(hougeki.get("api_damage")));
         // 味方連合艦隊を反映
-        if (isFriendSecond) {
+        if (isFriendSecond && !hougeki.containsKey("api_at_eflag")) {
             for (BattleAtackDto dto : seq) {
                 if (dto.friendAtack) {
                     dto.makeOriginCombined();
@@ -674,8 +674,8 @@ public class BattleAtackDto {
         dto.friendAtack = true;
 
         int idx = 0;
-        for (int i = 0; i < 6; ++i) {
-            int dam = dam_list.getInt(i + 1);
+        for (int i = 0; i < dam_list.size(); ++i) {
+            int dam = dam_list.getInt(i);
             if (dam > 0) {
                 idx++;
             }
@@ -683,10 +683,10 @@ public class BattleAtackDto {
         dto.target = new int[idx];
         dto.damage = new int[idx];
         idx = 0;
-        for (int i = 0; i < 6; ++i) {
-            int dam = dam_list.getInt(i + 1);
+        for (int i = 0; i < dam_list.size(); ++i) {
+            int dam = dam_list.getInt(i);
             if (dam > 0) {
-                dto.target[idx] = i;
+                dto.target[idx] = i-1;
                 dto.damage[idx] = dam;
                 idx++;
             }
@@ -707,8 +707,8 @@ public class BattleAtackDto {
         dto.friendAtack = true;
 
         int idx = 0;
-        for (int i = 0; i < 6; ++i) {
-            int dam = dam_list[i + 1];
+        for (int i = 0; i < dam_list.length; ++i) {
+            int dam = dam_list[i];
             if (dam > 0) {
                 idx++;
             }
@@ -719,13 +719,13 @@ public class BattleAtackDto {
             dto.critical = new int[idx];
         }
         idx = 0;
-        for (int i = 0; i < 6; ++i) {
-            int dam = dam_list[i + 1];
+        for (int i = 0; i < dam_list.length; ++i) {
+            int dam = dam_list[i];
             if (dam > 0) {
-                dto.target[idx] = i;
+                dto.target[idx] = i-1;
                 dto.damage[idx] = dam;
                 if(cl_list != null){
-                    dto.critical[idx] = cl_list[i+1];
+                    dto.critical[idx] = cl_list[i];
                 }
                 idx++;
             }
@@ -739,8 +739,8 @@ public class BattleAtackDto {
         dto.friendAtack = true;
 
         int idx = 0;
-        for (int i = 0; i < 6; ++i) {
-            int dam = dam_list[i + 1];
+        for (int i = 0; i < dam_list.length; ++i) {
+            int dam = dam_list[i];
             if (dam > 0) {
                 idx++;
             }
@@ -749,12 +749,12 @@ public class BattleAtackDto {
         dto.damage = new int[idx];
         dto.critical = new int[idx];
         idx = 0;
-        for (int i = 0; i < 6; ++i) {
-            int dam = dam_list[i + 1];
+        for (int i = 0; i < dam_list.length; ++i) {
+            int dam = dam_list[i];
             if (dam > 0) {
-                dto.target[idx] = i;
+                dto.target[idx] = i-1;
                 dto.damage[idx] = dam;
-                dto.critical[idx] = cl_list[i+1] + 1;
+                dto.critical[idx] = cl_list[i] + 1;
                 idx++;
             }
         }

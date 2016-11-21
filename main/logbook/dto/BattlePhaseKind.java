@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.dto;
 
@@ -43,7 +43,11 @@ public enum BattlePhaseKind {
     COMBINED_EC_BATTLE(false, false, BattlePatternConstants.NON_COMBINED_PTTERN, DataType.COMBINED_EC_BATTLE),
     /** 通常艦隊敵連合艦隊の夜戦 */
     COMBINED_EC_BATTLE_MIDNIGHT(true, false, BattlePatternConstants.NON_COMBINED_PTTERN,
-            DataType.COMBINED_EC_BATTLE_MIDNIGHT);
+            DataType.COMBINED_EC_BATTLE_MIDNIGHT),
+    /** 連合艦隊vs連合艦隊水上打撃部隊の昼戦 */
+    COMBINED_EACH_BATTLE_WATER(false, false, BattlePatternConstants.WATER_EACH_PATTERN, DataType.COMBINED_EACH_BATTLE_WATER),
+    /** 連合艦隊vs連合艦隊の昼戦 */
+    COMBINED_EACH_BATTLE(false, false, BattlePatternConstants.BATTLE_EACH_PATTERN, DataType.COMBINED_EACH_BATTLE);
 
     private final boolean night;
     private final boolean practice;
@@ -145,6 +149,16 @@ class BattlePatternConstants {
 
     // 連合艦隊の水雷戦
     public static boolean[] WATER_PATTERN = new boolean[] {
+            true, true, false, false, true, true
+    };
+
+    // 連合艦隊vs連合艦隊の通常
+    public static boolean[] BATTLE_EACH_PATTERN = new boolean[] {
+            true, true, false, true, false, true
+    };
+
+    // 連合艦隊の水雷戦
+    public static boolean[] WATER_EACH_PATTERN = new boolean[] {
             true, true, false, false, true, true
     };
 }
