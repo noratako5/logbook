@@ -2991,7 +2991,6 @@ public class BattleExDto extends AbstractDto {
         {
             int[][]prevHP = startHP;
             if(attackList != null){
-                String fleetName = "通常艦隊";//後で対応が必要
                 ArrayList<ArrayList<int[][]>>hougekiHP = this.createNextHPHougeki(startHP, attackList);
                 int[] api_at_eflag = GsonUtil.toIntArray(api_hougeki.get("api_at_eflag"));
                 int[] api_at_list = GsonUtil.toIntArray(api_hougeki.get("api_at_list"));
@@ -3026,6 +3025,10 @@ public class BattleExDto extends AbstractDto {
                         boolean kabau = (damageList[j] - (double)damage) > 0.05;
                         int cl = clList[j];
                         ArrayList<String> row = (ArrayList<String>) dayPhaseRow.clone();
+                        String fleetName =
+                                (!this.isCombined())?"通常艦隊"
+                                :(eflag == 1 && df > 6)||(eflag == 0 && at > 6) ?"連合第2艦隊"
+                                :"連合第1艦隊";
                         row.add("砲撃戦");
                         row.add(fleetName);
                         row.add(hougekiCount);
@@ -3086,7 +3089,7 @@ public class BattleExDto extends AbstractDto {
             if(this.isCombined() && this.getDockCombined()!=null){
                 List<ShipDto> ships = this.getDockCombined().getShips();
                 for(int i=0;i<ships.size();i++){
-                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));
                 }
             }
         }
@@ -3094,7 +3097,7 @@ public class BattleExDto extends AbstractDto {
             enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
             if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){
-                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));
                 }
             }
         }
@@ -3664,7 +3667,7 @@ public class BattleExDto extends AbstractDto {
             if(this.isCombined() && this.getDockCombined()!=null){
                 List<ShipDto> ships = this.getDockCombined().getShips();
                 for(int i=0;i<ships.size();i++){
-                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));
                 }
             }
         }
@@ -3672,7 +3675,7 @@ public class BattleExDto extends AbstractDto {
             enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
             if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){
-                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));
                 }
             }
         }
@@ -3966,7 +3969,7 @@ public class BattleExDto extends AbstractDto {
             if(this.isCombined() && this.getDockCombined()!=null){
                 List<ShipDto> ships = this.getDockCombined().getShips();
                 for(int i=0;i<ships.size();i++){
-                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));
                 }
             }
         }
@@ -3974,7 +3977,7 @@ public class BattleExDto extends AbstractDto {
             enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
             if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){
-                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));
                 }
             }
         }
@@ -4384,7 +4387,7 @@ public class BattleExDto extends AbstractDto {
             if(this.isCombined() && this.getDockCombined()!=null){
                 List<ShipDto> ships = this.getDockCombined().getShips();
                 for(int i=0;i<ships.size();i++){
-                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));
+                    combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));
                 }
             }
         }
@@ -4392,7 +4395,7 @@ public class BattleExDto extends AbstractDto {
             enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
             if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){
-                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));
                 }
             }
         }
@@ -4667,7 +4670,7 @@ public class BattleExDto extends AbstractDto {
             enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
             if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){
-                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));
+                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));
                 }
             }
         }
@@ -4932,19 +4935,19 @@ public class BattleExDto extends AbstractDto {
             combinedRows = new ArrayList<ArrayList<String>>();
             if(this.isCombined() && this.getDockCombined()!=null){
                 List<ShipDto> ships = this.getDockCombined().getShips();
-                for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
-                for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));}
+                for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }else{
-                for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }
         }
         if(enemyCombinedRows == null){
             enemyCombinedRows = new ArrayList<ArrayList<String>>();
             if(this.isCombined() && this.getDockCombined()!=null){
-                for(int i=0;i<this.enemyCombined.size();i++){ enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));}
-                for(int i=this.enemyCombined.size();i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                for(int i=0;i<this.enemyCombined.size();i++){ enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));}
+                for(int i=this.enemyCombined.size();i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }else{
-                for(int i=0;i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                for(int i=0;i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }
         }
         int combinedFlag = this.getCombinedFlag();
@@ -5371,18 +5374,18 @@ public class BattleExDto extends AbstractDto {
                 }
                 ArrayList<ArrayList<String>> combinedEnemyRows = new ArrayList<ArrayList<String>>();
                 if(this.isEnemyCombined()){
-                    for(int i=0;i<this.enemyCombined.size();i++){ combinedEnemyRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i));}
-                    for(int i=this.enemyCombined.size();i<6;i++){ combinedEnemyRows.add(this.ShipRowBodyBase(null,0, i));}
+                    for(int i=0;i<this.enemyCombined.size();i++){ combinedEnemyRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));}
+                    for(int i=this.enemyCombined.size();i<6;i++){ combinedEnemyRows.add(this.ShipRowBodyBase(null,0, i+6));}
                 }else{
-                    for(int i=0;i<6;i++){ combinedEnemyRows.add(this.ShipRowBodyBase(null, 0, i));}
+                    for(int i=0;i<6;i++){ combinedEnemyRows.add(this.ShipRowBodyBase(null, 0, i+6));}
                 }
                 ArrayList<ArrayList<String>> combinedRows = new ArrayList<ArrayList<String>>();
                 if(this.isCombined() && this.getDockCombined()!=null){
                     List<ShipDto> ships = this.getDockCombined().getShips();
-                    for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i));}
-                    for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                    for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));}
+                    for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
                 }else{
-                    for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i));}
+                    for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
                 }
                 BuiltinScriptKeys()
                     .stream()
