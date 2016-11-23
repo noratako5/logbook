@@ -3616,18 +3616,10 @@ public class BattleExDto extends AbstractDto {
                             row.add(String.valueOf(cl));
                             row.add(String.valueOf(damage));
                             row.add(kabau?"1" :"0");
-                            if(!enemyIsSecond){
-                                if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
-                                else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-7), prevHP[0][at-7],this.maxEnemyHp[at-7]));}
-                                if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
-                                else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
-                            }
-                            else{
-                                if(at < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
-                                else{row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(at-7), prevHP[0][at-7],this.maxEnemyHpCombined[at-7]));}
-                                if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
-                                else{row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(df-7), prevHP[0][df-7],this.maxEnemyHpCombined[df-7]));}
-                            }
+                            if(at < 7){row.addAll(this.ShipRowBodyUpdate(isSecond?friendCombinedRows.get(at-1):friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(enemyIsSecond?enemyCombinedRows.get(at-7):enemyRows.get(at-7), prevHP[enemyIsSecond?3:0][at-7],enemyIsSecond?this.maxEnemyHpCombined[at-7]:this.maxEnemyHp[at-7]));}
+                            if(df < 7){row.addAll(this.ShipRowBodyUpdate(isSecond?friendCombinedRows.get(df-1):friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
+                            else{row.addAll(this.ShipRowBodyUpdate(enemyIsSecond?enemyCombinedRows.get(df-7):enemyRows.get(df-7), prevHP[enemyIsSecond?3:0][df-7],enemyIsSecond?this.maxEnemyHpCombined[df-7]:this.maxEnemyHp[df-7]));}
                             row.add(combinedFlagString);
                             if(filter.filterHougekiAttackDefenceECNight(this, at, df, isSecond,enemyIsSecond) && filter.filterOutput(row)){
                                 body.add(row);
