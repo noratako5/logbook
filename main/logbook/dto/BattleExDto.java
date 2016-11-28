@@ -2895,6 +2895,7 @@ public class BattleExDto extends AbstractDto {
             header.add(String.format("防御艦.%s",shipHeader.get(i)));
         }
         header.add("艦隊種類");
+        header.add("敵艦隊種類");
         return header;
     }
 
@@ -2965,6 +2966,7 @@ public class BattleExDto extends AbstractDto {
                         if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
                         else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
                         row.add(combinedFlagString);
+                        row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                         if(filter.filterHougekiAttackDefence(this, at, df, isSecond) && filter.filterOutput(row)){
                             body.add(row);
                         }
@@ -3052,6 +3054,7 @@ public class BattleExDto extends AbstractDto {
                             else{row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(df-7), prevHP[2][df-7],this.maxFriendHpCombined[df-7]));}
                         }
                         row.add(combinedFlagString);
+                        row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                         if(filter.filterHougekiAttackDefenceEC(this, at, df, eflag) && filter.filterOutput(row)){
                             body.add(row);
                         }
@@ -3461,6 +3464,7 @@ public class BattleExDto extends AbstractDto {
             header.add(String.format("防御艦.%s",shipHeader.get(i)));
         }
         header.add("艦隊種類");
+        header.add("敵艦隊種類");
         return header;
     }
 
@@ -3536,6 +3540,7 @@ public class BattleExDto extends AbstractDto {
                             if(df < 7){row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
                             else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-7), prevHP[0][df-7],this.maxEnemyHp[df-7]));}
                             row.add(combinedFlagString);
+                            row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                             if(filter.filterHougekiAttackDefence(this, at, df, isSecond) && filter.filterOutput(row)){
                                 body.add(row);
                             }
@@ -3621,6 +3626,7 @@ public class BattleExDto extends AbstractDto {
                             if(df < 7){row.addAll(this.ShipRowBodyUpdate(isSecond?friendCombinedRows.get(df-1):friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));}
                             else{row.addAll(this.ShipRowBodyUpdate(enemyIsSecond?enemyCombinedRows.get(df-7):enemyRows.get(df-7), prevHP[enemyIsSecond?3:0][df-7],enemyIsSecond?this.maxEnemyHpCombined[df-7]:this.maxEnemyHp[df-7]));}
                             row.add(combinedFlagString);
+                            row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                             if(filter.filterHougekiAttackDefenceECNight(this, at, df, isSecond,enemyIsSecond) && filter.filterOutput(row)){
                                 body.add(row);
                             }
@@ -3750,6 +3756,7 @@ public class BattleExDto extends AbstractDto {
             header.add(String.format("防御艦.%s",shipHeader.get(i)));
         }
         header.add("艦隊種類");
+        header.add("敵艦隊種類");
         return header;
     }
 
@@ -3806,6 +3813,7 @@ public class BattleExDto extends AbstractDto {
                 row.addAll(this.ShipRowBodyUpdate(friendRows.get(at-1), prevHP[isSecond?2 :1][at-1],isSecond?this.maxFriendHpCombined[at-1] :this.maxFriendHp[at-1]));
                 row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));
                 row.add(combinedFlagString);
+                row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                 if(filter.filterRaigekiAttackDefence(this, at, df, isSecond, true) && filter.filterOutput(row)){
                     body.add(row);
                 }
@@ -3832,6 +3840,7 @@ public class BattleExDto extends AbstractDto {
                 row.addAll(this.ShipRowBodyUpdate(enemyRows.get(at-1), prevHP[0][at-1],this.maxEnemyHp[at-1]));
                 row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[isSecond?2 :1][df-1],isSecond?this.maxFriendHpCombined[df-1] :this.maxFriendHp[df-1]));
                 row.add(combinedFlagString);
+                row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                 if(filter.filterRaigekiAttackDefence(this, at, df, isSecond, false) && filter.filterOutput(row)){
                     body.add(row);
                 }
@@ -3894,6 +3903,7 @@ public class BattleExDto extends AbstractDto {
                 if(enemyIsSecond){row.addAll(this.ShipRowBodyUpdate(enemyCombinedRows.get(df-7), prevHP[3][df-7],this.maxEnemyHpCombined[df-7]));}
                 else{row.addAll(this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]));}
                 row.add(combinedFlagString);
+                row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                 if(filter.filterRaigekiAttackDefenceEC(this, at, df, true) && filter.filterOutput(row)){
                     body.add(row);
                 }
@@ -3928,6 +3938,7 @@ public class BattleExDto extends AbstractDto {
                 if(isSecond){ row.addAll(this.ShipRowBodyUpdate(friendCombinedRows.get(df-7), prevHP[2][df-7],this.maxFriendHpCombined[df-7])); }
                 else{ row.addAll(this.ShipRowBodyUpdate(friendRows.get(df-1), prevHP[1][df-1],this.maxFriendHp[df-1])); }
                 row.add(combinedFlagString);
+                row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
                 if(filter.filterRaigekiAttackDefenceEC(this, at, df, false) && filter.filterOutput(row)){
                     body.add(row);
                 }
@@ -4787,6 +4798,7 @@ public class BattleExDto extends AbstractDto {
                 .forEach(s->header.add("味方連合第二艦隊"+index+"."+s));
         }
         header.add("艦隊種類");
+        header.add("敵艦隊種類");
         return header;
     }
 
@@ -4899,6 +4911,7 @@ public class BattleExDto extends AbstractDto {
             for (int i = 0; i < 6; ++i) { row.addAll((this.isEnemyCombined() && i<this.maxEnemyHpCombined.length)?this.ShipRowBodyUpdate(enemyCombinedRows.get(i),prevHP[3][i],this.maxEnemyHpCombined[i]):enemyCombinedRows.get(i)); }
             for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),prevHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
             row.add(combinedFlagString);
+            row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
             if(filter.filterOutput(row)){
                 body.add(row);
             }
