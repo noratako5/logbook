@@ -4397,7 +4397,7 @@ public class BattleExDto extends AbstractDto {
         }
         if(enemyCombinedRows == null){
             enemyCombinedRows = new ArrayList<ArrayList<String>>();
-            if(this.isCombined() && this.getDockCombined()!=null){
+            if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){ enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));}
                 for(int i=this.enemyCombined.size();i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }else{
@@ -4950,7 +4950,7 @@ public class BattleExDto extends AbstractDto {
         }
         if(enemyCombinedRows == null){
             enemyCombinedRows = new ArrayList<ArrayList<String>>();
-            if(this.isCombined() && this.getDockCombined()!=null){
+            if(this.isEnemyCombined()){
                 for(int i=0;i<this.enemyCombined.size();i++){ enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));}
                 for(int i=this.enemyCombined.size();i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }else{
