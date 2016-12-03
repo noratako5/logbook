@@ -5247,7 +5247,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.HougekiRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"夜戦":
                         try{
@@ -5265,7 +5272,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.YasenRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"砲撃戦夜戦":
                         try{
@@ -5291,7 +5305,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.HougekiRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"雷撃戦":
                         try{
@@ -5303,7 +5324,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.RaigekiRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"航空戦":
                         try{
@@ -5315,7 +5343,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.AirRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"航空戦撃墜":
                         try{
@@ -5327,7 +5362,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.AirLostRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"基地航空戦":
                         try{
@@ -5339,7 +5381,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.BaseAirRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     case"編成":
                         try{
@@ -5357,7 +5406,14 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
-                            return new String[0][];
+                            String[]row = new String[this.HenseiRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
                         }
                     default:
                         return new String[0][];
