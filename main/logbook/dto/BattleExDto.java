@@ -5059,6 +5059,23 @@ public class BattleExDto extends AbstractDto {
                 .stream()
                 .forEach(s->header.add("敵軍"+index+"."+s));
         }
+        for(int i=1;i<=6;i++){
+            String index = (new Integer(i)).toString();
+            header.addAll(
+                ShipRowHeader()
+                    .stream()
+                    .map(s->"自軍連合第二艦隊"+index+"."+s)
+                    .collect(Collectors.toList())
+            );
+        }
+        for(int i=1;i <= 6; ++i){
+            String index = (new Integer(i)).toString();
+            ShipSummaryRowHeader()
+                .stream()
+                .forEach(s->header.add("敵軍連合第二艦隊"+index+"."+s));
+        }
+        header.add("艦隊種類");
+        header.add("敵艦隊種類");
         return header;
     }
 
@@ -5068,7 +5085,14 @@ public class BattleExDto extends AbstractDto {
         ArrayList<ArrayList<String>> enemySummaryRows = new ArrayList<ArrayList<String>>();
         for(int i=0;i<this.enemy.size();i++){enemySummaryRows.add(this.ShipSummaryRowBody(this.enemy.get(i)));}
         for(int i=this.enemy.size();i<6;i++){enemySummaryRows.add(this.ShipSummaryRowBody(null));}
-
+        ArrayList<ArrayList<String>> enemyCombinedSummaryRows = new ArrayList<ArrayList<String>>();
+        if(this.isEnemyCombined()){
+            for(int i=0;i<this.enemyCombined.size();i++){enemyCombinedSummaryRows.add(this.ShipSummaryRowBody(this.enemyCombined.get(i)));}
+            for(int i=this.enemyCombined.size();i<6;i++){enemyCombinedSummaryRows.add(this.ShipSummaryRowBody(null));}
+        }
+        else{
+            for(int i=0;i<6;i++){enemyCombinedSummaryRows.add(this.ShipSummaryRowBody(null));}
+        }
         if(friendRows == null){
             friendRows = new ArrayList<ArrayList<String>>();
             if(this.getDock()!=null){
@@ -5077,6 +5101,16 @@ public class BattleExDto extends AbstractDto {
                 for(int i=ships.size();i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
             }else{
                 for(int i=0;i<6;i++){ friendRows.add(this.ShipRowBodyBase(null, 0, i));}
+            }
+        }
+        if(combinedRows == null){
+            combinedRows = new ArrayList<ArrayList<String>>();
+            if(this.isCombined() && this.getDockCombined()!=null){
+                List<ShipDto> ships = this.getDockCombined().getShips();
+                for(int i=0;i<ships.size();i++){ combinedRows.add(this.ShipRowBodyBase(ships.get(i), this.maxFriendHpCombined[i], i+6));}
+                for(int i=ships.size();i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
+            }else{
+                for(int i=0;i<6;i++){ combinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }
         }
         int[][]phaseStartHP = new int[3][];
@@ -5102,6 +5136,18 @@ public class BattleExDto extends AbstractDto {
         }
         for (int i = 0; i < 6; ++i) { row.addAll((i<this.maxFriendHp.length)?this.ShipRowBodyUpdate(friendRows.get(i),phaseStartHP[1][i],this.maxFriendHp[i]):friendRows.get(i)); }
         for (int i = 0; i < 6; ++i) { row.addAll(enemySummaryRows.get(i)); }
+        for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),phaseStartHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
+        for (int i = 0; i < 6; ++i) { row.addAll(enemyCombinedSummaryRows.get(i)); }
+
+        int combinedFlag = this.getCombinedFlag();
+        String combinedFlagString =
+            (combinedFlag == 0)?"通常艦隊":
+            (combinedFlag == 1)?"機動部隊":
+            (combinedFlag == 2)?"水上部隊":
+            (combinedFlag == 3)?"輸送部隊":
+            "不明";
+        row.add(combinedFlagString);
+        row.add(isEnemyCombined()?"連合艦隊":"通常艦隊");
         if(filter.filterOutput(row)){
             body.add(row);
         }
