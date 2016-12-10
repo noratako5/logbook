@@ -770,6 +770,14 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         if (phase.getHougeki3() != null)
             hougekiList.add(phase.getHougeki3());
 
+        if(phase.getInjectionAirBase() != null){
+            this.genAirBattle(phase.getInjectionAirBase(), "基地噴式航空隊攻撃",
+                    friendShips, enemyShips, friendHp, enemyHp);
+        }
+        if(phase.getInjectionAir() != null){
+            this.genAirBattle(phase.getInjectionAir(), "噴式航空戦",
+                    friendShips, enemyShips, friendHp, enemyHp);
+        }
         // 基地航空隊
         List<AirBattleDto> airBaseList = phase.getAirBase();
         if (airBaseList != null) {
@@ -780,7 +788,7 @@ public class BattleHtmlGenerator extends HTMLGenerator {
             }
         }
 
-        // 航空戦 → 支援艦隊による攻撃 →　開幕対潜 → 開幕 → 航空戦２回目
+        // 航空戦 → 支援艦隊による攻撃 → 開幕対潜 → 開幕 → 航空戦２回目
         for (int i = 0; i < airList.size(); ++i) {
             this.genAirBattle(airList.get(i), "航空戦(" + (i + 1) + "/" + airList.size() + ")",
                     friendShips, enemyShips, friendHp, enemyHp);

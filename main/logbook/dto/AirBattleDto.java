@@ -68,12 +68,21 @@ public class AirBattleDto {
         if ((jsonStage1 != null) && (jsonStage1 != JsonValue.NULL)) {
             JsonObject jsonStage1Obj = kouku.getJsonObject("api_stage1");
             this.stage1 = readPlaneCount(jsonStage1Obj);
-            JsonArray jsonTouchPlane = jsonStage1Obj.getJsonArray("api_touch_plane");
-            this.touchPlane = new int[] {
-                    jsonTouchPlane.getInt(0),
-                    jsonTouchPlane.getInt(1)
-            };
-            this.seiku = toSeiku(jsonStage1Obj.getInt("api_disp_seiku"));
+            if(jsonStage1Obj.containsKey("api_touch_plane")){
+                JsonArray jsonTouchPlane = jsonStage1Obj.getJsonArray("api_touch_plane");
+                this.touchPlane = new int[] {
+                        jsonTouchPlane.getInt(0),
+                        jsonTouchPlane.getInt(1)
+                };
+            }else{
+                this.touchPlane = new int[]{-1,-1};
+            }
+            if(jsonStage1Obj.containsKey("api_disp_seiku")){
+                this.seiku = toSeiku(jsonStage1Obj.getInt("api_disp_seiku"));
+            }
+            else{
+                this.seiku = toSeiku(-1);
+            }
         }
 
         JsonValue jsonStage2 = kouku.get("api_stage2");
@@ -104,7 +113,7 @@ public class AirBattleDto {
         if (jsonStage1 != null) {
             this.stage1 = readPlaneCount(jsonStage1);
             int[] jsonTouchPlane = GsonUtil.toIntArray(jsonStage1.get("api_touch_plane"));
-            this.touchPlane = jsonTouchPlane;
+            this.touchPlane = (jsonTouchPlane != null) ?jsonTouchPlane :(new int[]{-1,-1});
             this.seiku = toSeiku(GsonUtil.toInt(jsonStage1.get("api_disp_seiku")));
         }
 

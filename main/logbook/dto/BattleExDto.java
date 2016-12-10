@@ -27,9 +27,6 @@ import com.google.gson.internal.LinkedTreeMap;
 
 import logbook.config.AppConfig;
 import logbook.data.DataType;
-
-import com.dyuproject.protostuff.Tag;
-
 import logbook.data.context.GlobalContext;
 import logbook.gui.logic.DateTimeString;
 import logbook.internal.EnemyData;
@@ -259,6 +256,8 @@ public class BattleExDto extends AbstractDto {
         private double[] damageRate;
 
         /** 攻撃シーケンス */
+        private transient AirBattleDto injectionAirBase = null;
+        private transient AirBattleDto injectionAir = null;
         @Tag(35)
         private List<AirBattleDto> airBase = null;
         @Tag(11)
@@ -320,7 +319,18 @@ public class BattleExDto extends AbstractDto {
             }
 
             // 攻撃シーケンスを読み取る //
-
+            if(object.containsKey("api_air_base_injection")){
+                JsonObject air_base_injection = object.getJsonObject("api_air_base_injection");
+                if(air_base_injection != null){
+                    this.injectionAirBase = new AirBattleDto(air_base_injection, isFriendCombined || isEnemyCombined, true);
+                }
+            }
+            if(object.containsKey("api_injection_kouku")){
+                JsonObject air_injection_kouku = object.getJsonObject("api_injection_kouku");
+                if(air_injection_kouku != null){
+                    this.injectionAir = new AirBattleDto(air_injection_kouku, isFriendCombined || isEnemyCombined, false);
+                }
+            }
             // 基地航空隊
             JsonValue air_base_attack = object.get("api_air_base_attack");
             if (air_base_attack instanceof JsonArray) {
@@ -422,6 +432,8 @@ public class BattleExDto extends AbstractDto {
 
             // 敵は連合艦隊の第二艦隊か？（敵連合艦隊夜戦で第二艦隊が相手の場合のみ）
             this.isEnemySecond = (tree.containsKey("api_active_deck")) ?(GsonUtil.toIntArray(tree.get("api_active_deck"))[1] == 2) : false;
+            this.isFriendSecond = (tree.containsKey("api_active_deck")
+                    ? (GsonUtil.toIntArray(tree.get("api_active_deck"))[0] == 2) : false);
 
             this.kind = kind;
             this.isNight = kind.isNight();
@@ -440,7 +452,14 @@ public class BattleExDto extends AbstractDto {
             this.flarePos = jsonFlarePos;
 
             // 攻撃シーケンスを読み取る //
-
+            LinkedTreeMap air_base_injection = (LinkedTreeMap)tree.get("api_air_base_injection");
+            if(air_base_injection != null){
+                this.injectionAirBase = new AirBattleDto(air_base_injection, isFriendCombined || isEnemyCombined, true);
+            }
+            LinkedTreeMap air_injection_kouku = (LinkedTreeMap)tree.get("api_injection_kouku");
+            if(air_injection_kouku != null){
+                this.injectionAir = new AirBattleDto(air_injection_kouku, isFriendCombined || isEnemyCombined, false);
+            }
             // 基地航空隊
             Object air_base_attack = tree.get("api_air_base_attack");
             if (air_base_attack instanceof List) {
@@ -821,6 +840,8 @@ public class BattleExDto extends AbstractDto {
          */
         public BattleAtackDto[][] getAtackSequence() {
             return new BattleAtackDto[][] {
+                    ((this.injectionAirBase == null) || (this.injectionAirBase.atacks == null)) ? null : this.toArray(this.injectionAirBase.atacks),
+                    ((this.injectionAir == null) || (this.injectionAir.atacks == null)) ? null : this.toArray(this.injectionAir.atacks),
                     this.getAirBaseBattlesArray(),
                     ((this.air == null) || (this.air.atacks == null)) ? null : this.toArray(this.air.atacks),
                     this.support == null ? null : this.toArray(this.support),
@@ -999,6 +1020,13 @@ public class BattleExDto extends AbstractDto {
          */
         public double[] getDamageRate() {
             return this.damageRate;
+        }
+
+        public AirBattleDto getInjectionAir() {
+            return this.injectionAir;
+        }
+        public AirBattleDto getInjectionAirBase() {
+            return this.injectionAirBase;
         }
 
         /**
@@ -2480,6 +2508,38 @@ public class BattleExDto extends AbstractDto {
         body.add("");
         return body;
     }
+    private ArrayList<String> DayPhaseRowBodyAir(AirBattleDto air){
+        ArrayList<String> body = this.PhaseRowBody();
+        if(this.sakuteki != null){
+            body.add(this.sakuteki[0]);
+            body.add(this.sakuteki[1]);
+        }else{
+            body.add("");
+            body.add("");
+        }
+
+        Phase phase1 = this.getPhase1();
+        String seiku = "";
+        if(air != null){
+            seiku = air.seiku;
+        }
+        body.add(seiku);
+        body.add(this.formationMatch);
+
+        String touchPlane0 = "";
+        String touchPlane1 = "";
+        if(air != null){
+            String[] names = air.getTouchPlane();
+            touchPlane0 = (names[0].equals("なし"))?"" :names[0];
+            touchPlane1 = (names[1].equals("なし"))?"" :names[1];
+        }
+        body.add(touchPlane0);
+        body.add(touchPlane1);
+
+        body.add("");
+        body.add("");
+        return body;
+    }
     static private ArrayList<String> NightPhaseRowHeader(){
         return DayPhaseRowHeader();
     }
@@ -3123,7 +3183,9 @@ public class BattleExDto extends AbstractDto {
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
             phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
-        int[][]airBaseStartHP = phaseStartHP;
+        int[][]injectionAirBaseStartHP = phaseStartHP;
+        int[][]injectionAirStartHP = this.createNextHPAir(injectionAirBaseStartHP, phase.injectionAirBase);
+        int[][]airBaseStartHP = this.createNextHPAir(injectionAirStartHP, phase.injectionAir);
         int[][]air1StartHP = airBaseStartHP;
         if(phase.airBase != null){
             ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
@@ -4002,7 +4064,9 @@ public class BattleExDto extends AbstractDto {
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
             phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
-        int[][]airBaseStartHP = phaseStartHP;
+        int[][]injectionAirBaseStartHP = phaseStartHP;
+        int[][]injectionAirStartHP = this.createNextHPAir(injectionAirBaseStartHP, phase.injectionAirBase);
+        int[][]airBaseStartHP = this.createNextHPAir(injectionAirStartHP, phase.injectionAir);
         int[][]air1StartHP = airBaseStartHP;
         if(phase.airBase != null){
             ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
@@ -4217,7 +4281,7 @@ public class BattleExDto extends AbstractDto {
         {
             int[][]prevHP = startHP;
             if(api_kouku.get("api_stage3")!=null || api_kouku.get("api_stage3_combined")!=null){
-                ArrayList<String> rowHead = this.DayPhaseRowBody();
+                ArrayList<String> rowHead = this.DayPhaseRowBodyAir(air);
                 String stage1_f_count = "";
                 String stage1_f_lostcount = "";
                 String stage1_e_count = "";
@@ -4431,7 +4495,26 @@ public class BattleExDto extends AbstractDto {
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
             phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
-        int[][]airBaseStartHP = phaseStartHP;
+        int[][]injectionAirBaseStartHP = phaseStartHP;
+        int[][]injectionAirStartHP = this.createNextHPAir(injectionAirBaseStartHP, phase.injectionAirBase);
+        int[][]airBaseStartHP = injectionAirStartHP;
+        if(phase.injectionAir != null){
+            LinkedTreeMap api_kouku = (LinkedTreeMap)tree.get("api_injection_kouku");
+            airBaseStartHP =
+                this.AirRowBodyConstruct(
+                    enemyRows,
+                    friendRows,
+                    enemyCombinedRows,
+                    combinedRows,
+                    enemySummaryRows,
+                    friendSummaryRows,
+                    phase.injectionAir,
+                    api_kouku,
+                    injectionAirStartHP,
+                    body,
+                    filter
+                );
+        }
         int[][]air1StartHP = airBaseStartHP;
         if(phase.airBase != null){
             ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
@@ -4545,7 +4628,7 @@ public class BattleExDto extends AbstractDto {
         {
             int[][]prevHP = startHP;
             if(api_kouku.get("api_stage3")!=null){
-                ArrayList<String> rowHead = this.DayPhaseRowBody();
+                ArrayList<String> rowHead = this.DayPhaseRowBodyAir(air);
                 rowHead.add(GsonUtil.toIntString(api_kouku.get("api_base_id")));
                 rowHead.add(String.valueOf(airIndex));
 
@@ -4703,7 +4786,9 @@ public class BattleExDto extends AbstractDto {
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
             phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
-        int[][]airBaseStartHP = phaseStartHP;
+        int[][]injectionAirBaseStartHP = phaseStartHP;
+        int[][]injectionAirStartHP = this.createNextHPAir(injectionAirBaseStartHP, phase.injectionAirBase);
+        int[][]airBaseStartHP = this.createNextHPAir(injectionAirStartHP, phase.injectionAir);
         int[][]air1StartHP = airBaseStartHP;
         if(phase.airBase != null){
             List<Object> airBase = (List<Object>)tree.get("api_air_base_attack");
@@ -4811,7 +4896,7 @@ public class BattleExDto extends AbstractDto {
             BuiltinScriptFilter filter)
         {
             int[][]prevHP = startHP;
-            ArrayList<String> row = this.DayPhaseRowBody();
+            ArrayList<String> row = this.DayPhaseRowBodyAir(air);
             String stage1_f_count = "";
             String stage1_f_lostcount = "";
             String stage1_e_count = "";
@@ -4975,7 +5060,25 @@ public class BattleExDto extends AbstractDto {
             phaseStartHP[2] = (this.isCombined()) ?phase1.nowFriendHpCombined.clone() :null;
             phaseStartHP[3] = (this.isEnemyCombined()) ?phase1.nowEnemyHpCombined.clone() : null;
         }
-        int[][]airBaseStartHP = phaseStartHP;
+        int[][]injectionAirBaseStartHP = phaseStartHP;
+        int[][]injectionAirStartHP = this.createNextHPAir(injectionAirBaseStartHP, phase.injectionAirBase);
+        int[][]airBaseStartHP = injectionAirStartHP;
+        if(phase.injectionAir != null){
+            LinkedTreeMap api_kouku = (LinkedTreeMap)tree.get("api_injection_kouku");
+            airBaseStartHP =
+                this.AirLostRowBodyConstruct(
+                    enemyRows,
+                    friendRows,
+                    enemyCombinedRows,
+                    combinedRows,
+                    phase.injectionAir,
+                    api_kouku,
+                    combinedFlagString,
+                    injectionAirStartHP,
+                    body,
+                    filter
+                );
+        }
         int[][]air1StartHP = airBaseStartHP;
         if(phase.airBase != null){
             ArrayList<int[][]>airHP = this.createNextHPAirBase(airBaseStartHP,phase.airBase);
