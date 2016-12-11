@@ -6,13 +6,13 @@ import java.util.Map;
 
 import javax.json.JsonObject;
 
+import com.dyuproject.protostuff.Tag;
+
 import logbook.config.AppConfig;
 import logbook.constants.AppConstants;
 import logbook.data.context.GlobalContext;
 import logbook.internal.CondTiming;
 import logbook.util.JsonUtils;
-
-import com.dyuproject.protostuff.Tag;
 
 /**
  * 艦娘を表します
@@ -106,7 +106,7 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
 
     /**
      * コンストラクター
-     * 
+     *
      * @param object JSON Object
      */
     public ShipDto(JsonObject object) {
@@ -233,7 +233,7 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
 
     /**
      * 艦隊IDを設定する
-     * 
+     *
      * @param fleetid 艦隊ID
      */
     public void setFleetid(String fleetid) {
@@ -603,5 +603,53 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
      */
     public ItemDto getSlotExItem() {
         return this.slotExItem;
+    }
+
+    /**
+     *
+     * @return 艦の装備抜き索敵値
+     */
+    public int getSakutekiWithoutItem(){
+        int soSakuteki = this.param.getSaku();
+        for(ItemDto item : this.getItem2()){
+            if(item != null){
+                soSakuteki -= item.getParam().getSaku();
+            }
+        }
+        if(this.getSlotExItem() != null){
+            soSakuteki -= this.getSlotExItem().getParam().getSaku();
+        }
+        return soSakuteki;
+    }
+    /**
+     *
+     * @return 艦の装備抜き索敵値由来の索敵スコア
+     */
+    public double getSakutekiScoreWithoutItem(){
+        return Math.sqrt(this.getSakutekiWithoutItem());
+    }
+    /**
+     *
+     * @return 分岐点係数をかける前の装備の索敵スコアの合計値
+     */
+    public double getItemSakutekiScore(){
+        double score = 0.0;
+        for(ItemDto item : this.getItem2()){
+            if(item != null){
+                score += item.getSakutekiScore();
+            }
+        }
+        if(this.getSlotExItem() != null){
+            score += this.getSlotExItem().getSakutekiScore();
+        }
+        return score;
+    }
+    /**
+     *
+     * @param bunkiKeisu
+     * @return この艦の分岐点係数を考慮した索敵スコア(素索敵分 + 係数*装備分)
+     */
+    public double getSakutekiScore(double bunkiKeisu){
+        return this.getSakutekiScoreWithoutItem() + bunkiKeisu*this.getItemSakutekiScore();
     }
 }

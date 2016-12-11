@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package logbook.dto;
 
@@ -7,9 +7,9 @@ import java.beans.Transient;
 
 import javax.json.JsonObject;
 
-import logbook.internal.Item;
-
 import com.dyuproject.protostuff.Tag;
+
+import logbook.internal.Item;
 
 /**
  * 個別装備
@@ -246,5 +246,54 @@ public class ItemDto extends AbstractDto {
      */
     public void setAlv(int alv) {
         this.alv = alv;
+    }
+
+    /**
+     *
+     * @return 索敵スコア計算時に装備索敵値にかかる係数
+     */
+    public double getSakutekiKeisu(){
+        switch (this.getType2()) {
+            case 8:return 0.8;//艦上攻撃機
+            case 9:return 1.0;//艦上偵察機
+            case 10:return 1.2;//水上偵察機
+            case 11:return 1.1;//水上爆撃機
+            default:return 0.6;//その他
+        }
+    }
+    /**
+     *
+     * @return 索敵スコア計算時に改修値を索敵値に加算する際の係数
+     */
+    public double getSakutekiKaisyuKeisu(){
+        switch (this.getType2()) {
+            case 9: return 1.2;// 艦上偵察機
+            case 10: return 1.2;// 水上偵察機
+            case 12: return 1.25;// 小型電探
+            case 13: return 1.4;// 大型電探
+            default: return 0.0;// その他
+        }
+    }
+    /**
+     *
+     * @return 索敵スコアのうち改修値由来の値
+     */
+    public double getKaisyuSakutekiScore(){
+        double kaisyuKasan = this.getSakutekiKaisyuKeisu() * Math.sqrt(this.level);
+        return kaisyuKasan * this.getSakutekiKeisu();
+    }
+    /**
+     *
+     * @return 索敵スコアのうち装備索敵値由来の値
+     */
+    public double getSakutekiScoreWithoutKaisyu(){
+        return this.getSakutekiKeisu() * this.getParam().getSaku();
+    }
+    /**
+     *
+     * @return この装備の改修分も考慮した索敵スコア
+     */
+    public double getSakutekiScore(){
+        return this.getSakutekiScoreWithoutKaisyu() + this.getKaisyuSakutekiScore();
     }
 }

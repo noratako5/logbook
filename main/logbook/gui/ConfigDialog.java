@@ -428,7 +428,7 @@ public final class ConfigDialog extends Dialog {
 
         Label labelDateFormat = new Label(compositeReport, SWT.NONE);
         labelDateFormat.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        labelDateFormat.setText("出力日付形式*");
+        labelDateFormat.setText("出力日付形式");
 
         final Text dateFormat = new Text(compositeReport, SWT.BORDER);
         GridData gdDateFormat = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
@@ -476,7 +476,7 @@ public final class ConfigDialog extends Dialog {
         final Combo sakutekiCombo = new Combo(compositeFleetTab, SWT.READ_ONLY);
         sakutekiCombo.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
         sakutekiCombo.add("A.艦隊素の索敵値 + 装備の索敵値");
-        sakutekiCombo.add("B.判定式(33)(艦隊素の索敵分 + 装備分 - 提督Lv分 + 艦隊空き数分)");
+        sakutekiCombo.add("B.判定式(33)(艦隊素の索敵分 + 装備分(分岐点係数) - 提督Lv分 + 艦隊空き数分)");
         sakutekiCombo.add("C.判定式(33)(2-5式(秋))");
         sakutekiCombo.add("D.ほっぽアルファVer2.0.1(艦隊素の索敵分 + 装備分 - 提督Lv分)");
         sakutekiCombo.add("F.ほっぽアルファVer2.0.1(2-5式(秋))");
@@ -485,6 +485,16 @@ public final class ConfigDialog extends Dialog {
         sakutekiCombo.add("H.2-5式(旧)(偵察機×2 + 電探 + √(装備込みの艦隊索敵値-偵察機-電探))");
         sakutekiCombo.add("I.装備込みの艦隊索敵値(2-5式(旧))");
         sakutekiCombo.select(AppConfig.get().getSakutekiMethodV4());
+
+        Label labelBunkiten = new Label(compositeFleetTab, SWT.NONE);
+        labelBunkiten.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1));
+        labelBunkiten.setText("分岐点係数");
+
+        final Text bunkiten = new Text(compositeFleetTab, SWT.BORDER);
+        GridData gdBunkiten = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+        gdBunkiten.widthHint = SwtUtils.DPIAwareWidth(180);
+        bunkiten.setLayoutData(gdDateFormat);
+        bunkiten.setText(Double.toString(AppConfig.get().getBunkitenKeisu()));
 
         Label mainLog = new Label(compositeFleetTab, SWT.NONE);
         mainLog.setText("母港タブのログ");
@@ -1163,6 +1173,7 @@ public final class ConfigDialog extends Dialog {
                 AppConfig.get().setAkashiTimerFormat(akashiFormatCombo.getSelectionIndex());
                 AppConfig.get().setSeikuMethod(seikuCombo.getSelectionIndex());
                 AppConfig.get().setSakutekiMethodV4(sakutekiCombo.getSelectionIndex());
+                AppConfig.get().setBunkitenKeisu(Double.valueOf(bunkiten.getText()));
                 // notify
                 AppConfig.get().setOkCond(condSpinner.getSelection());
                 AppConfig.get().setNoticeCondOnlyMainFleet(condOnlyMain.getSelection());

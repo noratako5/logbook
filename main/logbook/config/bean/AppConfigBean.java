@@ -352,8 +352,11 @@ public final class AppConfigBean {
     /** 最大表示件数 */
     private int maxPrintItems = 2000;
 
-    /** 最大表示件数 */
+    /** 日付形式 */
     private String builtinDateFormat = "yyyy-MM-dd HH:mm:ss";
+    
+    /** 分岐点係数 */
+    private double bunkitenKeisu = 1;
 
     /** システムワイドホットキー (Windowsのみ対応) 0:なし, 1:Ctrl+Shift+z, 2:Win+Z */
     private int systemWideHotKey = 0;
@@ -1878,6 +1881,13 @@ public final class AppConfigBean {
      */
     public void setBuiltinDateFormat(String builtinDateFormat) {
         this.builtinDateFormat = builtinDateFormat;
+    }
+    
+    public double getBunkitenKeisu(){
+        return bunkitenKeisu;
+    }
+    public void setBunkitenKeisu(double keisu){
+        this.bunkitenKeisu = keisu;
     }
 
     /**

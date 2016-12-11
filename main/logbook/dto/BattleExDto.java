@@ -2803,6 +2803,182 @@ public class BattleExDto extends AbstractDto {
         body.set(7, hpText);
         return body;
     }
+
+
+
+    private static ArrayList<String> _shipSakutekiRowHeader = null;
+    private static ArrayList<String> ShipSakutekiRowHeader(){
+        if(_shipSakutekiRowHeader != null){
+            return _shipSakutekiRowHeader;
+        }
+        ArrayList<String> header = new ArrayList<String>();
+        header.add("編成順");
+        header.add("ID");
+        header.add("名前");
+        header.add("種別");
+        header.add("Lv");
+        header.add("装備込み索敵");
+        header.add("素索敵");
+        header.add("索敵スコア");
+        header.addAll(ItemSakutekiRowHeader());
+        _shipSakutekiRowHeader = header;
+        return _shipSakutekiRowHeader;
+    }
+    private ArrayList<String> ShipSakutekiRowBodyBase(ShipBaseDto ship,int index){
+        if(ship != null){
+            ArrayList<String> body = new ArrayList<String>();
+            String shipId = "";
+            String fullName = "";
+            String type = "";
+            if(ship.shipInfo != null){
+                shipId = String.valueOf(ship.shipInfo.getShipId());
+                fullName = ship.shipInfo.getFullName();
+                type = ship.shipInfo.getType();
+            }
+            String saku = "";
+            String soSakuteki = "";
+            String sakutekiScore = "";
+            if(ship.param != null && ship instanceof ShipDto){
+                ShipDto s = (ShipDto)ship;
+                saku = String.valueOf(ship.param.getSaku());
+                soSakuteki = String.valueOf(s.getSakutekiWithoutItem());
+                double ten = 10000000000.0;
+                sakutekiScore = String.format("%.10f",(Math.floor(s.getSakutekiScoreWithoutItem()*ten)+0.1)/ten);
+            }
+            String lv = String.valueOf(ship.getLv());
+            body.add(String.valueOf(index+1));
+            body.add(shipId);
+            body.add(fullName);
+            body.add(type);
+            body.add(lv);
+            body.add(saku);
+            body.add(soSakuteki);
+            body.add(sakutekiScore);
+            body.addAll(this.ItemSakutekiRowBody(ship));
+            return body;
+        }else{
+            int length = ShipRowHeader().size();
+            ArrayList<String> body = new ArrayList<String>();
+            for(int i=0;i<length;i++){
+                body.add("");
+            }
+            return body;
+        }
+    }
+
+
+
+
+
+
+    private static ArrayList<String> _itemSakutekiRowHeader = null;
+    private static ArrayList<String> ItemSakutekiRowHeader(){
+        if(_itemSakutekiRowHeader == null){
+            ArrayList<String> header = new ArrayList<String>();
+            for(int i=1;i<=5;i++){
+                header.add(String.format("装備%d.名前",i));
+                header.add(String.format("装備%d.カテゴリ",i));
+                header.add(String.format("装備%d.索敵",i));
+                header.add(String.format("装備%d.改修",i));
+                header.add(String.format("装備%d.改修索敵加算値",i));
+                header.add(String.format("装備%d.素索敵スコア",i));
+                header.add(String.format("装備%d.改修索敵スコア",i));
+                header.add(String.format("装備%d.合算索敵スコア",i));
+            }
+            _itemSakutekiRowHeader = header;
+        }
+        return _itemSakutekiRowHeader;
+    }
+
+    private ArrayList<String> ItemSakutekiRowBodyConstruct(ItemDto item,ItemInfoDto info,Integer onSlot){
+        ArrayList<String> body = new ArrayList<String>();
+        String name = "";
+        String type = "";
+        String sakuteki = "";
+        String level = "";
+        String kaisyuKasan = "";
+        String soSakutekiScore = "";
+        String kaisyuSakutekiScore = "";
+        String gassanSakutekiScore = "";
+        if(info != null && item != null){
+            name = item.getName();
+            type = item.getTypeName();
+            sakuteki =  String.valueOf(item.getParam().getSakuteki());
+            int lv = item.getLevel();
+            level = String.valueOf(item.getLevel());
+            double ten = 10000000000.0;
+            double kaisyuKasanD = item.getSakutekiKaisyuKeisu() * Math.sqrt(lv);
+            kaisyuKasan = String.format("%.10f",(Math.floor(kaisyuKasanD*ten)+0.1)/ten);
+            soSakutekiScore = String.format("%.10f",(Math.floor(item.getSakutekiScoreWithoutKaisyu() *ten)+0.1)/ten);
+            kaisyuSakutekiScore = String.format("%.10f",(Math.floor(item.getKaisyuSakutekiScore()*ten)+0.1)/ten);
+            gassanSakutekiScore = String.format("%.10f",(Math.floor(item.getSakutekiScore()*ten)+0.1)/ten);
+        }
+        body.add(name);
+        body.add(type);
+        body.add(sakuteki);
+        body.add(level);
+        body.add(kaisyuKasan);
+        body.add(soSakutekiScore);
+        body.add(kaisyuSakutekiScore);
+        body.add(gassanSakutekiScore);
+        return body;
+    }
+
+    private ArrayList<String> ItemSakutekiRowBody(ShipBaseDto ship){
+        ArrayList<String> body = new ArrayList<String>();
+
+        List<ItemDto>itemDtos = null;
+        ItemDto itemExDto = null;
+        List<ItemInfoDto>itemInfoDtos = null;
+        ItemInfoDto itemInfoExDto = null;
+        int[] onSlots = null;
+        if(ship != null){
+            if(ship instanceof ShipDto){
+                ShipDto s = (ShipDto)ship;
+                itemDtos = s.getItem2();
+                itemExDto = s.getSlotExItem();
+                if(itemExDto != null){
+                    itemInfoExDto = itemExDto.getInfo();
+                }
+            }
+            itemInfoDtos = ship.getItem();
+            onSlots = ship.getOnSlot();
+        }
+        for(int i=0;i<5;i++){
+            ArrayList<String> itemRow = null;
+            if(i==4 && itemExDto != null && itemInfoExDto != null){
+                itemRow = this.ItemSakutekiRowBodyConstruct(itemExDto, itemInfoExDto, null);
+            }
+            else if(itemInfoDtos != null && i < itemInfoDtos.size()){
+                Integer onSlot = null;
+                if(onSlots != null && i < onSlots.length){
+                    onSlot = Integer.valueOf(onSlots[i]);
+                }
+                if(itemDtos != null && i < itemDtos.size()){
+                    itemRow = this.ItemSakutekiRowBodyConstruct(itemDtos.get(i),itemInfoDtos.get(i),onSlot);
+                }else{
+                    itemRow = this.ItemSakutekiRowBodyConstruct(null, itemInfoDtos.get(i), onSlot);
+                }
+            }
+            else{
+                itemRow = this.ItemSakutekiRowBodyConstruct(null, null, null);
+            }
+            body.addAll(itemRow);
+        }
+        return body;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     private static ArrayList<String>ShipSummaryRowHeader(){
         ArrayList<String> header = new ArrayList<String>();
         header.add("ID");
@@ -5253,7 +5429,58 @@ public class BattleExDto extends AbstractDto {
         return body;
     }
 
-    /**砲撃戦夜戦は含まない*/
+
+    static public ArrayList<String> HenseiSakutekiRowHeader(){
+        ArrayList<String> header = PhaseRowHeader();
+        header.add("素索敵スコア合計");
+        header.add("装備スコア合計");
+        header.add("司令部スコア");
+        header.add("人数スコア");
+        for(int i=1;i<=6;i++){
+            String index = (new Integer(i)).toString();
+            header.addAll(
+                ShipSakutekiRowHeader()
+                    .stream()
+                    .map(s->"自軍"+index+"."+s)
+                    .collect(Collectors.toList())
+            );
+        }
+        return header;
+    }
+    private ArrayList<ArrayList<String>>HenseiSakutekiRowBody(Phase phase,LinkedTreeMap tree,ArrayList<ArrayList<String>> enemyRows,ArrayList<ArrayList<String>> friendRows,ArrayList<ArrayList<String>> enemyCombinedRows,ArrayList<ArrayList<String>> combinedRows,BuiltinScriptFilter filter){
+        ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+        ArrayList<ArrayList<String>> sakutekiFriendRows = new ArrayList<ArrayList<String>>();
+        double withoutItemScore = 0.0;
+        double itemScore = 0.0;
+        double levelScore = -Math.ceil(0.4 * this.getHqLv());
+        int countScore = 0;
+        if(this.getDock()!=null){
+            List<ShipDto> ships = this.getDock().getShips();
+            for(int i=0;i<ships.size();i++){ sakutekiFriendRows.add(this.ShipSakutekiRowBodyBase(ships.get(i), i));}
+            for(int i=ships.size();i<6;i++){ sakutekiFriendRows.add(this.ShipSakutekiRowBodyBase(null, i));}
+            for(ShipDto ship:ships){
+                withoutItemScore += ship.getSakutekiScoreWithoutItem();
+                itemScore += ship.getItemSakutekiScore();
+            }
+            countScore = 2 * (6 - ships.size());
+        }else{
+            for(int i=0;i<6;i++){ sakutekiFriendRows.add(this.ShipSakutekiRowBodyBase(null, i)); }
+        }
+        ArrayList<String> row = this.PhaseRowBody();
+
+        double ten = 10000000000.0;
+        row.add(String.format("%.10f",(Math.floor(withoutItemScore*ten)+0.1)/ten));
+        row.add(String.format("%.10f",(Math.floor(itemScore*ten)+0.1)/ten));
+        row.add(String.format("%.0f",levelScore));
+        row.add(String.valueOf(countScore));
+        for (int i = 0; i < 6; ++i) { row.addAll(sakutekiFriendRows.get(i)); }
+        if(filter.filterOutput(row)){
+            body.add(row);
+        }
+        return body;
+    }
+
+    /**砲撃戦夜戦とかは含まない*/
     public static ArrayList<String> BuiltinScriptKeys(){
         ArrayList<String> list = new ArrayList<String>();
         list.add("砲撃戦");
@@ -5263,9 +5490,10 @@ public class BattleExDto extends AbstractDto {
         list.add("航空戦撃墜");
         list.add("基地航空戦");
         list.add("編成");
+        list.add("編成索敵");
         return list;
     }
-    /**砲撃戦夜戦は含まない*/
+    /**砲撃戦夜戦とかは含まない*/
     public static Map<String,String[]> BuiltinScriptHeader(){
         try{
             HashMap<String,String[]>result = new HashMap<String,String[]>();
@@ -5306,6 +5534,9 @@ public class BattleExDto extends AbstractDto {
                     break;
                 case"編成":
                     _headerCache.put(key,HenseiRowHeader().toArray(new String[0]));
+                    break;
+                case"編成索敵":
+                    _headerCache.put(key,HenseiSakutekiRowHeader().toArray(new String[0]));
                     break;
             }
             return _headerCache.get(key);
@@ -5506,6 +5737,29 @@ public class BattleExDto extends AbstractDto {
                             return array;
                         }catch (Exception e){
                             String[]row = new String[this.HenseiRowHeader().size()];
+                            for(int i=0;i<row.length;i++){
+                                row[i] = "例外発生";
+                            }
+                            row[0] = dateString;
+                            String[][]error = new String[1][];
+                            error[0] = row;
+                            return error;
+                        }
+                    case"編成索敵":
+                        try{
+                            ArrayList<ArrayList<String>> body = new ArrayList<ArrayList<String>>();
+                            if(this.getPhase1() != null){
+                                body.addAll(this.HenseiSakutekiRowBody(this.getPhase1(),treeArray[0],enemyRows,friendRows,enemyCombinedRows,combinedRows,filter));
+                            }
+                            String[][]array = new String[body.size()][];
+                            for(int i=0;i<array.length;i++){
+                                array[i] = body.get(i).toArray(new String[0]);
+                                array[i][0] = dateString;
+                            }
+                            return array;
+                        }catch (Exception e){
+                            e.printStackTrace();
+                            String[]row = new String[this.HenseiSakutekiRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
                             }
