@@ -260,12 +260,19 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
             new MenuItem(this.tablemenu, SWT.SEPARATOR);
         }
         MenuItem sendclipbord = new MenuItem(this.tablemenu, SWT.NONE);
-        sendclipbord.addSelectionListener(new TableToClipboardAdapter(null, this.table, this.getConfig()));
-        sendclipbord.setText("クリップボードにコピー(&C)");
+        sendclipbord.addSelectionListener(new TableToClipboardAdapter(null,null, this.table, this.getConfig(),false));
+        sendclipbord.setText("クリップボードに可視列コピー(&C)");
         MenuItem sendclipbordWithoutHeader = new MenuItem(this.tablemenu, SWT.NONE);
-        sendclipbordWithoutHeader.addSelectionListener(new TableToClipboardAdapter(this.header, this.table, this
-                .getConfig()));
-        sendclipbordWithoutHeader.setText("クリップボードにコピー(ヘッダーを含める)");
+        sendclipbordWithoutHeader.addSelectionListener(new TableToClipboardAdapter(this.header,null, this.table, this
+                .getConfig(),false));
+        sendclipbordWithoutHeader.setText("クリップボードに可視列コピー(ヘッダーを含める)");
+        MenuItem sendclipbord2 = new MenuItem(this.tablemenu, SWT.NONE);
+        sendclipbord2.addSelectionListener(new TableToClipboardAdapter(null,(()->this.body), this.table, this.getConfig(),true));
+        sendclipbord2.setText("クリップボードに全列コピー(&C)");
+        MenuItem sendclipbordWithoutHeader2 = new MenuItem(this.tablemenu, SWT.NONE);
+        sendclipbordWithoutHeader2.addSelectionListener(new TableToClipboardAdapter(this.header,(()->this.body), this.table, this
+                .getConfig(),true));
+        sendclipbordWithoutHeader2.setText("クリップボードに全列コピー(ヘッダーを含める)");
         new MenuItem(this.tablemenu, SWT.SEPARATOR);
 
         if (!this.isNoMenubar()) {

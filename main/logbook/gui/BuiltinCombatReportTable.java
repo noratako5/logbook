@@ -30,6 +30,7 @@ import logbook.scripting.TableItemCreatorProxy;
  *
  */
 public final class BuiltinCombatReportTable extends DropReportTable {
+    private final int MAX_COLUMN = 200;
     private final String key;
     private final TableItemCreatorProxy tableItemCreatorProxy;
     private final String defaultTitleMain;
@@ -261,10 +262,15 @@ public final class BuiltinCombatReportTable extends DropReportTable {
         }
         boolean[]visibles = this.getConfig().getVisibleColumn();
         SelectionListener listener = this.getHeaderSelectionListener();
+        int counter = 0;
         for (int i = 0; i < this.header.length; i++) {
             if(visibles[i] == false){
                 continue;
             }
+            if(counter == MAX_COLUMN){
+                break;
+            }
+            counter++;
             TableColumn col = new TableColumn(this.table, SWT.LEFT);
             col.setText(this.header[i]);
             col.setMoveable(true);
@@ -318,9 +324,14 @@ public final class BuiltinCombatReportTable extends DropReportTable {
             TableRowHeader rowHeader = (TableRowHeader) line[0];
             rowHeader.setNumber(i + 1); // ソート順に関係ない番号
             List<Comparable> itemList = new ArrayList<>();
+            int counter = 0;
             for(int j = 0; j<visibles.length && j<line.length;j++){
+                if(counter == MAX_COLUMN){
+                    break;
+                }
                 if(visibles[j]){
                     itemList.add(line[j]);
+                    counter++;
                 }
             }
             Comparable[] line2 = itemList.toArray(new Comparable[0]);
