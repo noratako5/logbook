@@ -294,12 +294,13 @@ public class SakutekiString implements Comparable<SakutekiString> {
             return String.format("%d+%d",
                     this.totalSakuteki - this.slotSakuteki, this.slotSakuteki);
         case 1: // 判定式(33)(艦素索敵分 + 装備分(分岐点係数) + 提督Lv分 + 艦隊空き数分)
+            double small = 0.000000000001;
             return String.format(
                         "%.3f (%.3f%+.3f(%.1f)%+.1f%+.1f)",
-                        (Math.floor(this.calc25v4*1000)+0.1)/1000.0,
-                        (Math.floor(this.v4Ship*1000)+0.1)/1000.0,
-                        (Math.floor(this.v4Item*bunki *1000)+0.1)/1000.0,
-                        (Math.floor(bunki *10)+0.1)/10.0,
+                        (Math.floor(this.calc25v4*1000+small)+0.1)/1000.0,
+                        (Math.floor(this.v4Ship*1000+small)+0.1)/1000.0,
+                        (Math.floor(this.v4Item*bunki *1000+small)+0.1)/1000.0,
+                        (Math.floor(bunki *10+small)+0.1)/10.0,
                         this.v4HqLv,
                         this.v4Space
                     );
