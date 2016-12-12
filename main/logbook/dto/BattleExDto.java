@@ -405,7 +405,12 @@ public class BattleExDto extends AbstractDto {
             this.raigeki = BattleAtackDto.makeRaigeki(object.get("api_raigeki"), kind.isRaigekiSecond());
 
             // ダメージを反映 //
-
+            if (this.injectionAirBase != null){
+                this.doAtack(this.injectionAirBase.atacks);
+            }
+            if (this.injectionAir != null){
+                this.doAtack(this.injectionAir.atacks);
+            }
             if (this.airBase != null)
                 for (AirBattleDto attack : this.airBase)
                     this.doAtack(attack.atacks);
@@ -532,7 +537,12 @@ public class BattleExDto extends AbstractDto {
             this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_raigeki"), kind.isRaigekiSecond());
 
             // ダメージを反映 //
-
+            if (this.injectionAirBase != null){
+                this.doAtack(this.injectionAirBase.atacks);
+            }
+            if (this.injectionAir != null){
+                this.doAtack(this.injectionAir.atacks);
+            }
             if (this.airBase != null)
                 for (AirBattleDto attack : this.airBase)
                     this.doAtack(attack.atacks);
