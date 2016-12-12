@@ -5,6 +5,7 @@ package logbook.dto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -5454,6 +5455,7 @@ public class BattleExDto extends AbstractDto {
         double itemScore = 0.0;
         double levelScore = -Math.ceil(0.4 * this.getHqLv());
         int countScore = 0;
+        ArrayList<Integer> indexArray = new ArrayList<Integer>();
         if(this.getDock()!=null){
             List<ShipDto> ships = this.getDock().getShips();
             for(int i=0;i<ships.size();i++){ sakutekiFriendRows.add(this.ShipSakutekiRowBodyBase(ships.get(i), i));}
@@ -5463,6 +5465,10 @@ public class BattleExDto extends AbstractDto {
                 itemScore += ship.getItemSakutekiScore();
             }
             countScore = 2 * (6 - ships.size());
+            for(int i=0;i<ships.size();i++){
+                indexArray.add(i);
+            }
+            indexArray.sort(Comparator.comparing(i -> ships.get((Integer)i).getShipId()));
         }else{
             for(int i=0;i<6;i++){ sakutekiFriendRows.add(this.ShipSakutekiRowBodyBase(null, i)); }
         }
@@ -5473,7 +5479,8 @@ public class BattleExDto extends AbstractDto {
         row.add(String.format("%.10f",(Math.floor(itemScore*ten)+0.1)/ten));
         row.add(String.format("%.0f",levelScore));
         row.add(String.valueOf(countScore));
-        for (int i = 0; i < 6; ++i) { row.addAll(sakutekiFriendRows.get(i)); }
+        for (int i=0;i<indexArray.size();i++){row.addAll(sakutekiFriendRows.get(indexArray.get(i)));}
+        for (int i = indexArray.size(); i < 6; ++i) { row.addAll(sakutekiFriendRows.get(i)); }
         if(filter.filterOutput(row)){
             body.add(row);
         }
