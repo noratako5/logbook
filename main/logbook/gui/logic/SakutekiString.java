@@ -297,10 +297,10 @@ public class SakutekiString implements Comparable<SakutekiString> {
             double small = 0.00000000000001;
             return String.format(
                         "%.3f (%.3f%+.3f(%.1f)%+.1f%+.1f)",
-                        (Math.floor(this.calc25v4*1000+small)+0.1)/1000.0,
-                        (Math.floor(this.v4Ship*1000+small)+0.1)/1000.0,
-                        (Math.floor(this.v4Item*bunki *1000+small)+0.1)/1000.0,
-                        (Math.floor(bunki *10+small)+0.1)/10.0,
+                        (Math.floor((this.calc25v4+small)*1000)+0.1)/1000.0,
+                        (Math.floor((this.v4Ship+small)*1000)+0.1)/1000.0,
+                        (Math.floor((this.v4Item+small)*bunki *1000)+0.1)/1000.0,
+                        (Math.floor((bunki+small) *10)+0.1)/10.0,
                         this.v4HqLv,
                         this.v4Space
                     );

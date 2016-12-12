@@ -2845,7 +2845,7 @@ public class BattleExDto extends AbstractDto {
                 soSakuteki = String.valueOf(s.getSakutekiWithoutItem());
                 double small = 0.00000000000001;
                 double ten = 10000000000.0;
-                sakutekiScore = String.format("%.10f",(Math.floor(s.getSakutekiScoreWithoutItem()*ten+small)+0.1)/ten);
+                sakutekiScore = String.format("%.10f",(Math.floor((s.getSakutekiScoreWithoutItem()+small)*ten)+0.1)/ten);
             }
             String lv = String.valueOf(ship.getLv());
             body.add(String.valueOf(index+1));
@@ -2911,10 +2911,10 @@ public class BattleExDto extends AbstractDto {
             double small = 0.00000000000001;
             double ten = 10000000000.0;
             double kaisyuKasanD = item.getSakutekiKaisyuKeisu() * Math.sqrt(lv);
-            kaisyuKasan = String.format("%.10f",(Math.floor(kaisyuKasanD*ten+small)+0.1)/ten);
-            soSakutekiScore = String.format("%.10f",(Math.floor(item.getSakutekiScoreWithoutKaisyu() *ten+small)+0.1)/ten);
-            kaisyuSakutekiScore = String.format("%.10f",(Math.floor(item.getKaisyuSakutekiScore()*ten+small)+0.1)/ten);
-            gassanSakutekiScore = String.format("%.10f",(Math.floor(item.getSakutekiScore()*ten+small)+0.1)/ten);
+            kaisyuKasan = String.format("%.10f",(Math.floor((kaisyuKasanD+small)*ten)+0.1)/ten);
+            soSakutekiScore = String.format("%.10f",(Math.floor((item.getSakutekiScoreWithoutKaisyu()+small)*ten)+0.1)/ten);
+            kaisyuSakutekiScore = String.format("%.10f",(Math.floor((item.getKaisyuSakutekiScore()+small)*ten)+0.1)/ten);
+            gassanSakutekiScore = String.format("%.10f",(Math.floor((item.getSakutekiScore()+small)*ten)+0.1)/ten);
         }
         body.add(name);
         body.add(type);
@@ -5478,8 +5478,8 @@ public class BattleExDto extends AbstractDto {
 
         double small = 0.00000000000001;
         double ten = 10000000000.0;
-        row.add(String.format("%.10f",(Math.floor(withoutItemScore*ten+small)+0.1)/ten));
-        row.add(String.format("%.10f",(Math.floor(itemScore*ten+small)+0.1)/ten));
+        row.add(String.format("%.10f",(Math.floor((withoutItemScore+small)*ten)+0.1)/ten));
+        row.add(String.format("%.10f",(Math.floor((itemScore+small)*ten)+0.1)/ten));
         row.add(String.format("%.0f",levelScore));
         row.add(String.valueOf(countScore));
         for (int i=0;i<indexArray.size();i++){row.addAll(sakutekiFriendRows.get(indexArray.get(i)));}
