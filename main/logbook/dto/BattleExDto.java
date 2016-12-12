@@ -2843,7 +2843,7 @@ public class BattleExDto extends AbstractDto {
                 ShipDto s = (ShipDto)ship;
                 saku = String.valueOf(ship.param.getSaku());
                 soSakuteki = String.valueOf(s.getSakutekiWithoutItem());
-                double small = 0.000000000001;
+                double small = 0.00000000000001;
                 double ten = 10000000000.0;
                 sakutekiScore = String.format("%.10f",(Math.floor(s.getSakutekiScoreWithoutItem()*ten+small)+0.1)/ten);
             }
@@ -2908,7 +2908,7 @@ public class BattleExDto extends AbstractDto {
             sakuteki =  String.valueOf(item.getParam().getSakuteki());
             int lv = item.getLevel();
             level = String.valueOf(item.getLevel());
-            double small = 0.000000000001;
+            double small = 0.00000000000001;
             double ten = 10000000000.0;
             double kaisyuKasanD = item.getSakutekiKaisyuKeisu() * Math.sqrt(lv);
             kaisyuKasan = String.format("%.10f",(Math.floor(kaisyuKasanD*ten+small)+0.1)/ten);
@@ -5476,7 +5476,7 @@ public class BattleExDto extends AbstractDto {
         }
         ArrayList<String> row = this.PhaseRowBody();
 
-        double small = 0.000000000001;
+        double small = 0.00000000000001;
         double ten = 10000000000.0;
         row.add(String.format("%.10f",(Math.floor(withoutItemScore*ten+small)+0.1)/ten));
         row.add(String.format("%.10f",(Math.floor(itemScore*ten+small)+0.1)/ten));
