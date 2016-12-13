@@ -5445,6 +5445,8 @@ public class BattleExDto extends AbstractDto {
 
     static public ArrayList<String> HenseiSakutekiRowHeader(){
         ArrayList<String> header = PhaseRowHeader();
+        header.add("索敵スコア");
+        header.add("分岐点係数");
         header.add("素索敵スコア合計");
         header.add("装備スコア合計");
         header.add("司令部スコア");
@@ -5485,9 +5487,11 @@ public class BattleExDto extends AbstractDto {
             for(int i=0;i<6;i++){ sakutekiFriendRows.add(this.ShipSakutekiRowBodyBase(null, i)); }
         }
         ArrayList<String> row = this.PhaseRowBody();
-
+        double bunki = AppConfig.get().getBunkitenKeisu();
         double small = 0.00000000000001;
         double ten = 10000000000.0;
+        row.add(String.format("%.10f",(Math.floor((withoutItemScore+itemScore*bunki+levelScore+countScore +small)*ten)+0.1)/ten));
+        row.add(String.format("%.2f",(Math.floor((bunki+small)*100.0)+0.1)/100.0));
         row.add(String.format("%.10f",(Math.floor((withoutItemScore+small)*ten)+0.1)/ten));
         row.add(String.format("%.10f",(Math.floor((itemScore+small)*ten)+0.1)/ten));
         row.add(String.format("%.0f",levelScore));
