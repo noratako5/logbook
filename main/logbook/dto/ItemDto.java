@@ -253,7 +253,10 @@ public class ItemDto extends AbstractDto {
      * @return 索敵スコア計算時に装備索敵値にかかる係数
      */
     public double getSakutekiKeisu(){
-        switch (this.getType2()) {
+        return getSakutekiKeisu(this.getType2());
+    }
+    public static double getSakutekiKeisu(int type2){
+        switch (type2) {
             case 8:return 0.8;//艦上攻撃機
             case 9:return 1.0;//艦上偵察機
             case 10:return 1.2;//水上偵察機
@@ -266,7 +269,10 @@ public class ItemDto extends AbstractDto {
      * @return 索敵スコア計算時に改修値を索敵値に加算する際の係数
      */
     public double getSakutekiKaisyuKeisu(){
-        switch (this.getType2()) {
+        return getSakutekiKaisyuKeisu(this.getType2());
+    }
+    public static double getSakutekiKaisyuKeisu(int type2){
+        switch (type2) {
             case 9: return 1.2;// 艦上偵察機
             case 10: return 1.2;// 水上偵察機
             case 12: return 1.25;// 小型電探

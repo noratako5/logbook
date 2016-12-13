@@ -99,6 +99,7 @@ public class SakutekiString implements Comparable<SakutekiString> {
                     }
                     int saku = item.getParam().getSaku();
                     int lv = item.getLevel(); // 改修
+                    double kaisyuKeisu = item.getSakutekiKaisyuKeisu();
                     switch (item.getType2()) {
                     case 7: // 艦上爆撃機
                         this.kanbaku += saku;
@@ -108,22 +109,22 @@ public class SakutekiString implements Comparable<SakutekiString> {
                         break;
                     case 9: // 艦上偵察機
                         this.kantei += saku;
-                        this.kanteiKaisyu += 0 * Math.sqrt(lv);
+                        this.kanteiKaisyu += kaisyuKeisu * Math.sqrt(lv);
                         break;
                     case 10: // 水上偵察機
                         this.suitei += saku;
-                        this.suiteiKaisyu += 1.2 * Math.sqrt(lv);
+                        this.suiteiKaisyu += kaisyuKeisu * Math.sqrt(lv);
                         break;
                     case 11: // 水上爆撃機
                         this.suibaku += saku;
                         break;
                     case 12: // 小型電探
                         this.kogataDentan += saku;
-                        this.dentanKaisyu += 1.25 * Math.sqrt(lv);
+                        this.dentanKaisyu += kaisyuKeisu * Math.sqrt(lv);
                         break;
                     case 13: // 大型電探
                         this.oogataDentan += saku;
-                        this.dentanKaisyu += 1.4 * Math.sqrt(lv);
+                        this.dentanKaisyu += kaisyuKeisu * Math.sqrt(lv);
                         break;
                     case 29: // 探照灯
                         this.tansyouto += saku;
@@ -227,14 +228,14 @@ public class SakutekiString implements Comparable<SakutekiString> {
     }
 
     private void addToCalcV4(ShipParam p) {
-        double fromItem = (p.kanbaku * 0.6)
-                + (p.kanko * 0.8)
-                + (p.kantei * 1.0 + p.kanteiKaisyu)
-                + ((p.suitei + p.suiteiKaisyu) * 1.2)
-                + (p.suibaku * 1.1)
-                + ((p.kogataDentan + p.oogataDentan + p.dentanKaisyu) * 0.6)
-                + (p.tansyouto * 0.6)
-                + (p.other * 0.6);
+        double fromItem = (p.kanbaku * ItemDto.getSakutekiKeisu(7))
+                + (p.kanko * ItemDto.getSakutekiKeisu(8))
+                + ((p.kantei + p.kanteiKaisyu) * ItemDto.getSakutekiKeisu(9))
+                + ((p.suitei + p.suiteiKaisyu) * ItemDto.getSakutekiKeisu(10))
+                + (p.suibaku * ItemDto.getSakutekiKeisu(11))
+                + ((p.kogataDentan + p.oogataDentan + p.dentanKaisyu) * ItemDto.getSakutekiKeisu(12))//0.6で同じ
+                + (p.tansyouto * ItemDto.getSakutekiKeisu(29))
+                + (p.other * ItemDto.getSakutekiKeisu(-1));
         double fromShip = Math.sqrt(p.sakuteki);
 
         this.calc25v4 += fromItem * AppConfig.get().getBunkitenKeisu() + fromShip;
@@ -295,6 +296,7 @@ public class SakutekiString implements Comparable<SakutekiString> {
                     this.totalSakuteki - this.slotSakuteki, this.slotSakuteki);
         case 1: // 判定式(33)(艦素索敵分 + 装備分(分岐点係数) + 提督Lv分 + 艦隊空き数分)
             double small = 0.00000000000001;
+
             return String.format(
                         "%.3f (%.3f%+.3f(%.1f)%+.1f%+.1f)",
                         (Math.floor((this.calc25v4+small)*1000)+0.1)/1000.0,
