@@ -688,7 +688,7 @@ public class BattleAtackDto {
         for (int i = 0; i < elems; ++i) {
             int dam = dam_list.getInt(i + 1);
             if (dam > 0) {
-                dto.target[idx] = i-1;
+                dto.target[idx] = i;
                 dto.damage[idx] = dam;
                 idx++;
             }
