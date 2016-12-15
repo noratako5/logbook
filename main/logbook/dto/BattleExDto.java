@@ -32,6 +32,7 @@ import logbook.data.context.GlobalContext;
 import logbook.gui.logic.DateTimeString;
 import logbook.internal.EnemyData;
 import logbook.internal.Item;
+import logbook.internal.LoggerHolder;
 import logbook.internal.UseItem;
 import logbook.scripting.BuiltinScriptFilter;
 import logbook.util.GsonUtil;
@@ -42,6 +43,7 @@ import logbook.util.JsonUtils;
  * @author Nekopanda
  */
 public class BattleExDto extends AbstractDto {
+    private static LoggerHolder LOG = new LoggerHolder("builtinScript");
 
     /** 日付 */
     @Tag(1)
@@ -5601,6 +5603,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("砲撃戦出力に失敗しました", e);
                             String[]row = new String[this.HougekiRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5626,6 +5629,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("夜戦出力に失敗しました", e);
                             String[]row = new String[this.YasenRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5659,6 +5663,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("砲撃戦夜戦出力に失敗しました", e);
                             String[]row = new String[this.HougekiRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5678,6 +5683,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("雷撃戦出力に失敗しました", e);
                             String[]row = new String[this.RaigekiRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5697,6 +5703,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("航空戦出力に失敗しました", e);
                             String[]row = new String[this.AirRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5716,6 +5723,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("航空戦撃墜出力に失敗しました", e);
                             String[]row = new String[this.AirLostRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5735,6 +5743,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("基地航空戦出力に失敗しました", e);
                             String[]row = new String[this.BaseAirRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5760,6 +5769,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("編成出力に失敗しました", e);
                             String[]row = new String[this.HenseiRowHeader().size()];
                             for(int i=0;i<row.length;i++){
                                 row[i] = "例外発生";
@@ -5782,6 +5792,7 @@ public class BattleExDto extends AbstractDto {
                             }
                             return array;
                         }catch (Exception e){
+                            LOG.get().warn("編成索敵出力に失敗しました", e);
                             e.printStackTrace();
                             String[]row = new String[this.HenseiSakutekiRowHeader().size()];
                             for(int i=0;i<row.length;i++){
