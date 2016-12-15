@@ -4898,7 +4898,7 @@ public class BattleExDto extends AbstractDto {
                         row.add(String.valueOf(damage));
                         row.add((kabau)?"1" :"0");
                         row.addAll((df-1)<this.maxEnemyHp.length?this.ShipRowBodyUpdate(enemyRows.get(df-1), prevHP[0][df-1],this.maxEnemyHp[df-1]):enemyRows.get(df-1));
-                        if(filter.filterDefenceCountItem(this.enemy.get(df-1)) && filter.filterOutput(row)){
+                        if((df-1)<this.maxEnemyHp.length && filter.filterDefenceCountItem(this.enemy.get(df-1)) && filter.filterOutput(row)){
                             body.add(row);
                         }
                     }
@@ -4921,7 +4921,7 @@ public class BattleExDto extends AbstractDto {
                         row.add(String.valueOf(damage));
                         row.add((kabau)?"1" :"0");
                         row.addAll((df-1)<this.maxEnemyHpCombined.length?this.ShipRowBodyUpdate(enemyCombinedRows.get(df-1), prevHP[3][df-1],this.maxEnemyHpCombined[df-1]):enemyCombinedRows.get(df-1));
-                        if(filter.filterDefenceCountItem(this.enemyCombined.get(df-1)) && filter.filterOutput(row)){
+                        if((df-1)<this.maxEnemyHpCombined.length && filter.filterDefenceCountItem(this.enemyCombined.get(df-1)) && filter.filterOutput(row)){
                             body.add(row);
                         }
                     }
@@ -4937,16 +4937,16 @@ public class BattleExDto extends AbstractDto {
         }
         if(enemyRows == null){
             enemyRows = new ArrayList<ArrayList<String>>();
-            for(int i=0;i<this.enemy.size();i++){
-                enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));
-            }
+            for(int i=0;i<this.enemy.size();i++){ enemyRows.add(this.ShipRowBodyBase(this.enemy.get(i), this.maxEnemyHp[i], i));}
+            for(int i=this.enemy.size();i<6;i++){ enemyRows.add(this.ShipRowBodyBase(null,0, i));}
         }
-        if(enemyCombinedRows == null && this.isEnemyCombined()){
-            enemyCombinedRows = (this.isEnemyCombined()) ?new ArrayList<ArrayList<String>>() :null;
+        if(enemyCombinedRows == null){
+            enemyCombinedRows = new ArrayList<ArrayList<String>>();
             if(this.isEnemyCombined()){
-                for(int i=0;i<this.enemyCombined.size();i++){
-                    enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));
-                }
+                for(int i=0;i<this.enemyCombined.size();i++){ enemyCombinedRows.add(this.ShipRowBodyBase(this.enemyCombined.get(i), this.maxEnemyHpCombined[i], i+6));}
+                for(int i=this.enemyCombined.size();i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
+            }else{
+                for(int i=0;i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }
         }
         ArrayList<ArrayList<String>> friendSummaryRows = new ArrayList<ArrayList<String>>();
