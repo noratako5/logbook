@@ -24,7 +24,7 @@ public class AppConstants {
     public static final String SUFFIX = "拡張版";
 
     /** バージョン */
-    public static final String VERSION = "2.3.1.44.35";
+    public static final String VERSION = "2.3.2.44.36";
 
     /** ホームページ */
     public static final URI HOME_PAGE_URI = URI.create("http://nekopanda.blog.jp/");
@@ -178,6 +178,16 @@ public class AppConstants {
 
     /** 艦載機装備アイテムのタイプID */
     public static final int[] PLANE_ITEM_TYPES = new int[] { 6, 7, 8, 9, 10, 11, 25, 26, 41, 45, 57 };
+
+    /** 補強増設に装備できるアイテムのタイプID */
+    public static final int[] EXSLOT_ITEM_TYPES = new int[] {
+            21, // 機銃
+            23, // ダメコン
+            27, // バルジ
+            28, // バルジ
+            43, // 食料
+            44 // 補給
+    };
 
     /** 文字コード(Shift_JIS) */
     public static final Charset CHARSET = Charset.forName("MS932");
@@ -348,7 +358,7 @@ public class AppConstants {
     public static final String MESSAGE_TOTAL_DRAM = "ドラム缶:{0} ({1}隻)。";
 
     /** メッセージ  大発:{0} (+{1}%) */
-    public static final String MESSAGE_TOTAL_DAIHATSU = "大発:{0} (+{1}%)";
+    public static final String MESSAGE_TOTAL_DAIHATSU = "大発:{0} (+{1}%)。";
 
     /** メッセージ  前回の遠征:{0} (+{1}%) */
     public static final String MESSAGE_PREVIOUS_MISSION = "前回の遠征:{0}";
