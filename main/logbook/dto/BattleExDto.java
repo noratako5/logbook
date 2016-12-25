@@ -199,6 +199,10 @@ public class BattleExDto extends AbstractDto {
     @Tag(51)
     private String resultJson;
 
+    /** 連合艦隊の種類 */
+    @Tag(52)
+    private int combinedKind = 0;
+
     /////////////////////////////////////////////////
 
     /**
@@ -312,9 +316,12 @@ public class BattleExDto extends AbstractDto {
             this.nowEnemyHpCombined = isEnemyCombined ? beforeEnemyHpCombined.clone() : null;
 
             // 夜間触接
-            JsonValue jsonTouchPlane = object.get("api_touch_plane");
-            if ((jsonTouchPlane != null) && (jsonTouchPlane != JsonValue.NULL)) {
-                this.touchPlane = JsonUtils.getIntArray(object, "api_touch_plane");
+            JsonArray jsonTouchPlane = object.getJsonArray("api_touch_plane");
+            if (jsonTouchPlane != null) {
+                this.touchPlane = new int[] {
+                        Integer.parseInt(jsonTouchPlane.get(0).toString()),
+                        Integer.parseInt(jsonTouchPlane.get(1).toString()),
+                };
             }
 
             // 照明弾発射艦
@@ -367,14 +374,16 @@ public class BattleExDto extends AbstractDto {
                     if (edam != null) {
                         this.support = BattleAtackDto.makeSupport(edam);
                     }
-                } else if ((support_air != null) && (support_air != JsonValue.NULL)) {
+                }
+                else if ((support_air != null) && (support_air != JsonValue.NULL)) {
                     JsonValue stage3 = ((JsonObject) support_air).get("api_stage3");
                     if ((stage3 != null) && (stage3 != JsonValue.NULL)) {
                         this.support = BattleAtackDto.makeSupport(((JsonObject) stage3).getJsonArray("api_edam"));
                     }
                 }
                 this.supportType = toSupport(support_flag.intValue());
-            } else {
+            }
+            else {
                 this.supportType = "";
             }
 
@@ -394,7 +403,8 @@ public class BattleExDto extends AbstractDto {
             if (this.isFriendSecond) {
                 this.hougeki = BattleAtackDto.makeHougeki(object.get("api_hougeki"),
                         true, this.isEnemySecond); // 自分が連合艦隊の場合の夜戦
-            } else {
+            }
+            else {
                 this.hougeki = BattleAtackDto.makeHougeki(object.get("api_hougeki"),
                         kind.isHougekiSecond(), this.isEnemySecond); // 夜戦
             }
@@ -640,7 +650,8 @@ public class BattleExDto extends AbstractDto {
                     if (item.getSlotitemId() == 42) { //応急修理要員
                         hps[index] = (int) (ship.getMaxhp() * 0.2);
                         return;
-                    } else if (item.getSlotitemId() == 43) { //応急修理女神
+                    }
+                    else if (item.getSlotitemId() == 43) { //応急修理女神
                         hps[index] = ship.getMaxhp();
                         return;
                     }
@@ -741,19 +752,21 @@ public class BattleExDto extends AbstractDto {
                     return ResultRank.D;
                 }
                 return ResultRank.E;
-            } else {
+            }
+            else {
                 // PHASE1:轟沈艦なし かつ 敵艦全滅
                 if ((friendSunk == 0) && (enemySunk == numStartEships)) {
                     // 戦闘終了時のHPが戦闘開始時のHP以上の場合、完全勝利S判定にする
                     // ソースはscenes/BattleResultMain.swfのgetTweenShowRank()参照
                     if (friendGaugeMax <= friendGauge) {
                         return ResultRank.PERFECT;
-                    } else {
+                    }
+                    else {
                         return ResultRank.S;
                     }
                 }
-                // PHASE2:轟沈艦なし かつ 敵艦隊の戦闘開始時の数が1隻以上(必要?) かつ 敵艦の撃沈数が7割以上
-                else if ((friendSunk == 0) && (numStartEships >= 1)
+                // PHASE2:轟沈艦なし かつ 敵艦隊の戦闘開始時の数が1隻より上 かつ 敵艦の撃沈数が7割以上
+                else if ((friendSunk == 0) && (numStartEships > 1)
                         && (enemySunk >= Math.floor(0.7 * numStartEships))) {
                     return ResultRank.A;
                 }
@@ -796,13 +809,16 @@ public class BattleExDto extends AbstractDto {
                     if (dto.friendAtack) {
                         if (target < 6) {
                             this.nowEnemyHp[target] -= damage;
-                        } else {
+                        }
+                        else {
                             this.nowEnemyHpCombined[target - 6] -= damage;
                         }
-                    } else {
+                    }
+                    else {
                         if (target < 6) {
                             this.nowFriendHp[target] -= damage;
-                        } else {
+                        }
+                        else {
                             this.nowFriendHpCombined[target - 6] -= damage;
                         }
                     }
@@ -1220,7 +1236,8 @@ public class BattleExDto extends AbstractDto {
 
             if (object.containsKey("api_dock_id")) {
                 dockId = object.get("api_dock_id").toString();
-            } else {
+            }
+            else {
                 dockId = object.get("api_deck_id").toString();
             }
 
@@ -1293,13 +1310,15 @@ public class BattleExDto extends AbstractDto {
             if (isFriendCombined) {
                 this.startFriendHpCombined = new int[numFshipsCombined];
                 this.maxFriendHpCombined = new int[numFshipsCombined];
-            } else {
+            }
+            else {
                 this.maxFriendHpCombined = null;
             }
             if (isEnemyCombined) {
                 this.startEnemyHpCombined = new int[numEshipsCombined];
                 this.maxEnemyHpCombined = new int[numEshipsCombined];
-            } else {
+            }
+            else {
                 this.maxEnemyHpCombined = null;
             }
 
@@ -1336,7 +1355,8 @@ public class BattleExDto extends AbstractDto {
                         this.maxFriendHp[i - 1] = maxHp;
                         this.friendGaugeMax += this.startFriendHp[i - 1] = hp;
                     }
-                } else {
+                }
+                else {
                     if ((i - 6) <= numEships) {
                         this.maxEnemyHp[i - 1 - 6] = maxHp;
                         this.enemyGaugeMax += this.startEnemyHp[i - 1 - 6] = hp;
@@ -1352,7 +1372,8 @@ public class BattleExDto extends AbstractDto {
                             this.maxFriendHpCombined[i - 1] = maxHp;
                             this.friendGaugeMax += this.startFriendHpCombined[i - 1] = hp;
                         }
-                    } else {
+                    }
+                    else {
                         if ((i - 6) <= numEshipsCombined) {
                             this.maxEnemyHpCombined[i - 1 - 6] = maxHp;
                             this.enemyGaugeMax += this.startEnemyHpCombined[i - 1 - 6] = hp;
@@ -1390,7 +1411,8 @@ public class BattleExDto extends AbstractDto {
                             phase.getNowFriendHp(), phase.getNowFriendHpCombined(),
                             phase.getNowEnemyHp(), phase.getNowEnemyHpCombined()),
                     kind);
-        } else {
+        }
+        else {
             this.completeDamageAndAddPhase(new Phase(this, object, kind,
                     this.startFriendHp, this.startFriendHpCombined,
                     this.startEnemyHp, this.startEnemyHpCombined), kind);
@@ -1583,7 +1605,8 @@ public class BattleExDto extends AbstractDto {
     private void completeDamageAndAddPhase(Phase phase, BattlePhaseKind kind) {
         if (kind.isPractice()) {
             phase.practiceDamage(this);
-        } else {
+        }
+        else {
             phase.battleDamage(this);
         }
         this.phaseList.add(phase);
@@ -1592,7 +1615,8 @@ public class BattleExDto extends AbstractDto {
     private void readResultJson(JsonObject object) {
         if (object.get("api_quest_name") != null) {
             this.questName = object.getString("api_quest_name");
-        } else {
+        }
+        else {
             // 演習の場合はない
             this.questName = null;
         }
@@ -1610,14 +1634,16 @@ public class BattleExDto extends AbstractDto {
             this.dropShipId = getShip.getInt("api_ship_id");
             this.dropType = getShip.getString("api_ship_type");
             this.dropName = getShip.getString("api_ship_name");
-        } else {
+        }
+        else {
             this.dropType = "";
             this.dropName = "";
         }
         if (this.dropItem) {
             String name = UseItem.get(object.getJsonObject("api_get_useitem").getInt("api_useitem_id"));
             this.dropItemName = StringUtils.defaultString(name);
-        } else {
+        }
+        else {
             this.dropItemName = "";
         }
         this.mvp = object.getInt("api_mvp");
@@ -1886,7 +1912,8 @@ public class BattleExDto extends AbstractDto {
             if (this.mapCellDto == null) {
                 return false;
             }
-        } else {
+        }
+        else {
             // 演習の場合
         }
         return (this.friends != null) && (this.getDock() != null) &&
@@ -2268,173 +2295,6 @@ public class BattleExDto extends AbstractDto {
     public int getDropShipId() {
         return this.dropShipId;
     }
-
-    /**
-     * 連合艦隊フラグ 連合の種類が特定できなかった場合は-1
-     * @return combinedFlag
-     */
-    public int getCombinedFlag(){
-        if(this.isCombined() == false){
-            return 0;
-        }
-
-        if(this.phaseList.isEmpty()){
-            return -1;
-        }
-        Phase phase = this.phaseList.get(0);
-        if(phase.isNight()){
-            return -1;
-        }
-        else if(phase.getApi().equals(DataType.COMBINED_BATTLE_WATER.getApiName())||phase.getApi().equals(DataType.COMBINED_EACH_BATTLE_WATER.getApiName())){
-            return 2;
-        }
-        else if(phase.getApi().equals(DataType.COMBINED_BATTLE.getApiName())||phase.getApi().equals(DataType.COMBINED_EACH_BATTLE.getApiName())){
-            //輸送と機動の区別は編成条件によるゴリ押し消去法しかない?
-            //空き枠は轟沈考慮
-            if(this.getDock() == null || this.getDockCombined() == null){
-                return -1;
-            }
-            {
-                int type1[];
-                {
-                    List<ShipDto> ships1 = this.getDock().getShips();
-                    type1 =  new int[ships1.size()];
-                    for(int i=0;i<type1.length;i++){
-                        type1[i] = ships1.get(i).getStype();
-                    }
-                }
-                int aki = 6-type1.length;
-                {
-                    int kuubo = 0;
-                    int senkan = 0;
-                    for(int type:type1){
-                        switch(type){
-                            case 7:
-                            case 11:
-                            case 18:
-                                kuubo++;break;
-                            case 8:
-                            case 9:
-                            case 10:
-                                senkan++;break;
-                        }
-                    }
-                    if(kuubo + aki < 2 || 4 < kuubo || 2 < senkan){
-                        return 3;
-                    }
-                }
-                {
-                    int kuchiku = 0;
-                    int keijunRenjun = 0;
-                    int koujun = 0;
-                    int kousen = 0;
-                    int suibo = 0;
-                    int youriku = 0;
-                    int senbo = 0;
-                    int hokyu = 0;
-                    int sonota = 0;
-                    for(int type:type1){
-                        switch(type){
-                            case 2:
-                                kuchiku++;break;
-                            case 3:
-                            case 21:
-                                keijunRenjun++;break;
-                            case 6:
-                                koujun++;break;
-                            case 10:
-                                kousen++;break;
-                            case 16:
-                                suibo++; break;
-                            case 17:
-                                youriku++;break;
-                            case 20:
-                                senbo++;break;
-                            case 22:
-                                hokyu++;break;
-                            default:
-                                sonota++;break;
-                        }
-                    }
-                    if(kuchiku + aki < 4 || 2 < keijunRenjun || 2 < koujun || 2 < kousen || 2 < suibo || 1 < youriku || 1 < senbo || 1 < hokyu || 0 < sonota ){
-                        return 1;
-                    }
-                }
-            }
-            {
-                int type2[];
-                {
-                    List<ShipDto> ships2 = this.getDockCombined().getShips();
-                    type2 =  new int[ships2.size()];
-                    for(int i=0;i<type2.length;i++){
-                        type2[i] = ships2.get(i).getStype();
-                    }
-                }
-                int aki = 6-type2.length;
-                {
-                    int keijun = 0;
-                    int kuchiku = 0;
-                    int jujunKoujun = 0;
-                    int keikuubo = 0;
-                    int suibo = 0;
-                    int kousokuSenkan = 0;
-                    int teisokuSenkanKousenSeikikuubo = 0;
-                    for(int type:type2){
-                        switch(type){
-                            case 3:
-                                keijun++;break;
-                            case 2:
-                                kuchiku++;break;
-                            case 5:
-                            case 6:
-                                jujunKoujun++;break;
-                            case 7:
-                                keikuubo++;break;
-                            case 16:
-                                suibo++;break;
-                            case 8:
-                                kousokuSenkan++;break;
-                            case 9:
-                            case 10:
-                            case 11:
-                                teisokuSenkanKousenSeikikuubo++;break;
-                        }
-                    }
-                    if( keijun + aki < 1 || kuchiku + aki < 2 || 1 < keijun || 2 < jujunKoujun || 1 < keikuubo || 1 < suibo || 2 < kousokuSenkan || 0 < teisokuSenkanKousenSeikikuubo ){
-                        return 3;
-                    }
-                }
-                {
-                    int keijunRenjun = 0;
-                    int kuchiku = 0;
-                    int jujunKoujun = 0;
-                    int sonota = 0;
-                    for(int type:type2){
-                        switch(type){
-                            case 3:
-                            case 21:
-                                keijunRenjun++;break;
-                            case 2:
-                                kuchiku++;break;
-                            case 5:
-                            case 6:
-                                jujunKoujun++;break;
-                            default:
-                                sonota++;break;
-                        }
-                    }
-                    if( keijunRenjun + aki < 1 || kuchiku + aki < 3 || 2 < keijunRenjun || 2 < jujunKoujun || 0 < sonota ){
-                        return 1;
-                    }
-                }
-            }
-            return -1;
-        }
-        else{
-            return -1;
-        }
-    }
-
 
     //標準装備のスクリプト群については全部Java側で処理することにした
     private static Gson _gson = new Gson();
@@ -3361,7 +3221,7 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -3936,7 +3796,7 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -4243,7 +4103,7 @@ public class BattleExDto extends AbstractDto {
                 }
             }
         }
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -4674,7 +4534,7 @@ public class BattleExDto extends AbstractDto {
             for(int i=0;i<ships.size();i++){friendSummaryRows.add(this.ShipSummaryRowBody(ships.get(i)));}
             for(int i=ships.size();i<6;i++){friendSummaryRows.add(this.ShipSummaryRowBody(null));}
         }
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -4965,7 +4825,7 @@ public class BattleExDto extends AbstractDto {
             for(int i=0;i<ships.size();i++){friendSummaryRows.add(this.ShipSummaryRowBody(ships.get(i)));}
             for(int i=ships.size();i<6;i++){friendSummaryRows.add(this.ShipSummaryRowBody(null));}
         }
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -5239,7 +5099,7 @@ public class BattleExDto extends AbstractDto {
                 for(int i=0;i<6;i++){ enemyCombinedRows.add(this.ShipRowBodyBase(null, 0, i+6));}
             }
         }
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -5439,7 +5299,7 @@ public class BattleExDto extends AbstractDto {
         for (int i = 0; i < 6; ++i) { row.addAll((this.isCombined() && i<this.maxFriendHpCombined.length)?this.ShipRowBodyUpdate(combinedRows.get(i),phaseStartHP[2][i],this.maxFriendHpCombined[i]):combinedRows.get(i)); }
         for (int i = 0; i < 6; ++i) { row.addAll(enemyCombinedSummaryRows.get(i)); }
 
-        int combinedFlag = this.getCombinedFlag();
+        int combinedFlag = this.getCombinedKind();
         String combinedFlagString =
             (combinedFlag == 0)?"通常艦隊":
             (combinedFlag == 1)?"機動部隊":
@@ -5912,19 +5772,190 @@ public class BattleExDto extends AbstractDto {
             return new String[0][];
         }
     }
+    /**
+     * 連合艦隊フラグ 連合の種類が特定できなかった場合は-1
+     * 過去の記録には保存されていないはずなので編成から判断するが決定不能なケースもよくある
+     * @return combinedFlag
+     */
+    private int calcCombinedFlag(){
+        if(this.isCombined() == false){
+            return 0;
+        }
 
+        if(this.phaseList.isEmpty()){
+            return -1;
+        }
+        Phase phase = this.phaseList.get(0);
+        if(phase.isNight()){
+            return -1;
+        }
+        else if(phase.getApi().equals(DataType.COMBINED_BATTLE_WATER.getApiName())||phase.getApi().equals(DataType.COMBINED_EACH_BATTLE_WATER.getApiName())){
+            return 2;
+        }
+        else if(phase.getApi().equals(DataType.COMBINED_BATTLE.getApiName())||phase.getApi().equals(DataType.COMBINED_EACH_BATTLE.getApiName())){
+            //輸送と機動の区別は編成条件によるゴリ押し消去法しかない?
+            //空き枠は轟沈考慮
+            if(this.getDock() == null || this.getDockCombined() == null){
+                return -1;
+            }
+            {
+                int type1[];
+                {
+                    List<ShipDto> ships1 = this.getDock().getShips();
+                    type1 =  new int[ships1.size()];
+                    for(int i=0;i<type1.length;i++){
+                        type1[i] = ships1.get(i).getStype();
+                    }
+                }
+                int aki = 6-type1.length;
+                {
+                    int kuubo = 0;
+                    int senkan = 0;
+                    for(int type:type1){
+                        switch(type){
+                            case 7:
+                            case 11:
+                            case 18:
+                                kuubo++;break;
+                            case 8:
+                            case 9:
+                            case 10:
+                                senkan++;break;
+                        }
+                    }
+                    if(kuubo + aki < 2 || 4 < kuubo || 2 < senkan){
+                        return 3;
+                    }
+                }
+                {
+                    int kuchiku = 0;
+                    int keijunRenjun = 0;
+                    int koujun = 0;
+                    int kousen = 0;
+                    int suibo = 0;
+                    int youriku = 0;
+                    int senbo = 0;
+                    int hokyu = 0;
+                    int sonota = 0;
+                    for(int type:type1){
+                        switch(type){
+                            case 2:
+                                kuchiku++;break;
+                            case 3:
+                            case 21:
+                                keijunRenjun++;break;
+                            case 6:
+                                koujun++;break;
+                            case 10:
+                                kousen++;break;
+                            case 16:
+                                suibo++; break;
+                            case 17:
+                                youriku++;break;
+                            case 20:
+                                senbo++;break;
+                            case 22:
+                                hokyu++;break;
+                            default:
+                                sonota++;break;
+                        }
+                    }
+                    if(kuchiku + aki < 4 || 2 < keijunRenjun || 2 < koujun || 2 < kousen || 2 < suibo || 1 < youriku || 1 < senbo || 1 < hokyu || 0 < sonota ){
+                        return 1;
+                    }
+                }
+            }
+            {
+                int type2[];
+                {
+                    List<ShipDto> ships2 = this.getDockCombined().getShips();
+                    type2 =  new int[ships2.size()];
+                    for(int i=0;i<type2.length;i++){
+                        type2[i] = ships2.get(i).getStype();
+                    }
+                }
+                int aki = 6-type2.length;
+                {
+                    int keijun = 0;
+                    int kuchiku = 0;
+                    int jujunKoujun = 0;
+                    int keikuubo = 0;
+                    int suibo = 0;
+                    int kousokuSenkan = 0;
+                    int teisokuSenkanKousenSeikikuubo = 0;
+                    for(int type:type2){
+                        switch(type){
+                            case 3:
+                                keijun++;break;
+                            case 2:
+                                kuchiku++;break;
+                            case 5:
+                            case 6:
+                                jujunKoujun++;break;
+                            case 7:
+                                keikuubo++;break;
+                            case 16:
+                                suibo++;break;
+                            case 8:
+                                kousokuSenkan++;break;
+                            case 9:
+                            case 10:
+                            case 11:
+                                teisokuSenkanKousenSeikikuubo++;break;
+                        }
+                    }
+                    if( keijun + aki < 1 || kuchiku + aki < 2 || 1 < keijun || 2 < jujunKoujun || 1 < keikuubo || 1 < suibo || 2 < kousokuSenkan || 0 < teisokuSenkanKousenSeikikuubo ){
+                        return 3;
+                    }
+                }
+                {
+                    int keijunRenjun = 0;
+                    int kuchiku = 0;
+                    int jujunKoujun = 0;
+                    int sonota = 0;
+                    for(int type:type2){
+                        switch(type){
+                            case 3:
+                            case 21:
+                                keijunRenjun++;break;
+                            case 2:
+                                kuchiku++;break;
+                            case 5:
+                            case 6:
+                                jujunKoujun++;break;
+                            default:
+                                sonota++;break;
+                        }
+                    }
+                    if( keijunRenjun + aki < 1 || kuchiku + aki < 3 || 2 < keijunRenjun || 2 < jujunKoujun || 0 < sonota ){
+                        return 1;
+                    }
+                }
+            }
+            return -1;
+        }
+        else{
+            return -1;
+        }
+    }
+    /**
+     * 連合艦隊の種類を取得します
+     * @return 連合艦隊の種類(0:未結成、1:機動部隊、2:水上部隊、3:輸送部隊、-x:強制解隊)
+     */
+    public int getCombinedKind() {
+        if(this.isCombined()){
+            if(this.combinedKind > 0){
+                return this.combinedKind;
+            }
+            else{
+                return this.calcCombinedFlag();
+            }
+        }else{
+            return this.combinedKind;
+        }
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
+    public void setCombinedKind(int combinedKind) {
+        this.combinedKind = combinedKind;
+    }
 }
-

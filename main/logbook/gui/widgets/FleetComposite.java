@@ -7,6 +7,7 @@ import java.util.BitSet;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.annotation.CheckForNull;
 
@@ -24,6 +25,7 @@ import logbook.gui.logic.DaihatsuString;
 import logbook.gui.logic.DamageRate;
 import logbook.gui.logic.SakutekiString;
 import logbook.gui.logic.SeikuString;
+import logbook.gui.logic.TPString;
 import logbook.gui.logic.TimeLogic;
 import logbook.gui.logic.TimeString;
 import logbook.internal.AkashiTimer;
@@ -398,7 +400,8 @@ public class FleetComposite extends Composite {
             this.condstLabels[i].setText("疲");
             if (cond >= 49) {
                 this.condstLabels[i].setEnabled(false);
-            } else {
+            }
+            else {
                 this.condstLabels[i].setEnabled(true);
             }
             // ステータス.燃料
@@ -406,7 +409,8 @@ public class FleetComposite extends Composite {
             if (fuelraito >= 1f) {
                 this.fuelstLabels[i].setEnabled(false);
                 this.fuelstLabels[i].setForeground(null);
-            } else {
+            }
+            else {
                 if (AppConfig.get().isWarnByNeedSupply()) {
                     // 補給不足で警告アイコン
                     this.state.set(WARN);
@@ -416,7 +420,8 @@ public class FleetComposite extends Composite {
                 if (fuelraito <= AppConstants.EMPTY_SUPPLY) {
                     // 補給赤
                     this.fuelstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_RED_COLOR));
-                } else if (fuelraito <= AppConstants.LOW_SUPPLY) {
+                }
+                else if (fuelraito <= AppConstants.LOW_SUPPLY) {
                     // 補給橙
                     this.fuelstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_ORANGE_COLOR));
                 }
@@ -434,7 +439,8 @@ public class FleetComposite extends Composite {
                 this.bullstLabels[i].setEnabled(false);
                 this.bullstLabels[i].setBackground(null);
                 this.bullstLabels[i].setForeground(null);
-            } else {
+            }
+            else {
                 if (AppConfig.get().isWarnByNeedSupply()) {
                     // 補給不足で警告アイコン
                     this.state.set(WARN);
@@ -443,7 +449,8 @@ public class FleetComposite extends Composite {
                 this.bullstLabels[i].setEnabled(true);
                 if (bullraito <= AppConstants.EMPTY_SUPPLY) {
                     this.bullstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_RED_COLOR));
-                } else if (bullraito <= AppConstants.LOW_SUPPLY) {
+                }
+                else if (bullraito <= AppConstants.LOW_SUPPLY) {
                     this.bullstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_ORANGE_COLOR));
                 }
                 needSupply = true;
@@ -455,27 +462,41 @@ public class FleetComposite extends Composite {
                 }
             }
 
-            // ステータス.ダメコン
+            // ステータス.ダメコン, 補給物資, 対空機銃, バルジなど
+            Map<String, Integer> exmap = new TreeMap<>();
+
             List<ItemDto> item = new ArrayList<ItemDto>(ship.getItem2());
             item.add(ship.getSlotExItem());
-            int dmgcsty = 0;
-            int dmgcstm = 0;
             for (ItemDto itemDto : item) {
                 if (itemDto != null) {
-                    if (itemDto.getName().equals("応急修理要員")) {
-                        dmgcsty++;
-                    } else if (itemDto.getName().equals("応急修理女神")) {
-                        dmgcstm++;
+                    if (itemDto.canEqipExslot()) {
+                        String name = itemDto.getName();
+                        Integer old = exmap.get(name);
+                        exmap.put(name, (old != null) ? (old + 1) : 1);
                     }
                 }
             }
             String dmgcstr = "";
-            if (dmgcsty > 0) {
-                dmgcstr += "要員x" + dmgcsty + " ";
+            String[][] namemap = new String[][] {
+                    new String[] { "応急修理要員", "要員" },
+                    new String[] { "応急修理女神", "女神" },
+                    new String[] { "洋上補給", "補給" },
+                    new String[] { "戦闘糧食", "糧食" },
+                    new String[] { "秋刀魚の缶詰", "缶詰" },
+            };
+            for (String[] map : namemap) {
+                String key = map[0];
+                if (exmap.containsKey(key)) {
+                    dmgcstr += map[1] + "x" + exmap.get(key) + " ";
+                    exmap.remove(key);
+                }
             }
-            if (dmgcstm > 0) {
-                dmgcstr += "女神x" + dmgcstm + " ";
+            if (AppConfig.get().isShowGunAndBulge()) {
+                for (Map.Entry<String, Integer> entry : exmap.entrySet()) {
+                    dmgcstr += entry.getKey() + "x" + entry.getValue() + " ";
+                }
             }
+
             this.dmgcLabels[i].setText(dmgcstr);
             this.dmgcLabels[i].setForeground(SWTResourceManager.getColor(SWT.COLOR_DARK_GREEN));
 
@@ -539,7 +560,8 @@ public class FleetComposite extends Composite {
                 }
                 this.condLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_RED_COLOR));
                 this.condstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_RED_COLOR));
-            } else if (cond < AppConstants.COND_ORANGE) {
+            }
+            else if (cond < AppConstants.COND_ORANGE) {
                 // 疲労29以下
                 if (AppConfig.get().isWarnByCondState()) {
                     // 疲労状態で警告アイコン
@@ -548,15 +570,18 @@ public class FleetComposite extends Composite {
                 }
                 this.condLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_ORANGE_COLOR));
                 this.condstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_ORANGE_COLOR));
-            } else if ((cond >= AppConstants.COND_DARK_GREEN) && (cond < AppConstants.COND_GREEN)) {
+            }
+            else if ((cond >= AppConstants.COND_DARK_GREEN) && (cond < AppConstants.COND_GREEN)) {
                 // 疲労50以上
                 this.condLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_DARK_GREEN_COLOR));
                 this.condstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_DARK_GREEN_COLOR));
-            } else if (cond >= AppConstants.COND_GREEN) {
+            }
+            else if (cond >= AppConstants.COND_GREEN) {
                 // 疲労53以上
                 this.condLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_GREEN_COLOR));
                 this.condstLabels[i].setForeground(ColorManager.getColor(AppConstants.COND_GREEN_COLOR));
-            } else {
+            }
+            else {
                 this.condLabels[i].setForeground(null);
                 this.condstLabels[i].setForeground(null);
             }
@@ -567,12 +592,14 @@ public class FleetComposite extends Composite {
                         AppConfig.get().isMonoIcon()
                                 ? AppConstants.R_ICON_EXCLAMATION_MONO
                                 : AppConstants.R_ICON_EXCLAMATION));
-            } else if (shipstatus.get(WARN)) {
+            }
+            else if (shipstatus.get(WARN)) {
                 this.iconLabels[i].setImage(SWTResourceManager.getImage(FleetComposite.class,
                         AppConfig.get().isMonoIcon()
                                 ? AppConstants.R_ICON_ERROR_MONO
                                 : AppConstants.R_ICON_ERROR));
-            } else {
+            }
+            else {
                 this.iconLabels[i].setImage(null);
             }
 
@@ -690,7 +717,8 @@ public class FleetComposite extends Composite {
         this.addStyledText(this.message, "\n", null);
         // 制空
         SeikuString seikuString = new SeikuString(ships);
-        this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_SEIKU, seikuString.toString()), null);
+        this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_SEIKU, seikuString.toString()),
+                null);
         if (lostPlanes > 0) {
             this.addStyledText(this.message,
                     MessageFormat.format("損失機:{0}(ボーキ:{1})", lostPlanes, lostPlanes * 5), null);
@@ -713,8 +741,13 @@ public class FleetComposite extends Composite {
             // 大発合計数
             this.addStyledText(this.message, daihatsu.toString(), null);
         }
+
+        // TP獲得量
+        this.addStyledText(this.message, new TPString(ships).toString(), null);
+
         this.addStyledText(this.message, "\n", null);
-        if ((currentMission != null) && (currentMission.getMission() == null) && (previousMission.getMission() != null)) {
+        if ((currentMission != null) && (currentMission.getMission() == null)
+                && (previousMission.getMission() != null)) {
             // 前回の遠征
             String text = previousMission.getDisplayText("missioncheck_" + dock.getId() + "p");
             this.addStyledText(this.message,
@@ -816,7 +849,7 @@ public class FleetComposite extends Composite {
 
     /**
      * 複数の色の中間色を取得する
-     * 
+     *
      * @param raito 割合
      * @param rgbs 色たち
      * @return 色
@@ -843,7 +876,7 @@ public class FleetComposite extends Composite {
 
     /**
      * 2つの色の中間色を取得する
-     * 
+     *
      * @param raito 割合
      * @param start 開始色
      * @param end 終了色

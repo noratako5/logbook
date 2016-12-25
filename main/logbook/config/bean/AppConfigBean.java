@@ -207,6 +207,9 @@ public final class AppConfigBean {
     /** モノクロアイコンを使用する */
     private boolean monoIcon;
 
+    /** 機銃やバルジの装備数を表示 */
+    private boolean showGunAndBulge = false;
+
     /** 疲労タイマーを表示する */
     private boolean showCondTimer = true;
 
@@ -354,7 +357,7 @@ public final class AppConfigBean {
 
     /** 日付形式 */
     private String builtinDateFormat = "yyyy-MM-dd HH:mm:ss";
-    
+
     /** 分岐点係数 */
     private double bunkitenKeisu = 1;
 
@@ -1278,6 +1281,20 @@ public final class AppConfigBean {
     }
 
     /**
+     * @return showGunAndBulge
+     */
+    public boolean isShowGunAndBulge() {
+        return this.showGunAndBulge;
+    }
+
+    /**
+     * @param showGunAndBulge セットする showGunAndBulge
+     */
+    public void setShowGunAndBulge(boolean showGunAndBulge) {
+        this.showGunAndBulge = showGunAndBulge;
+    }
+
+    /**
      * @return showCondTimer
      */
     public boolean isShowCondTimer() {
@@ -1882,7 +1899,7 @@ public final class AppConfigBean {
     public void setBuiltinDateFormat(String builtinDateFormat) {
         this.builtinDateFormat = builtinDateFormat;
     }
-    
+
     public double getBunkitenKeisu(){
         return bunkitenKeisu;
     }
