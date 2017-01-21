@@ -320,7 +320,11 @@ public class BattleHtmlGenerator extends HTMLGenerator {
             this.inline("td", String.valueOf(ship.getTaisen()), null);
             this.inline("td", String.valueOf(ship.getSakuteki()), null);
             this.inline("td", String.valueOf(ship.getLucky()), null);
-            this.inline("td", String.valueOf(ship.getParam().getSokuString()), null);
+            if (isFriend) {
+                this.inline("td", String.valueOf(((ShipDto) ship).getSokuString()), null);
+            } else {
+                this.inline("td", String.valueOf(ship.getParam().getSokuString()), null);
+            }
             this.inline("td", String.valueOf(ship.getParam().getLengString()), null);
 
             this.end(); // tr

@@ -595,7 +595,7 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
     }
 
     /**
-     * @param onslot2
+     * @param onslot
      */
     public void setOnslot(int[] onslot) {
         this.onslot = onslot;
@@ -680,6 +680,15 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
         else{
             return this.param.getSoku();
         }
-
+    }
+    public String getSokuString(){
+        switch (getSoku()){
+            case 0:return "陸上";
+            case 5:return  "低速";
+            case 10:return  "高速";
+            case 15:return "高速+";
+            case 20:return  "最速";
+            default:return "";
+        }
     }
 }
