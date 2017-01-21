@@ -628,6 +628,7 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
     public double getSakutekiScoreWithoutItem(){
         return Math.sqrt(this.getSakutekiWithoutItem());
     }
+
     /**
      *
      * @return 分岐点係数をかける前の装備の索敵スコアの合計値
@@ -644,6 +645,7 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
         }
         return score;
     }
+
     /**
      *
      * @param bunkiKeisu
@@ -652,4 +654,5 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
     public double getSakutekiScore(double bunkiKeisu){
         return this.getSakutekiScoreWithoutItem() + bunkiKeisu*this.getItemSakutekiScore();
     }
+
 }

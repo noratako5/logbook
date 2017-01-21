@@ -284,13 +284,20 @@ public class ItemDto extends AbstractDto {
             default: return 0.0;// その他
         }
     }
+
+    /**
+     *
+     * @return 改修で索敵値に加算される数値
+     */
+    public double getKaisyuKasan(){
+        return this.getSakutekiKaisyuKeisu() * Math.sqrt(this.level);
+    }
     /**
      *
      * @return 索敵スコアのうち改修値由来の値
      */
     public double getKaisyuSakutekiScore(){
-        double kaisyuKasan = this.getSakutekiKaisyuKeisu() * Math.sqrt(this.level);
-        return kaisyuKasan * this.getSakutekiKeisu();
+        return this.getKaisyuKasan() * this.getSakutekiKeisu();
     }
     /**
      *

@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import logbook.builtinscript.BuiltinScriptKt;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -813,7 +814,8 @@ public class BattleResultServer {
             List<Map<String,String[][]>> result=
                 battle
                 .parallelStream()
-                .map(b->b.BuiltinScriptBody())
+                //.map(b->b.BuiltinScriptBody())
+                .map(b-> BuiltinScriptKt.AllBody(b))
                 .collect(Collectors.toList());
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
             return result;

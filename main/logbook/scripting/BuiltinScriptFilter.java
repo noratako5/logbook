@@ -1013,10 +1013,12 @@ public class BuiltinScriptFilter {
     public boolean filterDateTime(Date date){
         return this.dateTimeFilter.filter(date);
     }
-    public boolean filterAttackCountItem(ShipBaseDto ship){
+    public boolean filterAttackCountItem(ShipBaseDto ship) {
+        if (ship == null) {return false;}
         return this.attackCountItemFilter.filter(ship);
     }
     public boolean filterDefenceCountItem(ShipBaseDto ship){
+        if(ship == null){return false;}
         return this.defenceCountItemFilter.filter(ship);
     }
     public boolean filterOutput(List<String> line){

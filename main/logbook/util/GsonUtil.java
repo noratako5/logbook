@@ -17,6 +17,18 @@ public class GsonUtil {
             return object.toString();
         }
     }
+
+    /**
+     *0開始indexを1開始にしたい時用　nullならnull、parseInt失敗時は例外
+     */
+    public static String toIntPlusOneString(Object object){
+        if(object == null){
+            return null;
+        }else{
+            return toIntString(toInt(object)+1);
+        }
+    }
+
     /**nullなら-1、NumberならintValue()、その他ならparseInt(toString())、整数でない文字列で落ちる*/
     public static int toInt(Object object){
         if(object == null){
@@ -27,6 +39,7 @@ public class GsonUtil {
             return Integer.parseInt(object.toString());
         }
     }
+
     public static int[] toIntArray(Object object){
         if(object instanceof List){
             List<Object> list = (List<Object>)object;

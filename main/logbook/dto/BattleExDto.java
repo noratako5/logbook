@@ -37,6 +37,7 @@ import logbook.internal.UseItem;
 import logbook.scripting.BuiltinScriptFilter;
 import logbook.util.GsonUtil;
 import logbook.util.JsonUtils;
+import logbook.builtinscript.*;
 
 /**
  * １回の会敵情報
@@ -210,7 +211,6 @@ public class BattleExDto extends AbstractDto {
      * @author Nekopanda
      */
     public static class Phase {
-
         @Tag(1)
         private final BattlePhaseKind kind;
         /** 味方HP */
@@ -292,6 +292,19 @@ public class BattleExDto extends AbstractDto {
 
         @Tag(30)
         private final String json;
+
+        //json1回読んだらとりあえずここに詰めとく
+        transient LinkedTreeMap treeCacheOrNull;
+        public LinkedTreeMap getTree(){
+            if(this.json != null && treeCacheOrNull == null){
+                treeCacheOrNull = getGson().fromJson(this.json,LinkedTreeMap.class);
+            }
+            return treeCacheOrNull;
+        }
+        public void setTree(LinkedTreeMap tree){
+            this.treeCacheOrNull = tree;
+        }
+
 
         public Phase(BattleExDto battle, JsonObject object, BattlePhaseKind kind,
                 int[] beforeFriendHp, int[] beforeFriendHpCombined, int[] beforeEnemyHp, int[] beforeEnemyHpCombined) {
@@ -2852,16 +2865,6 @@ public class BattleExDto extends AbstractDto {
         }
         return body;
     }
-
-
-
-
-
-
-
-
-
-
 
 
     private static ArrayList<String>ShipSummaryRowHeader(){
