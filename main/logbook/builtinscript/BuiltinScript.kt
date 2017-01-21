@@ -33,7 +33,12 @@ fun HeaderWithKey(key: String): Array<String> {
         return arrayOf()
     }
 }
-
+fun AllHeader():Map<String,Array<String>>{
+    return Keys.map { s->Pair(s, HeaderWithKey(s)) }.toMap()
+}
+fun Keys():List<String>{
+    return Keys
+}
 fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
     if(arg.battle.exVersion < 2){
         return arrayOf()
@@ -70,6 +75,10 @@ fun BodyWithKey(key:String,battle:BattleExDto,filter: BuiltinScriptFilter?=null)
     val arg = ScriptArg(battle, filter)
     return BodyWithKey(arg,key)
 }
+fun BodyWithFilter(battle:BattleExDto,filter:BuiltinScriptFilter):Array<Array<String>>{
+    return BodyWithKey(key = filter.key, battle = battle, filter = filter)
+}
+
 
 fun AllBody(battle:BattleExDto):Map<String,Array<Array<String>>>{
     val arg = ScriptArg(battle = battle)

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import logbook.builtinscript.BuiltinScriptKt;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
@@ -658,7 +659,7 @@ public final class ApplicationMain extends WindowBase {
             }
         });
         new MenuItem(cmdcombat, SWT.SEPARATOR);
-        BattleExDto.BuiltinScriptKeys()
+        BuiltinScriptKt.Keys()
             .stream()
             .forEach(key->{
                 MenuItem cmdcombatItem = new MenuItem(cmdcombat, SWT.CHECK);

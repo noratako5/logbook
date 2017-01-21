@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
+import logbook.builtinscript.BuiltinScriptKt;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
@@ -983,7 +984,7 @@ public class BuiltinScriptFilter {
         this.key = key;
         {
             Map<String,Integer> map = new HashMap<>();
-            String[] header = BattleExDto.BuiltinScriptHeaderWithKey(key);
+            String[] header = BuiltinScriptKt.HeaderWithKey(key);
             for(int i=0;i<header.length;i++){
                 map.put(header[i], Integer.valueOf(i));
             }

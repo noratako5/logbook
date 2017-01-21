@@ -701,7 +701,7 @@ public class BattleResultServer {
             List<String[][]> result=
                 battle
                 .parallelStream()
-                .map(b->b.BodyWithFilter(filter))
+                .map(b->BuiltinScriptKt.BodyWithFilter(b,filter))
                 .collect(Collectors.toList());
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
             return result;
@@ -713,7 +713,7 @@ public class BattleResultServer {
     private static int writeBuiltinCsvWithFilter(List<String[][]> resultList, String targetPath, int n,BuiltinScriptFilter filter) {
         try {
             boolean append = n > 0;
-            String[] header = BattleExDto.BuiltinScriptHeaderWithKey(filter.key);
+            String[] header = BuiltinScriptKt.HeaderWithKey(filter.key);
             List<String[]> allBodies = new ArrayList<String[]>();
             for (String[][] item : resultList) {
                 for (String[] body : item) {
@@ -780,7 +780,7 @@ public class BattleResultServer {
     private static int writeBuiltinCsv(List<Map<String,String[][]>> resultList, String targetPath, int n) {
         try {
             boolean append = n > 0;
-            Map<String,String[]> header = BattleExDto.BuiltinScriptHeader();
+            Map<String,String[]> header = BuiltinScriptKt.AllHeader();
             Set<String>keySet = header.keySet();
             for(String key:keySet){
                 List<String[]> allBodies = new ArrayList<String[]>();
@@ -876,7 +876,7 @@ public class BattleResultServer {
                 .map(b->{
                     b.readFromJson();
                     BattleResult item = map.get(b.getBattleDate());
-                    String[][] body = b.BuiltinScriptBodyWithKey(key, null, null,null, null, null, null);
+                    String[][] body = BuiltinScriptKt.BodyWithKey(key,b,null);
                     List<Comparable[]> list = new ArrayList<>();
                     for(String[] line:body){
                         list.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(0, item) },line));
@@ -968,7 +968,7 @@ public class BattleResultServer {
             List<Map<String,String[][]>> builtinCombatLog =
                 battle
                     .parallelStream()
-                    .map(b->b.BuiltinScriptBody())
+                    .map(b->BuiltinScriptKt.AllBody(b))
                     .collect(Collectors.toList());
 
             List<Map<String,Comparable[][]>> combatLog = null;
@@ -1039,7 +1039,7 @@ public class BattleResultServer {
     }
 
     private static BattleResult createBattleResult(BattleExDto dto, DataFile file, int n, boolean isLoadCombatLog) {
-        return new BattleResult(dto, file, n,BattleLogProxy.get().bodyMT(dto),dto.BuiltinScriptBody(),isLoadCombatLog ? CombatLogProxy.bodyAllMT(dto) : null);
+        return new BattleResult(dto, file, n,BattleLogProxy.get().bodyMT(dto),BuiltinScriptKt.AllBody(dto),isLoadCombatLog ? CombatLogProxy.bodyAllMT(dto) : null);
     }
     private static BattleResult createBattleResultWithCombatLog(BattleExDto dto, DataFile file, int n,Comparable[] battleLog,Map<String,String[][]> builtinCombatExtData, Map<String,Comparable[][]>combatLog) {
         return new BattleResult(dto, file, n,battleLog,builtinCombatExtData,combatLog);

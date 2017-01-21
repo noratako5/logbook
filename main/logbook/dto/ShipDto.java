@@ -8,10 +8,13 @@ import javax.json.JsonObject;
 
 import com.dyuproject.protostuff.Tag;
 
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.Gson;
 import logbook.config.AppConfig;
 import logbook.constants.AppConstants;
 import logbook.data.context.GlobalContext;
 import logbook.internal.CondTiming;
+import logbook.util.GsonUtil;
 import logbook.util.JsonUtils;
 
 /**
@@ -104,6 +107,15 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
     @Tag(40)
     private final String json;
 
+
+    //json1回読んだらとりあえずここに詰めとく
+    transient LinkedTreeMap treeCacheOrNull;
+    public LinkedTreeMap getTree(){
+        if(this.json != null && treeCacheOrNull == null){
+            treeCacheOrNull = (new Gson()).fromJson(this.json,LinkedTreeMap.class);
+        }
+        return treeCacheOrNull;
+    }
     /**
      * コンストラクター
      *
@@ -655,4 +667,19 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
         return this.getSakutekiScoreWithoutItem() + bunkiKeisu*this.getItemSakutekiScore();
     }
 
+    public int getSoku(){
+        if(this.getTree()!=null){
+            int soku = GsonUtil.toInt(this.getTree().get("api_soku"));
+            if(soku >= 0){
+                return soku;
+            }
+            else{
+                return this.param.getSoku();
+            }
+        }
+        else{
+            return this.param.getSoku();
+        }
+
+    }
 }

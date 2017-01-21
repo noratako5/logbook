@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import logbook.builtinscript.BuiltinScriptKt;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -238,7 +239,7 @@ public final class CreateReportLogic {
      * @return ヘッダー
      */
     public static String[] getBuiltinCombatResultHeader(String key) {
-        return ArrayUtils.addAll(new String[] { "No." }, BattleExDto.BuiltinScriptHeaderWithKey(key));
+        return ArrayUtils.addAll(new String[] { "No." }, BuiltinScriptKt.HeaderWithKey(key));
     }
 
     /**
