@@ -421,19 +421,16 @@ public final class ConfigDialog extends Dialog {
         maxPrintItemsSpinner.setMaximum(Short.MAX_VALUE);
         maxPrintItemsSpinner.setMinimum(1);
         maxPrintItemsSpinner.setSelection(AppConfig.get().getMaxPrintItems());
-        GridData gdMaxPrintItemsSpinner = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+        GridData gdMaxPrintItemsSpinner = new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1);
         gdMaxPrintItemsSpinner.widthHint = 55;
         maxPrintItemsSpinner.setLayoutData(gdMaxPrintItemsSpinner);
-        new Label(compositeReport, SWT.NONE);
 
         Label labelDateFormat = new Label(compositeReport, SWT.NONE);
         labelDateFormat.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         labelDateFormat.setText("出力日付形式");
 
         final Text dateFormat = new Text(compositeReport, SWT.BORDER);
-        GridData gdDateFormat = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
-        gdDateFormat.widthHint = SwtUtils.DPIAwareWidth(180);
-        dateFormat.setLayoutData(gdDateFormat);
+        dateFormat.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 2, 1));
         dateFormat.setText(AppConfig.get().getBuiltinDateFormat());
 
 
@@ -493,7 +490,7 @@ public final class ConfigDialog extends Dialog {
         final Text bunkiten = new Text(compositeFleetTab, SWT.BORDER);
         GridData gdBunkiten = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
         gdBunkiten.widthHint = SwtUtils.DPIAwareWidth(180);
-        bunkiten.setLayoutData(gdDateFormat);
+        bunkiten.setLayoutData(gdBunkiten);
         bunkiten.setText(Double.toString(AppConfig.get().getBunkitenKeisu()));
 
         Label mainLog = new Label(compositeFleetTab, SWT.NONE);
