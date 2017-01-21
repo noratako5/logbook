@@ -116,7 +116,7 @@ private fun HougekiRowBodyConstruct(
             else { row.addAll(enemyRows[df-7].updateShipRowBody(prevHP[enemyHPIndex][df-7],enemyMaxHP[df-7])) }
             row.add(arg.combinedFlagString)
             row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
-            if (arg.filter.filterHougekiAttackDefence(arg.battle, at, df, isSecond) && arg.filter.filterOutput(dayPhaseRow)) {
+            if (arg.filter.filterHougekiAttackDefence(arg.battle, at, df, isSecond) && arg.filter.filterOutput(row)) {
                 body.add(row)
             }
             if (i-1 < hougekiHP.size && j < hougekiHP[i-1].size) {
