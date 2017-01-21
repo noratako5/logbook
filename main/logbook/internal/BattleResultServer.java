@@ -713,6 +713,7 @@ public class BattleResultServer {
     private static int writeBuiltinCsvWithFilter(List<String[][]> resultList, String targetPath, int n,BuiltinScriptFilter filter) {
         try {
             boolean append = n > 0;
+            int start = n;
             String[] header = BuiltinScriptKt.HeaderWithKey(filter.key);
             List<String[]> allBodies = new ArrayList<String[]>();
             for (String[][] item : resultList) {
@@ -720,6 +721,7 @@ public class BattleResultServer {
                     allBodies.add(ArrayUtils.addAll(new String[] { (new Integer(++n)).toString() }, body));
                 }
             }
+            if(n == start){return n;}
             String[] headerArray = header;
             CreateReportLogic.writeCsvRed(new File(targetPath), ArrayUtils.addAll(new String[] { "No." }, headerArray), allBodies, append);
 
@@ -783,12 +785,14 @@ public class BattleResultServer {
             Map<String,String[]> header = BuiltinScriptKt.AllHeader();
             Set<String>keySet = header.keySet();
             for(String key:keySet){
+                int start = n;
                 List<String[]> allBodies = new ArrayList<String[]>();
                 for (Map<String,String[][]> item : resultList) {
                     for (String[] body : item.get(key)) {
                         allBodies.add(ArrayUtils.addAll(new String[] { (new Integer(++n)).toString() }, body));
                     }
                 }
+                if(append && n == start){ continue; }
                 String[] headerArray = header.get(key);
                 CreateReportLogic.writeCsvRed(new File(targetPath).toPath().resolve(key + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, headerArray), allBodies, append);
             }
@@ -1023,12 +1027,14 @@ public class BattleResultServer {
         try {
             boolean append = n > 0;
             for (CombatLogProxy proxy : CombatLogProxy.getAll()) {
+                int start = n;
                 List<Comparable[]> allBodies = new ArrayList<Comparable[]>();
                 for (Map<String,Comparable[][]> item : resultList) {
                     for (Comparable[] body : item.get(proxy.getPrefix())) {
                         allBodies.add(ArrayUtils.addAll(new Comparable[] { new TableRowHeader(++n, item) }, body));
                     }
                 }
+                if(append && n == start){continue;}
                 CreateReportLogic.writeCsv(new File(targetPath).toPath().resolve(proxy.getTitle() + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, proxy.header()), allBodies, append);
             }
             return n;
