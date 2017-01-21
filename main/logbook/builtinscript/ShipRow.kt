@@ -57,7 +57,7 @@ fun ShipRowBodyBase(ship: ShipBaseDto?, maxHp: Int, index: Int): ArrayList<Strin
         body.add((ship as? ShipDto)?.bull?.toString()?:"")
         body.add(ship?.shipInfo?.maxBull?.toString()?:"")
         body.add(ship?.lv?.toString()?:"")
-        body.add((when(ship?.param?.soku){0->"陸上";5->"低速";10->"高速";else->""}))
+        body.add((when(ship?.param?.soku){0->"陸上";5->"低速";10->"高速";15->"高速+";20->"最速" else->""}))
         body.add(ship?.param?.houg?.toString()?:"")
         body.add(ship?.param?.raig?.toString()?:"")
         body.add(ship?.param?.taiku?.toString()?:"")
