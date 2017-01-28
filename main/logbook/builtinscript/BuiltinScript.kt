@@ -73,7 +73,12 @@ fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
 
 fun BodyWithKey(key:String,battle:BattleExDto,filter: BuiltinScriptFilter?=null):Array<Array<String>>{
     val arg = ScriptArg(battle, filter)
-    return BodyWithKey(arg,key)
+    if(arg.filter.filterDateTime(battle.battleDate)) {
+        return BodyWithKey(arg, key)
+    }
+    else{
+        return arrayOf()
+    }
 }
 fun BodyWithFilter(battle:BattleExDto,filter:BuiltinScriptFilter):Array<Array<String>>{
     return BodyWithKey(key = filter.key, battle = battle, filter = filter)

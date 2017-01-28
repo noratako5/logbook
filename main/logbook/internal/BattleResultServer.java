@@ -828,8 +828,10 @@ public class BattleResultServer {
             return new ArrayList<Map<String,String[][]>>();
         }
     }
-
     public static List<Comparable[]> loadBuiltinBattleResultsBody(String key,List<BattleResultDto> targets){
+        return loadBuiltinBattleResultsBody(key, targets,0);
+    }
+    public static List<Comparable[]> loadBuiltinBattleResultsBody(String key,List<BattleResultDto> targets,int startIndex){
         DataFile nowFile = null;
         List<BattleResult> resultList = new ArrayList<>();
         List<Comparable[][]>bodyList = new ArrayList<>();
@@ -857,7 +859,7 @@ public class BattleResultServer {
         }
         for(int i=0;i<body.size();i++){
             TableRowHeader header = (TableRowHeader)body.get(i)[0];
-            header.setNumber(i+1);
+            header.setNumber(startIndex + i+1);
         }
         return body;
     }

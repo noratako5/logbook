@@ -685,7 +685,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         return this.config;
     }
 
-    protected final String getTitle() {
+    protected String getTitle() {
         String title = this.getTitleMain();
         if ((this.body != null) && (this.table != null)) {
             if (this.table.getItemCount() != this.body.size()) {
@@ -898,7 +898,7 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         }
     }
 
-    private void sortBody() {
+    protected void sortBody() {
         TableConfigBean.SortKey[] sortKeys = this.getConfig().getSortKeys();
         if (sortKeys != null) {
             for (int i = sortKeys.length - 1; i >= 0; --i) {
