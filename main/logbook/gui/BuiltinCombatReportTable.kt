@@ -118,7 +118,7 @@ class BuiltinCombatReportTable
     }
     override fun open() {
         super.open()
-
+        this.reloadTable()
     }
 
     /**

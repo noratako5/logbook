@@ -39,6 +39,31 @@ class BuiltinFilterWindow(val parent:BuiltinCombatReportTable):WindowBase(){
         this.shell.setActive()
         return
     }
+
+    private inner class AddRemoveGroup(composite: Composite,style:Int):Group(composite,style){
+        fun createContents(){
+            this.apply {
+                layout = GridLayout(4,false)
+                data = GridData(SWT.LEFT,SWT.CENTER,true,true,1,1)
+                Button(this,SWT.PUSH).apply {
+                    text = "+"
+                    data = GridData(SWT.LEFT,SWT.CENTER,true,true,2,1)
+                    addSelectionListener(object:SelectionAdapter(){
+                        override fun widgetSelected(e: SelectionEvent?) {
+                        }
+                    })
+                }
+                Button(this,SWT.PUSH).apply {
+                    text = "-"
+                    data = GridData(SWT.LEFT,SWT.CENTER,true,true,2,1)
+                    addSelectionListener(object:SelectionAdapter(){
+                        override fun widgetSelected(e: SelectionEvent?) {
+                        }
+                    })
+                }
+            }
+        }
+    }
     private fun createContents() {
         this.shell.layout = FillLayout()
         val scroll = ScrolledComposite(this.shell, SWT.H_SCROLL or SWT.V_SCROLL)
@@ -48,26 +73,9 @@ class BuiltinFilterWindow(val parent:BuiltinCombatReportTable):WindowBase(){
             expandVertical = true
             val composite = Composite(scroll,SWT.NONE).apply {
                 layout = GridLayout(1,false)
-                this@BuiltinFilterWindow.dateTimeGroup = Group(this,SWT.PUSH).apply {
+                this@BuiltinFilterWindow.dateTimeGroup = AddRemoveGroup(this,SWT.PUSH).apply {
                     text = "日時"
-                    layout = GridLayout(4,false)
-                    data = GridData(SWT.LEFT,SWT.CENTER,true,true,1,1)
-                    Button(this,SWT.PUSH).apply {
-                        text = "+"
-                        data = GridData(SWT.LEFT,SWT.CENTER,true,true,2,1)
-                        addSelectionListener(object:SelectionAdapter(){
-                            override fun widgetSelected(e: SelectionEvent?) {
-                            }
-                        })
-                    }
-                    Button(this,SWT.PUSH).apply {
-                        text = "-"
-                        data = GridData(SWT.LEFT,SWT.CENTER,true,true,2,1)
-                        addSelectionListener(object:SelectionAdapter(){
-                            override fun widgetSelected(e: SelectionEvent?) {
-                            }
-                        })
-                    }
+                    createContents()
                 }
             }
             content = composite
