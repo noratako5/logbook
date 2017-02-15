@@ -151,8 +151,8 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
         if (object.containsKey("api_slot_ex")) {
             _slotEx = object.getInt("api_slot_ex");
         }
-        this.slotEx = (_slotEx > 0) ? _slotEx : -1;
-        this.slotExItem = GlobalContext.getItem(this.slotEx);
+        this.slotEx = _slotEx;
+        this.slotExItem = GlobalContext.getItem(this.getSlotEx());
 
         this.json = object.toString();
     }
@@ -602,11 +602,19 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
     }
 
     /**
+     * 補助装備の穴を開けているか
+     * @return
+     */
+    public boolean hasSlotEx() {
+        return this.slotEx != 0;
+    }
+
+    /**
      * 補助装備ID
      * @return
      */
     public int getSlotEx() {
-        return this.slotEx;
+        return this.slotEx > 0 ? this.slotEx : -1;
     }
 
     /**
