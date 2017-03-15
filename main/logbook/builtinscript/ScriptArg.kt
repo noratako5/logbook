@@ -68,6 +68,14 @@ data class ScriptArg(
         get() = battle.phaseList.find { p->p.isNight }
     val dateString:String
         get() = battleCache.dateString
+    val friendIndexSummaryRows:ArrayList<ArrayList<String>>
+        get() = battleCache.friendIndexSummaryRows
+    val enemyIndexSummaryRows:ArrayList<ArrayList<String>>
+        get() = battleCache.enemyIndexSummaryRows
+    val combinedIndexSummaryRows:ArrayList<ArrayList<String>>
+        get() = battleCache.combinedIndexSummaryRows
+    val enemyCombinedIndexSummaryRows:ArrayList<ArrayList<String>>
+        get() = battleCache.enemyCombinedIndexSummaryRows
 }
 
 
@@ -85,7 +93,11 @@ data class BattleCache(
         private var combinedSakutekiRowsOrNull:ArrayList<ArrayList<String>>? = null,
         private var combinedFlagStringOrNull:String? = null,
         private var battleHPOrNull: BattleHP? = null,
-        private var dateStringOrNull:String? = null
+        private var dateStringOrNull:String? = null,
+        private  var friendIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var enemyIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var combinedIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var enemyCombinedIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null
 )
 {
     val combinedFlagString:String
@@ -213,6 +225,44 @@ data class BattleCache(
                 }
             }
             return dateStringOrNull!!
+        }
+
+    val enemyIndexSummaryRows:ArrayList<ArrayList<String>>
+        get(){
+            if(enemyIndexSummaryRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.enemy?.tryGet(i))) }
+                enemyIndexSummaryRowsOrNull = rows
+            }
+            return enemyIndexSummaryRowsOrNull!!
+        }
+    val friendIndexSummaryRows:ArrayList<ArrayList<String>>
+        get(){
+            if(friendIndexSummaryRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.dock?.ships?.tryGet(i))) }
+                friendIndexSummaryRowsOrNull = rows
+            }
+            return friendIndexSummaryRowsOrNull!!
+        }
+
+    val enemyCombinedIndexSummaryRows:ArrayList<ArrayList<String>>
+        get(){
+            if(enemyCombinedIndexSummaryRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.enemyCombined?.tryGet(i))) }
+                enemyCombinedIndexSummaryRowsOrNull = rows
+            }
+            return enemyCombinedIndexSummaryRowsOrNull!!
+        }
+    val combinedIndexSummaryRows:ArrayList<ArrayList<String>>
+        get(){
+            if(combinedIndexSummaryRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.dockCombined?.ships?.tryGet(i))) }
+                combinedIndexSummaryRowsOrNull = rows
+            }
+            return combinedIndexSummaryRowsOrNull!!
         }
 }
 

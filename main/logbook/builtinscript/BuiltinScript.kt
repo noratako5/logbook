@@ -9,7 +9,7 @@ import java.util.*
 
 
 //全出力用　砲撃戦夜戦は中身が重複するので除外
-val Keys = listOf<String>("砲撃戦","夜戦","雷撃戦","航空戦","航空戦撃墜","基地航空戦","編成","編成索敵")
+val Keys = listOf<String>("砲撃戦","夜戦","雷撃戦","航空戦","航空戦撃墜","基地航空戦","編成","編成索敵","砲撃順")
 private val LOG = LoggerHolder("builtinScript")
 
 //ヘッダをパラメータ入れて細かく増減させそうなので一旦キャッシュを無効化
@@ -26,6 +26,9 @@ fun HeaderWithKey(key: String): Array<String> {
             "基地航空戦" ->BaseAirRowHeader().toTypedArray()
             "編成" -> HenseiRowHeader().toTypedArray()
             "編成索敵" -> HenseiSakutekiRowHeader().toTypedArray()
+            "砲撃順"-> HougekiIndexRowHeader().toTypedArray()
+            //"My雷撃戦" -> MyRaigekiRowHeader().toTypedArray()
+            //"My砲撃戦" -> MyHougekiRowHeader().toTypedArray()
             else-> arrayOf()
         }
     }
@@ -59,6 +62,9 @@ fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
                     "基地航空戦" -> BaseAirRowBody(arg)
                     "編成" -> HenseiRowBody(arg)
                     "編成索敵" -> HenseiSakutekiRowBody(arg)
+                    "砲撃順"-> HougekiIndexRowBody(arg)
+                    //"My雷撃戦" -> MyRaigekiRowBody(arg)
+                    //"My砲撃戦" -> MyHougekiRowBody(arg)
                     else -> arrayListOf()
                 }
         return result.map { x -> x.toTypedArray() }.toTypedArray()

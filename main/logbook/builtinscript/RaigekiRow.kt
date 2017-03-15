@@ -268,3 +268,4 @@ fun RaigekiRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
     }
     return body
 }
+
