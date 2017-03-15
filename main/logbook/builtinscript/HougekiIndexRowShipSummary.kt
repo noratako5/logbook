@@ -3,7 +3,7 @@ package logbook.builtinscript
 import logbook.dto.ShipBaseDto
 import java.util.*
 
-private const val NOW_SONSYO_INDEX = 4
+private const val NOW_SONSYO_INDEX = 5
 
 fun HougekiIndexRowShipSummaryRowHeader(): ArrayList<String> {
     val header = ArrayList<String>()
@@ -11,6 +11,7 @@ fun HougekiIndexRowShipSummaryRowHeader(): ArrayList<String> {
     header.add("名前")
     header.add("Lv")
     header.add("艦種")
+    header.add("射程")
     header.add("損傷")
     //装備については砲撃時点の搭載数が取得できないので諦める
     //空母系は素手ないし全滅での砲撃不可能を考慮する必要あり
@@ -22,6 +23,7 @@ fun HougekiIndexRowShipSummaryRowBody(ship: ShipBaseDto?): ArrayList<String> {
     body.add(ship?.shipInfo?.fullName?.toString()?:"")
     body.add(ship?.lv?.toString()?:"")
     body.add(ship?.shipInfo?.type?:"")
+    body.add(when(ship?.param?.leng){0->"超短";1->"短";2->"中";3->"長";4->"超長";else->""})
     body.add("")
     return body
 }

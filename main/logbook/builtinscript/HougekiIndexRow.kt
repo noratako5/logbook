@@ -144,17 +144,17 @@ private fun HougekiIndexRowBodyConstruct(
             else { row.addAll(enemyRows[at-7].updateShipRowBody(prevHP[enemyHPIndex][at-7],enemyMaxHP[at-7])) }
             if (df < 7) { row.addAll(friendRows[df-1].updateShipRowBody(prevHP[friendHPIndex][df-1],friendMaxHP[df-1])) }
             else { row.addAll(enemyRows[df-7].updateShipRowBody(prevHP[enemyHPIndex][df-7],enemyMaxHP[df-7])) }
-            for(i in 0..5){
-                row.addAll(arg.friendIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND][i],arg.battle.maxFriendHp?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.friendIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND][k],arg.battle.maxFriendHp?.tryGet(k)?:-1))
             }
-            for(i in 0..5){
-                row.addAll(arg.enemyIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY][i],arg.battle.maxEnemyHp?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.enemyIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY][k],arg.battle.maxEnemyHp?.tryGet(k)?:-1))
             }
-            for(i in 0..5){
-                row.addAll(arg.combinedIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][i],arg.battle.maxFriendHpCombined?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.combinedIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][k],arg.battle.maxFriendHpCombined?.tryGet(k)?:-1))
             }
-            for(i in 0..5){
-                row.addAll(arg.enemyIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][i],arg.battle.maxEnemyHpCombined?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.enemyIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][k],arg.battle.maxEnemyHpCombined?.tryGet(k)?:-1))
             }
             row.add(arg.combinedFlagString)
             row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
@@ -252,17 +252,17 @@ private fun HougekiIndexRowBodyConstructEC(
                 if (df < 7) { row.addAll(arg.friendRows[df-1].updateShipRowBody(prevHP[HP_INDEX_FRIEND][df-1],arg.battle.maxFriendHp[df-1])) }
                 else { row.addAll(arg.combinedRows[df-7].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df-7], arg.battle.maxFriendHpCombined[df-7])) }
             }
-            for(i in 0..5){
-                row.addAll(arg.friendIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND][i],arg.battle.maxFriendHp?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.friendIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND][k],arg.battle.maxFriendHp?.tryGet(k)?:-1))
             }
-            for(i in 0..5){
-                row.addAll(arg.enemyIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY][i],arg.battle.maxEnemyHp?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.enemyIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY][k],arg.battle.maxEnemyHp?.tryGet(k)?:-1))
             }
-            for(i in 0..5){
-                row.addAll(arg.combinedIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][i],arg.battle.maxFriendHpCombined?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.combinedIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][k],arg.battle.maxFriendHpCombined?.tryGet(k)?:-1))
             }
-            for(i in 0..5){
-                row.addAll(arg.enemyIndexSummaryRows[i].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][i],arg.battle.maxEnemyHpCombined?.tryGet(i)?:-1))
+            for(k in 0..5){
+                row.addAll(arg.enemyIndexSummaryRows[k].updateHougekiIndexRowShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][k],arg.battle.maxEnemyHpCombined?.tryGet(k)?:-1))
             }
             row.add(arg.combinedFlagString)
             row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
