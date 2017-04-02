@@ -16,6 +16,8 @@ fun HougekiIndexRowHeader(): ArrayList<String> {
     header.add("全体攻撃順")
     header.add("敵味方別攻撃順")
     header.add("連続攻撃順")
+    header.add("全体攻撃履歴")
+    header.add("敵味方別攻撃履歴")
     header.add("攻撃艦")
     header.add("砲撃種別")
     header.add("表示装備1")
@@ -102,6 +104,9 @@ private fun HougekiIndexRowBodyConstruct(
     val dayPhaseRow = DamageDayRowBody(arg)
     var friendAttackCounter = 0
     var enemyAttackCounter = 0
+    val attackHistory = StringBuilder()
+    val attackHistoryFriend = StringBuilder()
+    val attackHistoryEnemy = StringBuilder()
     for (i in 1..api_at_list.size - 1) {
         val at = api_at_list[i]
         val atType = api_at_type[i]
@@ -117,8 +122,21 @@ private fun HougekiIndexRowBodyConstruct(
                 itemName[j] = Item.get(siList[j]).name
             }
         }
-        if(at < 7){ friendAttackCounter += 1; }
-        else{ enemyAttackCounter += 1; }
+        if(attackHistory.isNotEmpty()){ attackHistory.append(",") }
+        if(at < 7){
+            friendAttackCounter += 1
+            attackHistory.append("F")
+            attackHistory.append(at.toString())
+            if(attackHistoryFriend.isNotEmpty()){ attackHistoryFriend.append(",") }
+            attackHistoryFriend.append(at.toString())
+        }
+        else{
+            enemyAttackCounter += 1
+            attackHistory.append("E")
+            attackHistory.append((at-6).toString())
+            if(attackHistoryEnemy.isNotEmpty()){ attackHistoryEnemy.append(",") }
+            attackHistoryEnemy.append((at-6).toString())
+        }
         for (j in dfList.indices) {
             val df = dfList[j]
             val damage = damageList[j].toInt()
@@ -132,6 +150,9 @@ private fun HougekiIndexRowBodyConstruct(
             if(at < 7){ row.add(friendAttackCounter.toString()) }
             else{ row.add(enemyAttackCounter.toString()) }
             row.add((j+1).toString())
+            row.add(attackHistory.toString())
+            if(at < 7){ row.add(attackHistoryFriend.toString()) }
+            else{ row.add(attackHistoryEnemy.toString()) }
             row.add(attackFleetName)
             row.add(atType.toString())
             row.add(itemName[0])
@@ -195,6 +216,9 @@ private fun HougekiIndexRowBodyConstructEC(
     val dayPhaseRow =  DamageDayRowBody(arg)
     var friendAttackCounter = 0
     var enemyAttackCounter = 0
+    val attackHistory = StringBuilder()
+    val attackHistoryFriend = StringBuilder()
+    val attackHistoryEnemy = StringBuilder()
     for (i in 1..api_at_list.size - 1) {
         val eflag = api_at_eflag[i]
         val at = api_at_list[i]
@@ -203,18 +227,28 @@ private fun HougekiIndexRowBodyConstructEC(
         val siList = api_si_list[i]
         val clList = api_cl_list[i]
         val damageList = api_damage[i]
-
         val attackFleetName = if (eflag == 0) "自軍" else "敵軍"
-        if(eflag == 0){ friendAttackCounter += 1; }
-        else{ enemyAttackCounter += 1; }
-
+        if(attackHistory.isNotEmpty()){ attackHistory.append(",") }
+        if(eflag == 0){
+            friendAttackCounter += 1
+            attackHistory.append("F")
+            attackHistory.append(at.toString())
+            if(attackHistoryFriend.isNotEmpty()){ attackHistoryFriend.append(",") }
+            attackHistoryFriend.append(at.toString())
+        }
+        else{
+            enemyAttackCounter += 1
+            attackHistory.append("E")
+            attackHistory.append(at.toString())
+            if(attackHistoryEnemy.isNotEmpty()){ attackHistoryEnemy.append(",") }
+            attackHistoryEnemy.append(at.toString())
+        }
         val itemName = arrayOf("","","")
         for (j in itemName.indices) {
             if (j < siList.size && siList[j] > 0) {
                 itemName[j] = Item.get(siList[j]).name
             }
         }
-
         for (j in dfList.indices) {
             val df = dfList[j]
             val damage = damageList[j].toInt()
@@ -232,6 +266,9 @@ private fun HougekiIndexRowBodyConstructEC(
             if(eflag == 0){ row.add(friendAttackCounter.toString()) }
             else{ row.add(enemyAttackCounter.toString()) }
             row.add((j+1).toString())
+            row.add(attackHistory.toString())
+            if(eflag == 0){ row.add(attackHistoryFriend.toString()) }
+            else{ row.add(attackHistoryEnemy.toString()) }
             row.add(attackFleetName)
             row.add(atType.toString())
             row.add(itemName[0])
