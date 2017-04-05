@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.Calendar;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -45,6 +46,18 @@ import logbook.builtinscript.*;
  */
 public class BattleExDto extends AbstractDto {
     private static LoggerHolder LOG = new LoggerHolder("builtinScript");
+    private static Date enemyIDUpdatedDate = null;
+    private static Date getEnemyIDUpdatedDate() {
+        if(enemyIDUpdatedDate == null) {
+            Calendar c = Calendar.getInstance(TimeZone.getTimeZone("JST"));
+            c.clear();
+            c.set(2017, 4 - 1, 5, 12, 00, 00);
+            enemyIDUpdatedDate = c.getTime();
+        }
+        return  enemyIDUpdatedDate;
+    }
+
+
 
     /** 日付 */
     @Tag(1)
@@ -1150,11 +1163,15 @@ public class BattleExDto extends AbstractDto {
             int[][] eSlots = GsonUtil.toIntArrayArray(tree.get("api_eSlot"));
             int[][] eParams = GsonUtil.toIntArrayArray(tree.get("api_eParam"));
             int[] eLevel = GsonUtil.toIntArray(tree.get("api_ship_lv"));
+            boolean isOldEnemyId = this.getBattleDate().before(getEnemyIDUpdatedDate());
             for (int i = 1; i < shipKe.length; i++) {
                 int id = shipKe[i];
                 if (id != -1) {
                     int[] slot = eSlots[i - 1];
                     int[] param = eParams[i - 1];
+                    if(isOldEnemyId && id > 500){
+                        id += 1000;
+                    }
                     this.enemy.add(new EnemyShipDto(id, slot, param, eLevel[i]));
                 }
             }
@@ -1168,6 +1185,9 @@ public class BattleExDto extends AbstractDto {
                     if (id != -1) {
                         int[] slot = eSlotsCombined[i - 1];
                         int[] param = eParamsCombined[i - 1];
+                        if(isOldEnemyId && id > 500){
+                            id += 1000;
+                        }
                         this.enemyCombined.add(new EnemyShipDto(id, slot, param, eLevelCombined[i]));
                     }
                 }
