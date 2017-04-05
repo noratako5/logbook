@@ -434,7 +434,7 @@ public final class ShipInfoDto extends AbstractDto {
      * @return
      */
     public boolean isEnemy() {
-        return this.shipId > 500;
+        return this.shipId > 1500;
     }
 
     /**
