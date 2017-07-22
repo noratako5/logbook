@@ -659,11 +659,16 @@ public class BattleResultServer {
                     files.put(file.getPath(), file);
                 }
                 for (File file : files.values()) {
+                    if(filter != null && !filter.filterFileName(file)){
+                        continue;
+                    }
                     n = writeBuiltinCsvWithFilter(self, file, targetPath, resultDateSet, n,filter);
                 }
             }
             else if (sourceFile.isFile()) {
-                n = writeBuiltinCsv(self, sourceFile, targetPath, resultDateSet, n);
+                if(filter == null || filter.filterFileName(sourceFile)) {
+                    n = writeBuiltinCsv(self, sourceFile, targetPath, resultDateSet, n);
+                }
             }
         }
         BattleLogProxy.get().end();

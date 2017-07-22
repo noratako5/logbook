@@ -352,6 +352,9 @@ public final class AppConfigBean {
     /** 戦闘報告書を読みこむか */
     private boolean loadCombatLog = true;
 
+    /** ファイル名の日時をフィルタに利用するか */
+    private boolean useFileNameDate = true;
+
     /** 最大表示件数 */
     private int maxPrintItems = 2000;
 
@@ -1871,6 +1874,14 @@ public final class AppConfigBean {
      */
     public void setLoadCombatLog(boolean loadCombatLog) {
         this.loadCombatLog = loadCombatLog;
+    }
+
+    public boolean isUseFileNameDate() {
+        return this.useFileNameDate;
+    }
+
+    public void setUseFileNameDate(boolean useFileNameDate) {
+        this.useFileNameDate = useFileNameDate;
     }
     /**
      * @return maxPrintItems

@@ -1,6 +1,8 @@
 package logbook.scripting;
 
+import java.io.File;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,6 +12,7 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import logbook.builtinscript.BuiltinScriptKt;
+import logbook.config.AppConfig;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
@@ -24,6 +27,14 @@ import logbook.internal.ItemTypeApi2;
 
 public class BuiltinScriptFilter {
     private static final double THRESHOLD = 0.0001;
+    private static FastDateFormat filenameToDate = null;
+    private static  FastDateFormat getFilenameToDate() {
+        if(filenameToDate == null){
+            filenameToDate = FastDateFormat.getInstance("yyyy-MM-dd",TimeZone.getTimeZone("JST"));
+        }
+        return  filenameToDate;
+    }
+
     public final String key;
     private final DateTimeFilter dateTimeFilter;
     private final CountItemFilter attackCountItemFilter;
@@ -33,6 +44,8 @@ public class BuiltinScriptFilter {
 
     private interface DateTimeFilter{
         public boolean filter(Date date);
+        ///ファイル分けの日時境界よくわかってないのでゆるめに判定する
+        public boolean filterFileNameDate(Date date);
         public static DateTimeFilter create(Object object){
             if(object instanceof LinkedTreeMap){
                 return new DateTimeAndFilter(object);
@@ -70,6 +83,15 @@ public class BuiltinScriptFilter {
                 return result <= 0;
             }
         }
+        public boolean filterFileNameDate(Date date){
+            if(this.start == null){
+                return false;
+            }
+            else{
+                long result = this.start.getTime() - date.getTime();
+                return result <= 2*24*60*60*1000;
+            }
+        }
     }
     private static class DateTimeEndFilter implements DateTimeFilter{
         private static final FastDateFormat format = FastDateFormat.getInstance("yyyyMMddHHmmss",TimeZone.getTimeZone("JST"));
@@ -96,6 +118,15 @@ public class BuiltinScriptFilter {
                 return result >= 0;
             }
         }
+        public boolean filterFileNameDate(Date date){
+            if(this.end == null){
+                return false;
+            }
+            else{
+                long result = this.end.getTime() - date.getTime();
+                return result >= -2*24*60*60*1000;
+            }
+        }
     }
     private static class DateTimeAndFilter implements DateTimeFilter{
         private final List<DateTimeFilter> filterList;
@@ -111,6 +142,9 @@ public class BuiltinScriptFilter {
         public boolean filter(Date date){
             return this.filterList.stream().allMatch(f->f.filter(date));
         }
+        public boolean filterFileNameDate(Date date){
+            return this.filterList.stream().allMatch(f->f.filterFileNameDate(date));
+        }
     }
     private static class DateTimeOrFilter implements DateTimeFilter{
         private final List<DateTimeFilter> filterList;
@@ -124,16 +158,25 @@ public class BuiltinScriptFilter {
             this.filterList = list;
         }
         public boolean filter(Date date){
-            return !this.filterList.stream().allMatch(f->!f.filter(date));
+            return this.filterList.stream().anyMatch(f->f.filter(date));
+        }
+        public boolean filterFileNameDate(Date date){
+            return this.filterList.stream().anyMatch(f->f.filterFileNameDate(date));
         }
     }
     private static class DateTimeTrueFilter implements DateTimeFilter{
         public boolean filter(Date date){
             return true;
         }
+        public boolean filterFileNameDate(Date date){
+            return true;
+        }
     }
     private static class DateTimeFalseFilter implements DateTimeFilter{
         public boolean filter(Date date){
+            return false;
+        }
+        public boolean filterFileNameDate(Date date){
             return false;
         }
     }
@@ -1011,6 +1054,22 @@ public class BuiltinScriptFilter {
         return new BuiltinScriptFilter();
     }
 
+    public boolean filterFileName(File file){
+        if(!AppConfig.get().isUseFileNameDate()){
+            return true;
+        }
+
+        String name = file.getName();
+        String withoutExt = file.getName().substring(0,name.lastIndexOf('.'));
+        ParsePosition pos = new ParsePosition(0);
+        Date date = getFilenameToDate().parse(withoutExt,pos);
+        if(date != null) {
+            return this.dateTimeFilter.filterFileNameDate(date);
+        }
+        else {
+            return true;
+        }
+    }
     public boolean filterDateTime(Date date){
         return this.dateTimeFilter.filter(date);
     }

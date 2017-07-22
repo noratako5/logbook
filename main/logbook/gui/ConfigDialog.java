@@ -411,6 +411,11 @@ public final class ConfigDialog extends Dialog {
         loadCombatLog.setText("戦闘報告書を読み込む*");
         loadCombatLog.setSelection(AppConfig.get().isLoadCombatLog());
 
+        final Button useFileNameDate = new Button(compositeReport, SWT.CHECK);
+        useFileNameDate.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+        useFileNameDate.setText("ファイル名の日時をフィルタに利用する");
+        useFileNameDate.setSelection(AppConfig.get().isUseFileNameDate());
+
         Label maxPrintItemsLabel = new Label(compositeReport, SWT.NONE);
         maxPrintItemsLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         maxPrintItemsLabel.setText("最大表示件数");
@@ -1147,6 +1152,7 @@ public final class ConfigDialog extends Dialog {
                 AppConfig.get().setLoadCreateShipLog(loadCreateShipLog.getSelection());
                 AppConfig.get().setLoadMissionLog(loadMissionLog.getSelection());
                 AppConfig.get().setLoadCombatLog(loadCombatLog.getSelection());
+                AppConfig.get().setUseFileNameDate(useFileNameDate.getSelection());
                 AppConfig.get().setMaxPrintItems(maxPrintItemsSpinner.getSelection());
                 AppConfig.get().setBuiltinDateFormat(dateFormat.getText());
                 if (JIntellitypeWrapper.getInstance() != null) {
