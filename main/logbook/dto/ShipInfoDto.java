@@ -224,7 +224,7 @@ public final class ShipInfoDto extends AbstractDto {
      * @return beforeshpids
      */
     public int[] getBeforeshpids() {
-        return beforeshpids;
+        return this.beforeshpids;
     }
 
     /**
