@@ -122,12 +122,12 @@ public final class ShipInfoDto extends AbstractDto {
         this.stype = object.getJsonNumber("api_stype").intValue();
         this.slotNum = object.getInt("api_slot_num");
 
-        if (!this.isEnemy()) {
+        boolean reduced = (object.get("api_maxeq") == null);
+
+        if (!this.isEnemy() && !reduced) {
             this.maxBull = object.getJsonNumber("api_bull_max").intValue();
             this.maxFuel = object.getJsonNumber("api_fuel_max").intValue();
         }
-
-        boolean reduced = (object.get("api_maxeq") == null);
 
         if (!reduced) {
             this.sortNo = object.getJsonNumber("api_sortno").intValue();
@@ -137,11 +137,14 @@ public final class ShipInfoDto extends AbstractDto {
             this.maxeq = JsonUtils.getIntArray(object, "api_maxeq");
         }
 
-        ShipParameters[] params = reduced ?
-                ShipParameters.fromMasterEnemyShip(object) :
-                ShipParameters.fromMasterShip(object);
-        this.param = params[0];
-        this.max = params[1];
+        ShipParameters[] params =
+                (reduced && this.isEnemy()) ? ShipParameters.fromMasterEnemyShip(object) :
+                (!reduced)? ShipParameters.fromMasterShip(object)
+                :null;
+        if(params != null) {
+            this.param = params[0];
+            this.max = params[1];
+        }
         this.json = object.toString();
     }
 
