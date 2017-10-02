@@ -15,6 +15,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 同定されていない未加工のデータ
@@ -121,6 +122,44 @@ public class UndefinedData implements Data {
             }
         }
         return this;
+    }
+
+    ///未定義の対象でも変換を試みる
+    @Nullable
+    public final AkakariData toAkakariData() {
+        if (this.response.length != 0) {
+            DataType type = DataType.TYPEMAP.get(this.url);
+            if(type == null){
+                type = DataType.UNDEFINED;
+            }
+            if (this.url.contains("/kcsapi/")) {
+                try {
+                    // リクエストのフィールドを復号します
+                    Map<String, String> field = null;
+                    if (this.request != null) {
+                        field = getQueryMap(URLDecoder.decode(new String(this.request).trim(), "UTF-8"));
+                    }
+                    // レスポンスのJSONを復号します
+                    InputStream stream = new ByteArrayInputStream(this.response);
+                    if ((this.response[0] == (byte) 0x1f) && (this.response[1] == (byte) 0x8b)) {
+                        // レスポンスの先頭2バイトが0x1f, 0x8bであればgzip圧縮されている
+                        stream = new GZIPInputStream(stream);
+                    }
+                    // レスポンスボディのJSONはsvdata=から始まるので除去します
+                    int read;
+                    while (((read = stream.read()) != -1) && (read != '=')) {
+                    }
+
+                    JsonReader jsonreader = Json.createReader(stream);
+                    JsonObject json = jsonreader.readObject();
+
+                    return new AkakariData(type, this.date, json, field,this.url.substring("/kcsapi/".length()));
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }
+        return null;
     }
 
     public static Map<String, String> getQueryMap(String query) {

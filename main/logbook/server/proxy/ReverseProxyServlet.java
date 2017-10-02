@@ -9,7 +9,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import logbook.builtinscript.akakariLog.AkakariMasterLog;
+import logbook.builtinscript.akakariLog.AkakariMasterLogRecorder;
+import logbook.builtinscript.akakariLog.AkakariSyutsugekiLogRecorder;
 import logbook.config.AppConfig;
+import logbook.data.AkakariData;
 import logbook.data.Data;
 import logbook.data.DataType;
 import logbook.data.UndefinedData;
@@ -140,6 +144,14 @@ public final class ReverseProxyServlet extends ProxyServlet {
 
                         // キャプチャしたバイト配列は何のデータかを決定する
                         Data data = decodedData.toDefinedData();
+
+                        AkakariData akakariData = decodedData.toAkakariData();
+                        if(akakariData != null) {
+                            AkakariMasterLogRecorder.inputData(akakariData);
+                            //赤仮で使う戦闘ログはこっちで保存
+                            AkakariSyutsugekiLogRecorder.inputData(akakariData);
+                        }
+
                         if (data.getDataType() != DataType.UNDEFINED) {
                             // 定義済みのデータの場合にキューに追加する
                             GlobalContext.updateContext(data);

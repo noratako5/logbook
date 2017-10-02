@@ -23,6 +23,7 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import logbook.builtinscript.akakariLog.AkakariSyutsugekiLogRecorder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.swt.SWT;
