@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1050,7 +1051,7 @@ public class BattleResultServer {
                     }
                 }
                 if(append && n == start){continue;}
-                CreateReportLogic.writeCsv(new File(targetPath).toPath().resolve(proxy.getTitle() + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, proxy.header()), allBodies, append);
+                CreateReportLogic.writeCsv(new File(targetPath).toPath().resolve(proxy.getTitle() + ".csv").toFile(), ArrayUtils.addAll(new String[] { "No." }, proxy.header()), allBodies, append, Charset.forName("UTF-8"));
             }
             return n;
         } catch (IOException e) {

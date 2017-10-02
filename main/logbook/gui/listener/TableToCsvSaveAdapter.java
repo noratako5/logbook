@@ -13,10 +13,7 @@ import logbook.gui.logic.CreateReportLogic;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.*;
 
 /**
  * テーブルをCSVファイルに保存するアダプターです
@@ -71,8 +68,15 @@ public final class TableToCsvSaveAdapter extends SelectionAdapter {
                 }
             }
             try {
-                AbstractTableDialog.TextTable textTable = AbstractTableDialog.getTextTable(this.header, this.table,
-                        this.table.getItems(), this.config);
+                List<Comparable[]> body = new ArrayList<Comparable[]>();
+                TableItem[] items = this.table.getItems();
+                for (TableItem item : items) {
+                    String[] colums = new String[this.header.length];
+                    for (int i = 0; i < colums.length; i++) {
+                        colums[i] = item.getText(i);
+                    }
+                    body.add(colums);
+                }
 
                 CreateReportLogic.writeCsv(file, this.header, body, false, Charset.forName("UTF-8"));
             } catch (IOException e) {

@@ -22,6 +22,7 @@ import org.eclipse.swt.widgets.*
 import java.io.File
 import java.io.IOException
 import java.io.Serializable
+import java.nio.charset.Charset
 import java.util.stream.Collectors
 import kotlin.concurrent.thread
 
@@ -99,13 +100,13 @@ class BuiltinCombatReportTable
                     if(tmp.size >= 500) {
                         val body = BattleResultServer.loadBuiltinBattleResultsBody(this.key, tmp, index)
                         index += body.size
-                        CreateReportLogic.writeCsv(file, header, body, append)
+                        CreateReportLogic.writeCsv(file, header, body, append, Charset.forName("UTF-8"))
                         append = true
                         tmp.clear()
                     }
                 }
                 val body = BattleResultServer.loadBuiltinBattleResultsBody(this.key, tmp, index)
-                CreateReportLogic.writeCsv(file, header, body, append)
+                CreateReportLogic.writeCsv(file, header, body, append, Charset.forName("UTF-8"))
                 tmp.clear()
             }
             catch (e: IOException) {
