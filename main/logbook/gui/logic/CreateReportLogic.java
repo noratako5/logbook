@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -710,7 +711,7 @@ public final class CreateReportLogic {
         for (Comparable[] strings : body) {
             copybody.add(Arrays.copyOfRange(strings, 1, strings.length));
         }
-        writeCsv(file, copyheader, copybody, applend);
+        writeCsv(file, copyheader, copybody, applend, AppConstants.CHARSET);
     }
 
     /**
@@ -722,16 +723,16 @@ public final class CreateReportLogic {
      * @param applend 追記フラグ
      * @throws IOException 書き込みに失敗した
      */
-    public static void writeCsv(File file, String[] header, List<Comparable[]> body, boolean applend)
+    public static void writeCsv(File file, String[] header, List<Comparable[]> body, boolean applend, Charset charset)
             throws IOException {
         OutputStream stream = new BufferedOutputStream(new FileOutputStream(file, applend));
         try {
             if (!file.exists() || (FileUtils.sizeOf(file) <= 0)) {
-                IOUtils.write(toRecord(header), stream, AppConstants.CHARSET);
+                IOUtils.write(StringUtils.join(header, ',') + "\r\n", stream, charset);
             }
             for (Comparable[] colums : body) {
-                IOUtils.write(toRecord(ReportUtils.toStringArray(colums)), stream,
-                        AppConstants.CHARSET);
+                IOUtils.write(StringUtils.join(ReportUtils.toStringArray(colums), ',') + "\r\n", stream,
+                        charset);
             }
         } finally {
             stream.close();
@@ -804,7 +805,8 @@ public final class CreateReportLogic {
                     for (ItemDto itemDto : item) {
                         if ((itemDto == null) || (itemDto.getFriendlyName() == null)) {
                             find = find ? find : false;
-                        } else {
+                        }
+                        else {
                             find = find ? find : pattern.matcher(itemDto.getFriendlyName()).find();
                         }
                     }
@@ -814,7 +816,8 @@ public final class CreateReportLogic {
                         return false;
                     }
                 }
-            } else {
+            }
+            else {
                 // 部分一致で検索する
                 for (int i = 0; i < words.length; i++) {
                     boolean find = false;
@@ -827,7 +830,8 @@ public final class CreateReportLogic {
                     for (ItemDto itemDto : item) {
                         if ((itemDto == null) || (itemDto.getFriendlyName() == null)) {
                             find = find ? find : false;
-                        } else {
+                        }
+                        else {
                             find = find ? find : itemDto.getFriendlyName().indexOf(words[i]) != -1;
                         }
                     }
