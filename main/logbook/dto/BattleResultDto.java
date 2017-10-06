@@ -246,9 +246,9 @@ public class BattleResultDto extends AbstractDto {
     }
 
     public int getCombatDataRowCount(String name){
-        return this.allCombatExtDataRowCount.get(name);
+        return this.allCombatExtDataRowCount.getOrDefault(name,0);
     }
     public int getBuiltinCombatDataRowCount(String name){
-        return this.allBuiltinCombatExtDataRowCount.get(name);
+        return this.allBuiltinCombatExtDataRowCount.getOrDefault(name,0);
     }
 }

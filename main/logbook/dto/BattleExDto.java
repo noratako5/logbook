@@ -2071,6 +2071,7 @@ public class BattleExDto extends AbstractDto {
                     int youriku = 0;
                     int senbo = 0;
                     int hokyu = 0;
+                    int kuubo = 0;
                     int sonota = 0;
                     for(int type:type1){
                         switch(type){
@@ -2091,11 +2092,15 @@ public class BattleExDto extends AbstractDto {
                                 senbo++;break;
                             case 22:
                                 hokyu++;break;
+                            case 7:
+                            case 11:
+                            case 18:
+                                kuubo++;break;
                             default:
                                 sonota++;break;
                         }
                     }
-                    if(kuchiku + aki < 4 || 2 < keijunRenjun || 2 < koujun || 2 < kousen || 2 < suibo || 1 < youriku || 1 < senbo || 1 < hokyu || 0 < sonota ){
+                    if(kuchiku + aki < 4 || 2 < keijunRenjun || 2 < koujun || 2 < kousen || 2 < suibo || 1 < youriku || 1 < senbo || 1 < hokyu || 1<kuubo || 0 < sonota ){
                         return 1;
                     }
                 }

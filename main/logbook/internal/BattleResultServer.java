@@ -985,24 +985,25 @@ public class BattleResultServer {
                     .parallelStream()
                     .map(b->BattleLogProxy.get().bodyMT(b))
                     .collect(Collectors.toList());
-            List<Map<String,String[][]>> builtinCombatLog =
-                battle
-                    .parallelStream()
-                    .map(b->BuiltinScriptKt.AllBody(b))
-                    .collect(Collectors.toList());
+//            List<Map<String,String[][]>> builtinCombatLog =
+//                battle
+//                    .parallelStream()
+//                    .map(b->BuiltinScriptKt.AllBody(b))
+//                    .collect(Collectors.toList());
 
-            List<Map<String,Comparable[][]>> combatLog = null;
-            if(isLoadCombatLog){
-                combatLog =
-                    battle
-                    .parallelStream()
-                    .map(b->CombatLogProxy.bodyAllMT(b))
-                    .collect(Collectors.toList());
-            }
+//            List<Map<String,Comparable[][]>> combatLog = null;
+//            if(isLoadCombatLog){
+//                combatLog =
+//                    battle
+//                    .parallelStream()
+//                    .map(b->CombatLogProxy.bodyAllMT(b))
+//                    .collect(Collectors.toList());
+//            }
 
             List<BattleResult> result = new ArrayList<BattleResult>();
             for(int i=0;i<battle.size();i++){
-                result.add(createBattleResultWithCombatLog(battle.get(i),file, i,battleLog.get(i),builtinCombatLog.get(i),(isLoadCombatLog)?combatLog.get(i) :null));
+                //result.add(createBattleResultWithCombatLog(battle.get(i),file, i,battleLog.get(i),builtinCombatLog.get(i),(isLoadCombatLog)?combatLog.get(i) :null));
+                result.add(createBattleResultWithCombatLog(battle.get(i),file, i,battleLog.get(i),null,null));
             }
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
             return result;

@@ -161,8 +161,9 @@ class BuiltinCombatReportTable
             for (item in battleResults) {
                 //データが存在する場合はとりあえず読む
                 //基地航空非対応海域の基地航空ログだとかそういうのだけ飛ばせば十分
+                //拡張ログファイルにより行数が起動後に変化するケースが現れたので廃止
                 val c = item.getBuiltinCombatDataRowCount(this.key)
-                if (c == 0) { continue }
+                //if (c == 0) { continue }
                 targets.add(item)
             }
             val tmp = ArrayList<BattleResultDto>()

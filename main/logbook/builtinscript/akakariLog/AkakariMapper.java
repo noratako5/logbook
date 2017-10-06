@@ -1,7 +1,7 @@
 package logbook.builtinscript.akakariLog;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.type.TypeReference;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import logbook.internal.LoggerHolder;
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 import com.github.luben.zstd.Zstd;
@@ -17,9 +16,6 @@ import com.github.luben.zstd.Zstd;
 import java.io.*;
 import java.nio.file.Files;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 
 /**

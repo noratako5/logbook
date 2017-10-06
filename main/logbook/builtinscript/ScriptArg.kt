@@ -1,6 +1,7 @@
 package logbook.builtinscript
 
 import com.google.gson.internal.LinkedTreeMap
+import logbook.builtinscript.akakariLog.AkakariSyutsugekiLogReader
 import logbook.config.AppConfig
 import logbook.dto.BattleExDto
 import logbook.gui.logic.DateTimeString
@@ -76,6 +77,16 @@ data class ScriptArg(
         get() = battleCache.combinedIndexSummaryRows
     val enemyCombinedIndexSummaryRows:ArrayList<ArrayList<String>>
         get() = battleCache.enemyCombinedIndexSummaryRows
+    val friendAkakariRows:ArrayList<ArrayList<String>>
+        get() = battleCache.friendAkakariRows
+    val enemyAkakariRows:ArrayList<ArrayList<String>>
+        get() = battleCache.enemyAkakariRows
+    val combinedAkakariRows:ArrayList<ArrayList<String>>
+        get() = battleCache.combinedAkakariRows
+    val enemyCombinedAkakariRows:ArrayList<ArrayList<String>>
+        get() = battleCache.enemyCombinedAkakariRows
+    val hasAkakariInfo:Boolean
+        get() = (AkakariSyutsugekiLogReader.battleDateToShipArray(battle.battleDate)!= null)
 }
 
 
@@ -97,7 +108,11 @@ data class BattleCache(
         private  var friendIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
         private  var enemyIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
         private  var combinedIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
-        private  var enemyCombinedIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null
+        private  var enemyCombinedIndexSummaryRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var friendAkakariRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var enemyAkakariRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var combinedAkakariRowsOrNull:ArrayList<ArrayList<String>>? = null,
+        private  var enemyCombinedAkakariRowsOrNull:ArrayList<ArrayList<String>>? = null
 )
 {
     val combinedFlagString:String
@@ -263,6 +278,44 @@ data class BattleCache(
                 combinedIndexSummaryRowsOrNull = rows
             }
             return combinedIndexSummaryRowsOrNull!!
+        }
+
+    val enemyAkakariRows:ArrayList<ArrayList<String>>
+        get(){
+            if(enemyAkakariRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.enemy?.tryGet(i), battle.maxEnemyHp?.tryGet(i)?:0, i,battle.battleDate)) }
+                enemyAkakariRowsOrNull = rows
+            }
+            return enemyAkakariRowsOrNull!!
+        }
+    val friendAkakariRows:ArrayList<ArrayList<String>>
+        get(){
+            if(friendAkakariRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.dock?.ships?.tryGet(i), battle.maxFriendHp?.tryGet(i)?:0, i,battle.battleDate)) }
+                friendAkakariRowsOrNull = rows
+            }
+            return friendAkakariRowsOrNull!!
+        }
+
+    val enemyCombinedAkakariRows:ArrayList<ArrayList<String>>
+        get(){
+            if(enemyCombinedAkakariRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.enemyCombined?.tryGet(i), battle.maxEnemyHpCombined?.tryGet(i)?:0, i+6,battle.battleDate)) }
+                enemyCombinedAkakariRowsOrNull = rows
+            }
+            return enemyCombinedAkakariRowsOrNull!!
+        }
+    val combinedAkakariRows:ArrayList<ArrayList<String>>
+        get(){
+            if(combinedAkakariRowsOrNull == null){
+                val rows = ArrayList<ArrayList<String>>()
+                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.dockCombined?.ships?.tryGet(i), battle.maxFriendHpCombined?.tryGet(i)?:0, i+6,battle.battleDate)) }
+                combinedAkakariRowsOrNull = rows
+            }
+            return combinedAkakariRowsOrNull!!
         }
 }
 

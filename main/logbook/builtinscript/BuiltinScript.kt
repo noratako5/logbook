@@ -9,7 +9,7 @@ import java.util.*
 
 
 //全出力用　砲撃戦夜戦は中身が重複するので除外
-val Keys = listOf<String>("砲撃戦","夜戦","雷撃戦","航空戦","航空戦撃墜","基地航空戦","編成","編成索敵","砲撃順")
+val Keys = listOf<String>("砲撃戦","夜戦","雷撃戦","航空戦","航空戦撃墜","基地航空戦","編成","編成索敵","砲撃順","赤仮砲撃戦","赤仮夜戦")
 private val LOG = LoggerHolder("builtinScript")
 
 //ヘッダをパラメータ入れて細かく増減させそうなので一旦キャッシュを無効化
@@ -27,6 +27,8 @@ fun HeaderWithKey(key: String): Array<String> {
             "編成" -> HenseiRowHeader().toTypedArray()
             "編成索敵" -> HenseiSakutekiRowHeader().toTypedArray()
             "砲撃順"-> HougekiIndexRowHeader().toTypedArray()
+            "赤仮砲撃戦"-> AkakariHougekiRowHeader().toTypedArray()
+            "赤仮夜戦"->AkakariYasenRowHeader().toTypedArray()
             //"My雷撃戦" -> MyRaigekiRowHeader().toTypedArray()
             //"My砲撃戦" -> MyHougekiRowHeader().toTypedArray()
             else-> arrayOf()
@@ -63,6 +65,13 @@ fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
                     "編成" -> HenseiRowBody(arg)
                     "編成索敵" -> HenseiSakutekiRowBody(arg)
                     "砲撃順"-> HougekiIndexRowBody(arg)
+                    "赤仮砲撃戦"-> AkakariHougekiRowBody(arg)
+                    "赤仮夜戦"-> AkakariYasenRowBody(arg)
+                    "赤仮砲撃戦夜戦" -> {
+                        val body = AkakariHougekiRowBody(arg)
+                        body.addAll(AkakariYasenRowBody(arg))
+                        body
+                    }
                     //"My雷撃戦" -> MyRaigekiRowBody(arg)
                     //"My砲撃戦" -> MyHougekiRowBody(arg)
                     else -> arrayListOf()

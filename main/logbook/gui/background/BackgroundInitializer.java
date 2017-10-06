@@ -2,6 +2,7 @@ package logbook.gui.background;
 
 import java.util.List;
 
+import logbook.builtinscript.akakariLog.AkakariSyutsugekiLogReader;
 import logbook.config.AppConfig;
 import logbook.config.ShipGroupConfig;
 import logbook.constants.AppConstants;
@@ -151,6 +152,12 @@ public final class BackgroundInitializer extends Thread {
         } catch (Exception e) {
             LOG.get().warn("出撃ログの読み込みに失敗しました (" + AppConfig.get().getBattleLogPath() + ")", e);
         }
+        try{
+            AkakariSyutsugekiLogReader.loadAllStartPortDate();
+        }catch (Exception e) {
+            LOG.get().warn("赤仮出撃ログの読み込みに失敗しました (" + AppConfig.get().getBattleLogPath() + ")", e);
+        }
+
 
         ApplicationMain.logPrint("バックグラウンド初期化完了");
     }

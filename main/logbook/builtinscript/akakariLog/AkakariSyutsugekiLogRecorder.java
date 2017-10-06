@@ -4,10 +4,16 @@ import logbook.data.AkakariData;
 import logbook.data.Data;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import logbook.internal.LoggerHolder;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Created by noratako5 on 2017/09/13.
@@ -91,12 +97,35 @@ public class AkakariSyutsugekiLogRecorder {
             AkakariSyutsugekiLog[] result = list.toArray(new AkakariSyutsugekiLog[0]);
             AkakariMapper.writeObjectToMessageZstdFile(result,file);
 
-            //AkakariSyutsugekiLog[] result2 = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(file);
-            //AkakariMapper.writeObjectToJsonFile(result2,new File(syutsugekiLogPath+File.separator+"syutsugeki"+date+".json"));
+            AkakariSyutsugekiLogReader.loadStartPortDate(log);
+            AkakariSyutsugekiLogReader.updateLogFile(file.toPath(),result);
         }
         catch (Exception e){
             LOG.get().warn("保存失敗",e);
         }
     }
 
+    @NotNull
+    public static Path dateToPath(Date startPortDate){
+        FastDateFormat format =  FastDateFormat.getInstance("yyyy-MM-dd", TimeZone.getTimeZone("JST"));
+        String date = format.format(startPortDate);
+        File file = new File(syutsugekiLogPath+File.separator+"syutsugeki"+date+".dat");
+        return file.toPath();
+    }
+
+    @Nullable
+    public static List<Path> allFilePath(){
+        Path path = (new File(syutsugekiLogPath)).toPath();
+        if(Files.exists(path)) {
+            try {
+                return Files.list(path).collect(Collectors.toList());
+            } catch (Exception e) {
+                LOG.get().warn("読み込み失敗", e);
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
+    }
 }

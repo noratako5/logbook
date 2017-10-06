@@ -3,6 +3,7 @@ package logbook.builtinscript.akakariLog;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import logbook.data.AkakariData;
 import logbook.data.Data;
@@ -10,9 +11,7 @@ import logbook.data.DataType;
 import logbook.internal.LoggerHolder;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by noratako5 on 2017/09/18.
@@ -92,5 +91,29 @@ public class AkakariSyutsugekiLog {
     @JsonIgnore
     public boolean isFinish(){
         return (this.end_port != null);
+    }
+
+    @JsonIgnore
+    public List<Date> getBattleDateList(){
+        List<Date>result = new ArrayList<>();
+        for(AkakariSyutsugekiData data : this.data){
+            if(data.body instanceof  ObjectNode && data.body.get("api_nowhps")!=null){
+                result.add(data.date);
+            }
+        }
+        return result;
+    }
+
+    @JsonIgnore
+    public ArrayNode shipsAfterBattle(Date battleDate){
+        for(AkakariSyutsugekiData data : this.data){
+            if(data.date.after(battleDate) &&  data.body instanceof  ObjectNode){
+                JsonNode node = data.body.get("api_ship_data");
+                if(node instanceof ArrayNode) {
+                    return (ArrayNode)node;
+                }
+            }
+        }
+        return this.end_port.ship;
     }
 }

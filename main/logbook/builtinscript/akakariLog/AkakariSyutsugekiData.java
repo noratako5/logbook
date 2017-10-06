@@ -181,7 +181,6 @@ public class AkakariSyutsugekiData {
         return result;
     }
 
-
     @Nullable
     public static  AkakariSyutsugekiData dataOrNull(AkakariData data,List<AkakariData> startSlotItemArray) {
         AkakariSyutsugekiData akaData = new AkakariSyutsugekiData();
