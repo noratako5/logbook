@@ -215,47 +215,49 @@ private fun AkakariHougekiRowBodyConstructEC(
 
 fun AkakariHougekiRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
     val body = ArrayList<ArrayList<String>>()
-    arg.dayPhaseOrNull?.run {
-        val phase = this
-        AkakariHougekiRowBodyConstruct(
-                arg = arg,
-                attackList = phase.openingTaisen,
-                apiName = "api_opening_taisen",
-                hougekiCount = "先制対潜",
-                isSecond = arg.battle.isCombined,
-                startHP = arg.battleHP.dayPhase!!.openingTaisenStartHP,
-                body = body
-        )
-        AkakariHougekiRowBodyConstruct(
-                arg = arg,
-                attackList = phase.hougeki1,
-                apiName = "api_hougeki1",
-                hougekiCount = "1",
-                isSecond = phase.kind.isHougeki1Second,
-                startHP = arg.battleHP.dayPhase!!.hougeki1StartHP,
-                body = body
-        )
-        AkakariHougekiRowBodyConstruct(
-                arg = arg,
-                attackList = phase.hougeki2,
-                apiName = "api_hougeki2",
-                hougekiCount = if(phase.kind.isHougeki1Second == phase.kind.isHougeki2Second)"2" else "1",
-                isSecond = phase.kind.isHougeki2Second,
-                startHP = arg.battleHP.dayPhase!!.hougeki2StartHP,
-                body = body
-        )
-        AkakariHougekiRowBodyConstruct(
-                arg = arg,
-                attackList = phase.hougeki3,
-                apiName = "api_hougeki3",
-                hougekiCount =
-                if(phase.kind.isHougeki1Second == phase.kind.isHougeki2Second  && phase.kind.isHougeki1Second == phase.kind.isHougeki3Second)"3"
-                else if(phase.kind.isHougeki1Second == phase.kind.isHougeki2Second) "1"
-                else "2",
-                isSecond = phase.kind.isHougeki3Second,
-                startHP = arg.battleHP.dayPhase!!.hougeki3StartHP,
-                body = body
-        )
+    if(arg.hasAkakariInfo) {
+        arg.dayPhaseOrNull?.run {
+            val phase = this
+            AkakariHougekiRowBodyConstruct(
+                    arg = arg,
+                    attackList = phase.openingTaisen,
+                    apiName = "api_opening_taisen",
+                    hougekiCount = "先制対潜",
+                    isSecond = arg.battle.isCombined,
+                    startHP = arg.battleHP.dayPhase!!.openingTaisenStartHP,
+                    body = body
+            )
+            AkakariHougekiRowBodyConstruct(
+                    arg = arg,
+                    attackList = phase.hougeki1,
+                    apiName = "api_hougeki1",
+                    hougekiCount = "1",
+                    isSecond = phase.kind.isHougeki1Second,
+                    startHP = arg.battleHP.dayPhase!!.hougeki1StartHP,
+                    body = body
+            )
+            AkakariHougekiRowBodyConstruct(
+                    arg = arg,
+                    attackList = phase.hougeki2,
+                    apiName = "api_hougeki2",
+                    hougekiCount = if (phase.kind.isHougeki1Second == phase.kind.isHougeki2Second) "2" else "1",
+                    isSecond = phase.kind.isHougeki2Second,
+                    startHP = arg.battleHP.dayPhase!!.hougeki2StartHP,
+                    body = body
+            )
+            AkakariHougekiRowBodyConstruct(
+                    arg = arg,
+                    attackList = phase.hougeki3,
+                    apiName = "api_hougeki3",
+                    hougekiCount =
+                    if (phase.kind.isHougeki1Second == phase.kind.isHougeki2Second && phase.kind.isHougeki1Second == phase.kind.isHougeki3Second) "3"
+                    else if (phase.kind.isHougeki1Second == phase.kind.isHougeki2Second) "1"
+                    else "2",
+                    isSecond = phase.kind.isHougeki3Second,
+                    startHP = arg.battleHP.dayPhase!!.hougeki3StartHP,
+                    body = body
+            )
+        }
     }
     return body
 }

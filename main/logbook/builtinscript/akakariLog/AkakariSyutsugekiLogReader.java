@@ -15,9 +15,9 @@ import java.util.*;
 public class AkakariSyutsugekiLogReader {
     private static List<Date> startPortDateList = new ArrayList<>();
     private static Map<Date,Date> battleDateToStartPortDateCache = new HashMap<>();
-    private static AkakariCacheMap<Date,ArrayNode> battleDateToShipArrayCache = new AkakariCacheMap<>(100);
-    private static AkakariCacheMap<Date,AkakariSyutsugekiLog> startPortDateToLogCache = new AkakariCacheMap<>(100);
-    private static AkakariCacheMap<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = new AkakariCacheMap<Path, AkakariSyutsugekiLog[]>(3);
+    private static AkakariCacheMap<Date,ArrayNode> battleDateToShipArrayCache = new AkakariCacheMap<>(16);
+    private static AkakariCacheMap<Date,AkakariSyutsugekiLog> startPortDateToLogCache = new AkakariCacheMap<>(16);
+    private static AkakariCacheMap<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = new AkakariCacheMap<Path, AkakariSyutsugekiLog[]>(16);
 
     public static void loadAllStartPortDate(){
         List<Path> fileList = AkakariSyutsugekiLogRecorder.allFilePath();
