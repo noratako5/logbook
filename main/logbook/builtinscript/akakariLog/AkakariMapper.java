@@ -15,8 +15,11 @@ import com.github.luben.zstd.Zstd;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.time.ZoneId;
 import java.util.TimeZone;
+
+import static java.nio.file.StandardOpenOption.CREATE;
 
 /**
  * Created by noratako5 on 2017/09/23.
@@ -91,7 +94,7 @@ public class AkakariMapper {
             return true;
         }
         catch (Exception e){
-            LOG.get().warn("save failed",e);
+            LOG.get().warn("save",e);
             return false;
         }
     }
@@ -101,7 +104,7 @@ public class AkakariMapper {
             return jsonMapper.readValue(file,AkakariSyutsugekiLog[].class);
         }
         catch (Exception e) {
-            LOG.get().warn("load failed", e);
+            LOG.get().warn("load", e);
             return null;
         }
     }
@@ -123,13 +126,11 @@ public class AkakariMapper {
             if(compressed == null){
                 return false;
             }
-            FileOutputStream stream = new FileOutputStream(file);
-            stream.write(compressed);
-            stream.close();
+            Files.write(file.toPath(),compressed, CREATE);
             return true;
         }
         catch (Exception e){
-            LOG.get().warn("save failed",e);
+            LOG.get().warn("save",e);
             return false;
         }
     }

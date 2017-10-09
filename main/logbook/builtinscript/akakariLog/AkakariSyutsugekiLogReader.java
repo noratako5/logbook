@@ -42,7 +42,9 @@ public class AkakariSyutsugekiLogReader {
         }
     }
     public static void updateLogFile(Path path,AkakariSyutsugekiLog[] logArray){
-        zstdFilePathToLogArrayCache.put(path,logArray);
+        zstdFilePathToLogArrayCache.clear();
+        startPortDateToLogCache.clear();
+        zstdFilePathToLogArrayCache.clear();
     }
 
     @Nullable

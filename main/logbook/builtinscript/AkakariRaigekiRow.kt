@@ -1,0 +1,271 @@
+package logbook.builtinscript
+
+import com.google.gson.internal.LinkedTreeMap
+import logbook.dto.BattleAtackDto
+import logbook.dto.BattleExDto
+import logbook.scripting.BuiltinScriptFilter
+import logbook.util.GsonUtil
+import java.util.*
+
+fun AkakariRaigekiRowHeader(): ArrayList<String> {
+    val header = DamageDayNightRowHeader()
+    header.add("戦闘種別")
+    header.add("自艦隊")
+    header.add("開幕|閉幕")
+    header.add("攻撃艦")
+    header.add("種別")
+    header.add("表示装備1")
+    header.add("表示装備2")
+    header.add("表示装備3")
+    header.add("クリティカル")
+    header.add("ダメージ")
+    header.add("かばう")
+    val shipHeader = AkakariShipRowHeader()
+    val length = shipHeader.size
+    for (i in 0..length - 1) {
+        header.add(String.format("攻撃艦.%s", shipHeader[i]))
+    }
+    for (i in 0..length - 1) {
+        header.add(String.format("防御艦.%s", shipHeader[i]))
+    }
+    header.add("艦隊種類")
+    header.add("敵艦隊種類")
+    return header
+}
+
+private fun AkakariRaigekiRowBodyConstruct(
+        arg:ScriptArg,
+        attackList: List<BattleAtackDto>?,
+        apiName: String,
+        stage: String,
+        startHP: ArrayList<IntArray>,
+        body: ArrayList<ArrayList<String>>
+)
+{
+    if(attackList == null){
+        return
+    }
+    if(arg.battle.isEnemyCombined){
+        AkakariRaigekiRowBodyConstructEC(
+                arg = arg,
+                attackList = attackList,
+                apiName = apiName,
+                stage = stage,
+                startHP = startHP,
+                body = body
+        )
+        return
+    }
+    val api_raigeki = arg.dayPhaseOrNull?.tree?.get(apiName) as? LinkedTreeMap<*,*>
+    if(api_raigeki == null){return}
+
+    val prevHP = startHP
+    val isSecond = arg.battle.isCombined
+
+    val friendRows = if(isSecond) arg.combinedAkakariRows else arg.friendAkakariRows
+    val enemyRows = arg.enemyAkakariRows
+    val friendHPIndex = if(isSecond) HP_INDEX_FRIEND_COMBINED else HP_INDEX_FRIEND
+    val enemyHPIndex = HP_INDEX_ENEMY
+    val friendMaxHP = if(isSecond) arg.battle.maxFriendHpCombined else arg.battle.maxFriendHp
+    val enemyMaxHP = arg.battle.maxEnemyHp
+
+    val fleetName =
+            if (arg.battle.isCombined.not()) {"通常艦隊"}
+            else if (isSecond) {"連合第2艦隊"}
+            else {"連合第1艦隊"}
+
+    val api_frai = GsonUtil.toIntArray(api_raigeki["api_frai"])
+    val api_erai = GsonUtil.toIntArray(api_raigeki["api_erai"])
+    val api_fdam = GsonUtil.toDoubleArray(api_raigeki["api_fdam"])
+    val api_edam = GsonUtil.toDoubleArray(api_raigeki["api_edam"])
+    val api_fydam = GsonUtil.toIntArray(api_raigeki["api_fydam"])
+    val api_eydam = GsonUtil.toIntArray(api_raigeki["api_eydam"])
+    val api_fcl = GsonUtil.toIntArray(api_raigeki["api_fcl"])
+    val api_ecl = GsonUtil.toIntArray(api_raigeki["api_ecl"])
+
+    val dayPhaseRow = DamageDayRowBody(arg)
+
+    for (i in 1..6) {
+        val at = i
+        val df = api_frai[i]
+        if (df <= 0) {
+            continue
+        }
+        val cl = api_fcl[i]
+        val ydam = api_fydam[i]
+        val kabau = (api_edam[df] * 100).toInt() % 100 > 5
+        val row = ArrayList<String>(dayPhaseRow)
+        row.add("雷撃戦")
+        row.add(fleetName)
+        row.add(stage)
+        row.add("自軍")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add(cl.toString())
+        row.add(ydam.toString())
+        row.add(if (kabau) "1" else "0")
+        row.addAll(friendRows[at-1].updateAkakariShipRowBody(prevHP[friendHPIndex][at-1], friendMaxHP[at-1]))
+        row.addAll(enemyRows[df-1].updateAkakariShipRowBody(prevHP[enemyHPIndex][df-1], enemyMaxHP[df-1]))
+        row.add(arg.combinedFlagString)
+        row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
+        if (arg.filter.filterRaigekiAttackDefence(arg.battle, at, df, isSecond, true) && arg.filter.filterOutput(row)) {
+            body.add(row)
+        }
+    }
+    for (i in 1..6) {
+        val at = i
+        val df = api_erai[i]
+        if (df <= 0) {
+            continue
+        }
+        val cl = api_ecl[i]
+        val ydam = api_eydam[i]
+        val kabau = (api_fdam[df] * 100).toInt() % 100 > 5
+        val row = ArrayList<String>(dayPhaseRow)
+        row.add("雷撃戦")
+        row.add(fleetName)
+        row.add(stage)
+        row.add("敵軍")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add(cl.toString())
+        row.add(ydam.toString())
+        row.add(if (kabau) "1" else "0")
+        row.addAll(enemyRows[at-1].updateAkakariShipRowBody(prevHP[enemyHPIndex][at-1], enemyMaxHP[at-1]))
+        row.addAll(friendRows[df-1].updateAkakariShipRowBody(prevHP[friendHPIndex][df-1], friendMaxHP[df-1]))
+        row.add(arg.combinedFlagString)
+        row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
+        if (arg.filter.filterRaigekiAttackDefence(arg.battle, at, df, isSecond, false) && arg.filter.filterOutput(row)) {
+            body.add(row)
+        }
+    }
+}
+
+private fun AkakariRaigekiRowBodyConstructEC(
+        arg:ScriptArg,
+        attackList: List<BattleAtackDto>?,
+        apiName:String,
+        stage: String,
+        startHP: ArrayList<IntArray>,
+        body: ArrayList<ArrayList<String>>
+)
+{
+    if(attackList == null){ return }
+    val api_raigeki = arg.dayPhaseOrNull?.tree?.get(apiName) as? LinkedTreeMap<*,*>
+    if(api_raigeki == null){ return }
+    val prevHP = startHP
+    val api_frai = GsonUtil.toIntArray(api_raigeki["api_frai"])
+    val api_erai = GsonUtil.toIntArray(api_raigeki["api_erai"])
+    val api_fdam = GsonUtil.toDoubleArray(api_raigeki["api_fdam"])
+    val api_edam = GsonUtil.toDoubleArray(api_raigeki["api_edam"])
+    val api_fydam = GsonUtil.toIntArray(api_raigeki["api_fydam"])
+    val api_eydam = GsonUtil.toIntArray(api_raigeki["api_eydam"])
+    val api_fcl = GsonUtil.toIntArray(api_raigeki["api_fcl"])
+    val api_ecl = GsonUtil.toIntArray(api_raigeki["api_ecl"])
+    val dayPhaseRow = DamageDayRowBody(arg)
+
+    for (i in 1..12) {
+        val at = i
+        val df = api_frai[i]
+        val isSecond = at >= 7
+        val enemyIsSecond = df >= 7
+        val fleetName =
+                if (arg.battle.isCombined.not()) {"通常艦隊"}
+                else if (isSecond) {"連合第2艦隊"}
+                else {"連合第1艦隊"}
+        if (df <= 0) {
+            continue
+        }
+        val cl = api_fcl[i]
+        val ydam = api_fydam[i]
+        val kabau = (api_edam[df] * 100).toInt() % 100 > 5
+        val row = ArrayList<String>(dayPhaseRow)
+        row.add("雷撃戦")
+        row.add(fleetName)
+        row.add(stage)
+        row.add("自軍")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add(cl.toString())
+        row.add(ydam.toString())
+        row.add(if (kabau) "1" else "0")
+        if (isSecond) { row.addAll(arg.combinedAkakariRows[at-7].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][at-7], arg.battle.maxFriendHpCombined[at-7])) }
+        else { row.addAll(arg.friendAkakariRows[at-1].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND][at-1], arg.battle.maxFriendHp[at-1])) }
+        if (enemyIsSecond) { row.addAll(arg.enemyCombinedAkakariRows[df-7].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df-7],arg.battle.maxEnemyHpCombined[df-7])) }
+        else { row.addAll(arg.enemyAkakariRows[df-1].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY][df-1],arg.battle.maxEnemyHp[df-1])) }
+        row.add(arg.combinedFlagString)
+        row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
+        if (arg.filter.filterRaigekiAttackDefenceEC(arg.battle, at, df, true) && arg.filter.filterOutput(row)) {
+            body.add(row)
+        }
+    }
+    for (i in 1..12) {
+        val at = i
+        val df = api_erai[i]
+        val isSecond = df >= 7
+        val enemyIsSecond = at >= 7
+        val fleetName =
+                if (arg.battle.isCombined.not()) {"通常艦隊"}
+                else if (isSecond) {"連合第2艦隊"}
+                else {"連合第1艦隊"}
+        if (df <= 0) {
+            continue
+        }
+        val cl = api_ecl[i]
+        val ydam = api_eydam[i]
+        val kabau = (api_fdam[df] * 100).toInt() % 100 > 5
+        val row = ArrayList<String>(dayPhaseRow)
+        row.add("雷撃戦")
+        row.add(fleetName)
+        row.add(stage)
+        row.add("敵軍")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add("")
+        row.add(cl.toString())
+        row.add(ydam.toString())
+        row.add(if (kabau) "1" else "0")
+        if (enemyIsSecond) { row.addAll(arg.enemyCombinedAkakariRows[at-7].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at-7],arg.battle.maxEnemyHpCombined[at-7])) }
+        else { row.addAll(arg.enemyAkakariRows[at-1].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY][at-1],arg.battle.maxEnemyHp[at-1])) }
+        if (isSecond) { row.addAll(arg.combinedAkakariRows[df-7].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df-7], arg.battle.maxFriendHpCombined[df-7])) }
+        else { row.addAll(arg.friendAkakariRows[df-1].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND][df-1], arg.battle.maxFriendHp[df-1])) }
+        row.add(arg.combinedFlagString)
+        row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
+        if (arg.filter.filterRaigekiAttackDefenceEC(arg.battle, at, df, false) && arg.filter.filterOutput(row)) {
+            body.add(row)
+        }
+    }
+}
+
+
+fun AkakariRaigekiRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
+    val body = ArrayList<ArrayList<String>>()
+    arg.dayPhaseOrNull?.run {
+        val phase = this
+        AkakariRaigekiRowBodyConstruct(
+                arg = arg,
+                attackList = phase.opening,
+                apiName = "api_opening_atack",
+                stage = "開幕",
+                startHP = arg.battleHP.dayPhase!!.openingRaigekiStartHP,
+                body = body
+        )
+        AkakariRaigekiRowBodyConstruct(
+                arg = arg,
+                attackList = phase.raigeki,
+                apiName = "api_raigeki",
+                stage = "閉幕",
+                startHP = arg.battleHP.dayPhase!!.raigekiStartHP,
+                body = body
+        )
+    }
+    return body
+}
+

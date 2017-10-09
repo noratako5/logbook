@@ -95,10 +95,10 @@ public class AkakariSyutsugekiLogRecorder {
             }
             list.add(log);
             AkakariSyutsugekiLog[] result = list.toArray(new AkakariSyutsugekiLog[0]);
-            AkakariMapper.writeObjectToMessageZstdFile(result,file);
-
-            AkakariSyutsugekiLogReader.loadStartPortDate(log);
             AkakariSyutsugekiLogReader.updateLogFile(file.toPath(),result);
+            System.gc();
+            AkakariMapper.writeObjectToMessageZstdFile(result,file);
+            AkakariSyutsugekiLogReader.loadStartPortDate(log);
         }
         catch (Exception e){
             LOG.get().warn("保存失敗",e);
