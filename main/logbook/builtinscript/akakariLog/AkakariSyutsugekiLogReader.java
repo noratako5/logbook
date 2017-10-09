@@ -13,11 +13,11 @@ import java.util.*;
  * Created by noratako5 on 2017/10/03.
  */
 public class AkakariSyutsugekiLogReader {
-    private static List<Date> startPortDateList = new ArrayList<>();
-    private static Map<Date,Date> battleDateToStartPortDateCache = new HashMap<>();
-    private static AkakariCacheMap<Date,ArrayNode> battleDateToShipArrayCache = new AkakariCacheMap<>(16);
-    private static AkakariCacheMap<Date,AkakariSyutsugekiLog> startPortDateToLogCache = new AkakariCacheMap<>(16);
-    private static AkakariCacheMap<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = new AkakariCacheMap<Path, AkakariSyutsugekiLog[]>(4);
+    private static List<Date> startPortDateList = Collections.synchronizedList(new ArrayList<>());
+    private static Map<Date,Date> battleDateToStartPortDateCache = Collections.synchronizedMap(new HashMap<>());
+    private static Map<Date,ArrayNode> battleDateToShipArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
+    private static Map<Date,AkakariSyutsugekiLog> startPortDateToLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
+    private static Map<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
 
     public static void loadAllStartPortDate(){
         List<Path> fileList = AkakariSyutsugekiLogRecorder.allFilePath();

@@ -13,6 +13,7 @@ public class AkakariCacheMap<K,V> extends LinkedHashMap<K,V>{
         this.limit = limit;
     }
     protected boolean removeEldestEntry(Map.Entry eldest) {
-        return size() > this.limit;
+        boolean result = size() > this.limit;
+        return result;
     }
 }
