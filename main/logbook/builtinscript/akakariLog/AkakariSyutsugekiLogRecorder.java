@@ -23,8 +23,6 @@ import org.jetbrains.annotations.Nullable;
 public class AkakariSyutsugekiLogRecorder {
     private static LoggerHolder LOG = new LoggerHolder("builtinScript");
     //保存はmessagepack。
-    //キーはAPI名、時刻の2層。出撃時、帰投時の艦隊情報は特別扱い。
-    //ファイルは日付単位。マップ選択画面突入時刻を基準とする。
     //battlelog同様起動時に全て読み込み、戦闘日時と直後の艦情報のペアは持っておく。
 
     static private String syutsugekiLogPath = new File("akakariLog" + File.separator + "syutsugeki").getAbsolutePath();
@@ -99,6 +97,7 @@ public class AkakariSyutsugekiLogRecorder {
             System.gc();
             AkakariMapper.writeObjectToMessageZstdFile(result,file);
             AkakariSyutsugekiLogReader.loadStartPortDate(log);
+            //AkakariMapper.writeObjectToJsonFile(result,new File(syutsugekiLogPath+File.separator+"syutsugeki"+date+".json"));
         }
         catch (Exception e){
             LOG.get().warn("保存失敗",e);

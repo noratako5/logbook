@@ -9,8 +9,11 @@ import logbook.data.AkakariData;
 import logbook.data.Data;
 import logbook.data.DataType;
 import logbook.internal.LoggerHolder;
+import logbook.util.JacksonUtil;
 import org.jetbrains.annotations.Nullable;
 
+import javax.json.Json;
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -33,6 +36,11 @@ public class AkakariSyutsugekiLog {
     private boolean start = false;
     @JsonIgnore
     public boolean needSave = false;
+
+    @JsonIgnore
+    private AkakariSyutsugekiAirBaseData firstAirBase;
+    @JsonIgnore
+    private AkakariSyutsugekiAirBaseData lastAirBase;
 
     ///情報不足とかあったらnull返す
     @Nullable
@@ -115,5 +123,111 @@ public class AkakariSyutsugekiLog {
             }
         }
         return this.end_port.ship;
+    }
+    ///出撃してた場合出撃海域
+    @JsonIgnore
+    public int areaId(){
+        for(AkakariSyutsugekiData data : this.data){
+            if(data.api_name.equals("api_req_map/start")){
+                return JacksonUtil.toInt(data.body.get("api_maparea_id"));
+            }
+        }
+        return -1;
+    }
+    ///補給などの操作を加える前の初期基地航空
+    @JsonIgnore
+    public AkakariSyutsugekiAirBaseData firstAirBase(){
+        if(this.firstAirBase != null){
+            return this.firstAirBase;
+        }
+        for(AkakariSyutsugekiData data : this.data){
+            if(data.api_name.equals("api_get_member/mapinfo")){
+                JsonNode node = data.body.get("api_air_base");
+                if(node instanceof ArrayNode){
+                    AkakariSyutsugekiAirBaseData airBaseData = new AkakariSyutsugekiAirBaseData();
+                    airBaseData.airBase = (ArrayNode)node;
+                    airBaseData.slot_item = data.slot_item;
+                    this.firstAirBase = airBaseData;
+                    return airBaseData;
+                }
+                else{
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+    ///出撃直前の基地航空
+    @JsonIgnore
+    public AkakariSyutsugekiAirBaseData lastAirBase(){
+        if(this.lastAirBase != null){
+            return this.lastAirBase;
+        }
+        AkakariSyutsugekiAirBaseData airBase = this.firstAirBase();
+        if(airBase == null || airBase.airBase == null || airBase.slot_item == null){
+            return null;
+        }
+        for(AkakariSyutsugekiData data : this.data){
+            ObjectNode req = data.req;
+            if(req == null){
+                continue;
+            }
+            if(req.get("api_area_id")!=null && req.get("api_base_id")!=null){
+                int areaId = JacksonUtil.toInt(req.get("api_area_id"));
+                int baseId = JacksonUtil.toInt(req.get("api_base_id"));
+                if(areaId <0 || baseId < 0){
+                    continue;
+                }
+                JsonNode info = data.body.get("api_plane_info");
+                if(!(info instanceof ArrayNode)){
+                    continue;
+                }
+                ArrayNode infoArray = (ArrayNode)info;
+                ArrayNode oldInfo = null;
+                for(JsonNode jsonNode:airBase.airBase){
+                    if(!(jsonNode instanceof ObjectNode)){
+                        continue;
+                    }
+                    ObjectNode node = (ObjectNode)jsonNode;
+                    if(JacksonUtil.toInt(node.get("api_area_id")) == areaId && JacksonUtil.toInt(node.get("api_rid"))==baseId){
+                        JsonNode jsonInfo = node.get("api_plane_info");
+                        if(jsonInfo instanceof ArrayNode){
+                            oldInfo = (ArrayNode)jsonInfo;
+                        }
+                    }
+                }
+                if(oldInfo == null){
+                    return null;
+                }
+                for(JsonNode jsonNode : infoArray){
+                    if(!(jsonNode instanceof ObjectNode)){
+                        continue;
+                    }
+                    ObjectNode node = (ObjectNode)jsonNode;
+                    for(int i=0;i<oldInfo.size();i++){
+                        JsonNode oldJsonNode = oldInfo.get(i);
+                        if(!(oldJsonNode instanceof ObjectNode)){
+                            continue;
+                        }
+                        ObjectNode oldNode = (ObjectNode)oldJsonNode;
+                        if(JacksonUtil.toInt(node.get("api_squadron_id")) == JacksonUtil.toInt(oldNode.get("api_squadron_id"))){
+                            oldInfo.set(i,node);
+                            break;
+                        }
+                    }
+                }
+                if(data.slot_item != null) {
+                    for (JsonNode item : data.slot_item){
+                        //同一装備の重複が発生するが出撃マップ選択画面内での更新処理は無い(はず)なので気にしなくていい
+                        airBase.slot_item.add(item);
+                    }
+                }
+            }
+            if(data.api_name.equals("api_req_map/start")){
+                break;
+            }
+        }
+        this.lastAirBase = airBase;
+        return airBase;
     }
 }

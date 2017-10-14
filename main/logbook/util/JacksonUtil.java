@@ -18,7 +18,7 @@ public class JacksonUtil {
             return ((NumericNode)object).asInt();
         }else{
             //数値はある日突然文字列型になることがよくある
-            return Integer.parseInt(object.toString());
+            return Integer.parseInt(object.toString().replace("\"",""));
         }
     }
     public static int[] toIntArray(JsonNode object){

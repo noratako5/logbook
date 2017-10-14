@@ -17,6 +17,7 @@ public class AkakariSyutsugekiLogReader {
     private static Map<Date,Date> battleDateToStartPortDateCache = Collections.synchronizedMap(new HashMap<>());
     private static Map<Date,ArrayNode> battleDateToShipArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
     private static Map<Date,AkakariSyutsugekiLog> startPortDateToLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
+    private static Map<Date,AkakariSyutsugekiLog> startPortDateToNextLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
     private static Map<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
 
     public static void loadAllStartPortDate(){
@@ -62,6 +63,9 @@ public class AkakariSyutsugekiLogReader {
 
     @Nullable
     private  static AkakariSyutsugekiLog startPortDateToLog(Date startPortDate){
+        if(startPortDate == null){
+            return null;
+        }
         if(startPortDateToLogCache.containsKey(startPortDate)){
             return startPortDateToLogCache.get(startPortDate);
         }
@@ -79,7 +83,51 @@ public class AkakariSyutsugekiLogReader {
         return null;
     }
     @Nullable
+    private  static AkakariSyutsugekiLog startPortDateToNextLog(Date startPortDate){
+        if(startPortDate == null){
+            return null;
+        }
+        if(startPortDateToNextLogCache.containsKey(startPortDate)){
+            return startPortDateToNextLogCache.get(startPortDate);
+        }
+        {
+            Path path = AkakariSyutsugekiLogRecorder.dateToPath(startPortDate);
+            AkakariSyutsugekiLog[] logArray = zstdFilePathToLogArray(path);
+            if (logArray == null) {
+                return null;
+            }
+            for (AkakariSyutsugekiLog log : logArray) {
+                if (log.start_port.date.after(startPortDate)) {
+                    startPortDateToNextLogCache.put(startPortDate, log);
+                    return log;
+                }
+            }
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(startPortDate);
+        calendar.add(Calendar.DATE,1);
+        Date nextDate = calendar.getTime();
+        {
+            //夜中に日付またぐケース考えて次の日まで探索。それ以上は追わない
+            Path path = AkakariSyutsugekiLogRecorder.dateToPath(nextDate);
+            AkakariSyutsugekiLog[] logArray = zstdFilePathToLogArray(path);
+            if (logArray == null) {
+                return null;
+            }
+            for (AkakariSyutsugekiLog log : logArray) {
+                if (log.start_port.date.after(startPortDate)) {
+                    startPortDateToNextLogCache.put(startPortDate, log);
+                    return log;
+                }
+            }
+        }
+        return null;
+    }
+    @Nullable
     public static Date battleDateToStartPortDate(Date battleDate){
+        if(battleDate == null){
+            return null;
+        }
         if(battleDateToStartPortDateCache.containsKey(battleDate)){
             return battleDateToStartPortDateCache.get(battleDate);
         }
@@ -141,6 +189,27 @@ public class AkakariSyutsugekiLogReader {
         }
         return null;
     }
-
-
+    @Nullable
+    public static AkakariSyutsugekiAirBaseData battleDateToStartAirBaseData(Date battleDate){
+        AkakariSyutsugekiLog log = startPortDateToLog(battleDateToStartPortDate(battleDate));
+        if(log == null){
+            return null;
+        }
+        return log.lastAirBase();
+    }
+    @Nullable
+    public static AkakariSyutsugekiAirBaseData battleDateToEndAirBaseData(Date battleDate){
+        AkakariSyutsugekiLog log = startPortDateToNextLog(battleDateToStartPortDate(battleDate));
+        if(log == null){
+            return null;
+        }
+        return log.firstAirBase();
+    }
+    public static int battleDateToAreaId(Date battleDate){
+        AkakariSyutsugekiLog log = startPortDateToLog(battleDateToStartPortDate(battleDate));
+        if(log == null){
+            return -1;
+        }
+        return log.areaId();
+    }
 }
