@@ -34,9 +34,12 @@ public class AkakariMasterLogRecorder {
                 AkakariMasterLog[] array = AkakariMapper.readMasterLogFromMessageZstdFile(file);
                 if(array == null){
                     LOG.get().warn("ロード失敗");
-                    return;
+                    File file2 = new File(masterLogPath+File.separator+"master_error.dat");
+                    file.renameTo(file2);
                 }
-                list.addAll(Arrays.asList(array));
+                else {
+                    list.addAll(Arrays.asList(array));
+                }
             }
             AkakariMasterLog log = AkakariMasterLog.dataOrNull(data);
             if(log == null){

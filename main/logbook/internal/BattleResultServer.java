@@ -136,7 +136,6 @@ public class BattleResultServer {
     // member
     private final String path;
     private final LinkedBuffer buffer = LinkedBuffer.allocate(128 * 1024);
-
     // フィルタ用
     private Date firstBattleTime;
     private Date lastBattleTime;
@@ -240,8 +239,7 @@ public class BattleResultServer {
         public void addToFile(BattleExDto dto) {
             // ファイルとリストに追加
             try (FileOutputStream output = new FileOutputStream(getStoreFile(this.file), true)) {
-                ProtostuffIOUtil.writeDelimitedTo(output, dto, schema, BattleResultServer.this.buffer);
-                BattleResultServer.this.buffer.clear();
+                ProtostuffIOUtil.writeDelimitedTo(output, dto, schema, LinkedBuffer.allocate(128 * 1024));
             } catch (IOException e) {
                 LOG.get().warn("出撃ログの書き込みに失敗しました", e);
             }
@@ -288,6 +286,7 @@ public class BattleResultServer {
             while (input.available() > 0) {
                 BattleExDto battle = schema.newMessage();
                 try {
+                    buffer.clear();
                     ProtostuffIOUtil.mergeDelimitedFrom(input, battle, schema, buffer);
                     battle.readFromJson();
                     result.add(battle);
@@ -314,12 +313,22 @@ public class BattleResultServer {
         try {
             while (input.available() > 0) {
                 BattleExDto battle = schema.newMessage();
-                ProtostuffIOUtil.mergeDelimitedFrom(input, battle, schema, buffer);
                 try {
+                    buffer.clear();
+                    ProtostuffIOUtil.mergeDelimitedFrom(input, battle, schema, buffer);
+                    battle.readFromJson();
                     result.add(battle);
                 } catch (Exception e) {
                     this.failCount++;
-                    LOG.get().warn("戦闘ログの読み込みに失敗しました(" + new DateTimeString(battle.getBattleDate()) + ")", e);
+                    if (this.failCount <= 1) {
+                        Date battleDate = battle.getBattleDate();
+                        if (battleDate != null) {
+                            LOG.get().warn("戦闘ログの読み込みに失敗しました(" + new DateTimeString(battle.getBattleDate()) + ")", e);
+                        }
+                        else {
+                            LOG.get().warn("戦闘ログの読み込みに失敗しました", e);
+                        }
+                    }
                 }
             }
         } catch (EOFException e) {
@@ -389,7 +398,7 @@ public class BattleResultServer {
 
         List<CompletableFuture<List<BattleResult>>> futures = new ArrayList<>();
         ConcurrentLinkedQueue<LinkedBuffer> bufferQueue = new ConcurrentLinkedQueue<>();
-        final int parallel = 2;
+        final int parallel = 1;
         ExecutorService executer = Executors.newFixedThreadPool(parallel);
         for(int i=0;i<parallel;i++){
             bufferQueue.add(LinkedBuffer.allocate(128*1024));
@@ -569,6 +578,12 @@ public class BattleResultServer {
                 this.cachedFile = result.file;
             } catch (IOException e) {
                 return null;
+            }
+        }
+        Date date = result.getBattleDate();
+        for(BattleExDto dto : this.cachedResult) {
+            if(dto.getBattleDate().equals(date)){
+                return dto;
             }
         }
         if (this.cachedResult.size() <= result.index) {

@@ -145,7 +145,13 @@ public final class ReverseProxyServlet extends ProxyServlet {
                         // キャプチャしたバイト配列は何のデータかを決定する
                         Data data = decodedData.toDefinedData();
 
-                        AkakariData akakariData = decodedData.toAkakariData();
+                        AkakariData akakariData = null;
+                        try {
+                            akakariData = decodedData.toAkakariData();
+                        }
+                        catch (Exception e){
+
+                        }
                         if(akakariData != null) {
                             AkakariMasterLogRecorder.inputData(akakariData);
                             //赤仮で使う戦闘ログはこっちで保存

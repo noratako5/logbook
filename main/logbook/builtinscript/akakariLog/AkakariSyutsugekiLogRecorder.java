@@ -87,14 +87,16 @@ public class AkakariSyutsugekiLogRecorder {
                 AkakariSyutsugekiLog[] array = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(file);
                 if(array == null){
                     LOG.get().warn("ロード失敗");
-                    return;
+                    File file2 = new File(syutsugekiLogPath+File.separator+"syutsugeki"+date+"_error.dat");
+                    file.renameTo(file2);
                 }
-                list.addAll(Arrays.asList(array));
+                else {
+                    list.addAll(Arrays.asList(array));
+                }
             }
             list.add(log);
             AkakariSyutsugekiLog[] result = list.toArray(new AkakariSyutsugekiLog[0]);
             AkakariSyutsugekiLogReader.updateLogFile(file.toPath(),result);
-            System.gc();
             AkakariMapper.writeObjectToMessageZstdFile(result,file);
             AkakariSyutsugekiLogReader.loadStartPortDate(log);
             //AkakariMapper.writeObjectToJsonFile(result,new File(syutsugekiLogPath+File.separator+"syutsugeki"+date+".json"));
