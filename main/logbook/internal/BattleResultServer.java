@@ -135,7 +135,9 @@ public class BattleResultServer {
 
     // member
     private final String path;
-    private final LinkedBuffer buffer = LinkedBuffer.allocate(128 * 1024);
+    //並列処理した時の動作が怪しいので使わない
+    //private final LinkedBuffer buffer = LinkedBuffer.allocate(128 * 1024);
+    //private final LinkedBuffer writeBuffer = LinkedBuffer.allocate(128 * 1024);
     // フィルタ用
     private Date firstBattleTime;
     private Date lastBattleTime;
@@ -147,7 +149,7 @@ public class BattleResultServer {
     private final Map<String, DataFile> fileMap = new HashMap<>();
 
     // 重複検出用
-    private final Set<Date> resultDateSet = new HashSet<Date>();
+    private final Set<Date> resultDateSet = Collections.synchronizedSet(new HashSet<Date>());
 
     // キャッシュ
     private DataFile cachedFile;
@@ -177,7 +179,7 @@ public class BattleResultServer {
             throw new UnsupportedOperationException();
         }
         public List<BattleExDto> readAllWithoutReadFromJson() throws IOException {
-            return readAllWithoutReadFromJson(BattleResultServer.this.buffer);
+            return readAllWithoutReadFromJson(LinkedBuffer.allocate(128 * 1024));
         }
 
         public String getPath() {
@@ -193,14 +195,13 @@ public class BattleResultServer {
         }
 
         List<BattleExDto> load(InputStream input) throws IOException {
-            List<BattleExDto> result = BattleResultServer.this.loadFromInputStream(input,
-                    BattleResultServer.this.buffer);
+            List<BattleExDto> result = BattleResultServer.this.loadFromInputStream(input,LinkedBuffer.allocate(128 * 1024));
             this.numRecords = result.size();
             return result;
         }
 
         List<BattleExDto> loadWithoutReadFromJson(InputStream input) throws IOException {
-            return loadWithoutReadFromJson(input, BattleResultServer.this.buffer);
+            return loadWithoutReadFromJson(input, LinkedBuffer.allocate(128 * 1024));
         }
 
         List<BattleExDto> loadWithoutReadFromJson(InputStream input, LinkedBuffer buffer) throws IOException {
@@ -316,7 +317,6 @@ public class BattleResultServer {
                 try {
                     buffer.clear();
                     ProtostuffIOUtil.mergeDelimitedFrom(input, battle, schema, buffer);
-                    battle.readFromJson();
                     result.add(battle);
                 } catch (Exception e) {
                     this.failCount++;
@@ -398,7 +398,7 @@ public class BattleResultServer {
 
         List<CompletableFuture<List<BattleResult>>> futures = new ArrayList<>();
         ConcurrentLinkedQueue<LinkedBuffer> bufferQueue = new ConcurrentLinkedQueue<>();
-        final int parallel = 1;
+        final int parallel = 4;
         ExecutorService executer = Executors.newFixedThreadPool(parallel);
         for(int i=0;i<parallel;i++){
             bufferQueue.add(LinkedBuffer.allocate(128*1024));
@@ -411,6 +411,7 @@ public class BattleResultServer {
                         buffer = LinkedBuffer.allocate(128*1024);
                     }
                     List<BattleResult> list = loadBattleResults(file, this.isLoadCombatLog, this.resultDateSet, buffer);
+                    buffer.clear();
                     bufferQueue.add(buffer);
                     return list;
                 },

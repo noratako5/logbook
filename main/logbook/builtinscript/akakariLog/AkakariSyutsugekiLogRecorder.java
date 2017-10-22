@@ -105,7 +105,22 @@ public class AkakariSyutsugekiLogRecorder {
             LOG.get().warn("保存失敗",e);
         }
     }
-
+    public static void createJson(File file){
+        try {
+            ArrayList<AkakariSyutsugekiLog> list = new ArrayList<>();
+            if(file.exists() && file.length() > 0){
+                AkakariSyutsugekiLog[] array = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(file);
+                if(array != null){
+                    list.addAll(Arrays.asList(array));
+                }
+            }
+            AkakariSyutsugekiLog[] result = list.toArray(new AkakariSyutsugekiLog[0]);
+            AkakariMapper.writeObjectToJsonFile(result,new File(file.getAbsolutePath()+".json"));
+        }
+        catch (Exception e){
+            LOG.get().warn("保存失敗",e);
+        }
+    }
     @NotNull
     public static Path dateToPath(Date startPortDate){
         FastDateFormat format =  FastDateFormat.getInstance("yyyy-MM-dd", TimeZone.getTimeZone("JST"));

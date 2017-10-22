@@ -33,6 +33,7 @@ public class AkakariSyutsugekiLogReader {
             for(AkakariSyutsugekiLog log : logArray){
                 loadStartPortDate(log);
             }
+            //AkakariSyutsugekiLogRecorder.createJson(path.toFile());
         }
         Collections.sort(startPortDateList);
     }
