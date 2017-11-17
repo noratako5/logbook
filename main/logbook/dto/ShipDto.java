@@ -156,6 +156,40 @@ public final class ShipDto extends ShipBaseDto implements Comparable<ShipDto> {
 
         this.json = object.toString();
     }
+    public ShipDto(ShipInfoDto shipinfo, JsonObject object, Map<String,ItemDto> slotItemMap){
+        super(shipinfo,object,slotItemMap);
+        this.id = object.getJsonNumber("api_id").intValue();
+        this.locked = object.getJsonNumber("api_locked").intValue() == 1;
+
+        this.sortno = object.getInt("api_sortno");
+
+        this.lv = object.getJsonNumber("api_lv").intValue();
+        this.cond = object.getJsonNumber("api_cond").intValue();
+
+        this.docktime = object.getJsonNumber("api_ndock_time").longValue();
+        this.dockfuel = object.getJsonArray("api_ndock_item").getJsonNumber(0).intValue();
+        this.dockmetal = object.getJsonArray("api_ndock_item").getJsonNumber(1).intValue();
+
+        this.bull = object.getJsonNumber("api_bull").intValue();
+        this.fuel = object.getJsonNumber("api_fuel").intValue();
+
+        this.exp = object.getJsonArray("api_exp").getInt(0);
+        this.nextexp = object.getJsonArray("api_exp").getInt(1);
+        this.expraito = object.getJsonArray("api_exp").getInt(2) / 100f;
+        this.nowhp = this.getParam().getHP();
+        this.maxhp = this.getMax().getHP();
+        this.slotnum = object.getJsonNumber("api_slotnum").intValue();
+        this.onslot = JsonUtils.getIntArray(object, "api_onslot");
+
+        int _slotEx = -1;
+        if (object.containsKey("api_slot_ex")) {
+            _slotEx = object.getInt("api_slot_ex");
+        }
+        this.slotEx = _slotEx;
+        this.slotExItem = GlobalContext.getItem(this.getSlotEx());
+
+        this.json = object.toString();
+    }
 
     /** 新規入手艦 */
     public ShipDto(int id, ShipInfoDto shipinfo, int[] slot) {

@@ -190,8 +190,9 @@ public class AkakariSyutsugekiData {
             return null;
         }
         akaData.api_name = data.apiName;
-
-        akaData.body = AkakariMapper.jsonToJsonNode(data.getJsonObject().get("api_data").toString());
+        if(data.getJsonObject()!=null && data.getJsonObject().get("api_data")!=null) {
+            akaData.body = AkakariMapper.jsonToJsonNode(data.getJsonObject().get("api_data").toString());
+        }
 
         ObjectNode req = AkakariMapper.emptyObjectNode();
         List<String> keyList = Arrays.asList("api_formation", "api_recovery_type", "api_supply_flag", "api_ration_flag", "api_area_id", "api_base_id", "api_squadron_id", "api_item_id", "api_deck_id", "api_maparea_id", "api_mapinfo_no", "api_cell_id");

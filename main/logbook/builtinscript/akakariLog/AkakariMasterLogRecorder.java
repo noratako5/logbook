@@ -6,6 +6,7 @@ import logbook.data.DataType;
 import logbook.internal.LoggerHolder;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -56,9 +57,13 @@ public class AkakariMasterLogRecorder {
             list.add(log);
             AkakariMasterLog[] result = list.toArray(new AkakariMasterLog[0]);
             AkakariMapper.writeObjectToMessageZstdFile(result,file);
+            AkakariMasterLogReader.updateMasterDateList(result);
         }
         catch (Exception e){
             LOG.get().warn(data.apiName,e);
         }
+    }
+    public static Path getPath(){
+        return new File(masterLogPath+File.separator+"master.dat").toPath();
     }
 }

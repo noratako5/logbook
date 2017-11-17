@@ -108,7 +108,7 @@ public class AirBattleDto {
                 isBase);
     }
 
-    public AirBattleDto(LinkedTreeMap kouku, boolean isCombined, boolean isBase) {
+    public AirBattleDto(LinkedTreeMap kouku, boolean isCombined, boolean isBase,boolean splitHp) {
         LinkedTreeMap jsonStage1 = (LinkedTreeMap)kouku.get("api_stage1");
         if (jsonStage1 != null) {
             this.stage1 = readPlaneCount(jsonStage1);
@@ -134,7 +134,8 @@ public class AirBattleDto {
                 GsonUtil.toIntArrayArray(kouku.get("api_plane_from")),
                 (LinkedTreeMap)kouku.get("api_stage3"),
                 isCombined ? (LinkedTreeMap)kouku.get("api_stage3_combined") : null,
-                isBase);
+                isBase,
+                splitHp);
     }
 
     private static String toSeiku(int id) {

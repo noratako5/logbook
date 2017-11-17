@@ -345,28 +345,30 @@ public class BattleExDto extends AbstractDto {
             int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
             this.flarePos = jsonFlarePos;
 
+            boolean splitHp = tree.containsKey("api_f_nowhps");
+
             // 攻撃シーケンスを読み取る //
             LinkedTreeMap air_base_injection = (LinkedTreeMap)tree.get("api_air_base_injection");
             if(air_base_injection != null){
-                this.airBaseInjection = new AirBattleDto(air_base_injection, isFriendCombined || isEnemyCombined, true);
+                this.airBaseInjection = new AirBattleDto(air_base_injection, isFriendCombined || isEnemyCombined, true,splitHp);
             }
             LinkedTreeMap air_injection_kouku = (LinkedTreeMap)tree.get("api_injection_kouku");
             if(air_injection_kouku != null){
-                this.airInjection = new AirBattleDto(air_injection_kouku, isFriendCombined || isEnemyCombined, false);
+                this.airInjection = new AirBattleDto(air_injection_kouku, isFriendCombined || isEnemyCombined, false,splitHp);
             }
             // 基地航空隊
             Object air_base_attack = tree.get("api_air_base_attack");
             if (air_base_attack instanceof List) {
                 this.airBase = new ArrayList<>();
                 for (Object item : (List)air_base_attack) {
-                    this.airBase.add(new AirBattleDto((LinkedTreeMap)item, isFriendCombined || isEnemyCombined, true));
+                    this.airBase.add(new AirBattleDto((LinkedTreeMap)item, isFriendCombined || isEnemyCombined, true,splitHp));
                 }
             }
 
             // 航空戦（通常）
             LinkedTreeMap kouku = (LinkedTreeMap)tree.get("api_kouku");
             if (kouku != null) {
-                this.air = new AirBattleDto(kouku, isFriendCombined || isEnemyCombined, false);
+                this.air = new AirBattleDto(kouku, isFriendCombined || isEnemyCombined, false,splitHp);
                 // 昼戦の触接はここ
                 this.touchPlane = this.air.touchPlane;
                 // 制空はここから取る
@@ -383,13 +385,13 @@ public class BattleExDto extends AbstractDto {
                     int[] edam = GsonUtil.toIntArray(support_hourai.get("api_damage"));
                     int[] ecl = GsonUtil.toIntArray(support_hourai.get("api_cl_list"));
                     if (edam != null) {
-                        this.support = BattleAtackDto.makeSupport(edam,ecl);
+                        this.support = BattleAtackDto.makeSupport(edam,ecl,splitHp);
                     }
                 }
                 else if (support_air != null) {
                     LinkedTreeMap stage3 = (LinkedTreeMap)support_air.get("api_stage3");
                     if (stage3 != null) {
-                        this.support = BattleAtackDto.makeSupportAir(GsonUtil.toIntArray(stage3.get("api_edam")),GsonUtil.toIntArray(stage3.get("api_ecl_flag")));
+                        this.support = BattleAtackDto.makeSupportAir(GsonUtil.toIntArray(stage3.get("api_edam")),GsonUtil.toIntArray(stage3.get("api_ecl_flag")),splitHp);
                     }
                 }
                 this.supportType = toSupport(support_flag);
@@ -401,28 +403,28 @@ public class BattleExDto extends AbstractDto {
             //航空戦
             LinkedTreeMap kouku2 = (LinkedTreeMap)tree.get("api_kouku2");
             if (kouku2 != null){
-                this.air2 = new AirBattleDto(kouku2, isFriendCombined || isEnemyCombined, false);
+                this.air2 = new AirBattleDto(kouku2, isFriendCombined || isEnemyCombined, false,splitHp);
             }
 
             // 開幕対潜
             this.openingTaisen = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_opening_taisen"), kind.isOpeningSecond(),
-                    this.isEnemySecond);
+                    this.isEnemySecond,splitHp);
 
             // 開幕
-            this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_opening_atack"), kind.isOpeningSecond());
+            this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_opening_atack"), kind.isOpeningSecond(),splitHp);
 
             // 砲撃
             this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), isCombined(),
-                    this.isEnemySecond); // 夜戦
+                    this.isEnemySecond,splitHp); // 夜戦
             this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki1"), kind.isHougeki1Second(),
-                    this.isEnemySecond);
+                    this.isEnemySecond,splitHp);
             this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki2"), kind.isHougeki2Second(),
-                    this.isEnemySecond);
+                    this.isEnemySecond,splitHp);
             this.hougeki3 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki3"), kind.isHougeki3Second(),
-                    this.isEnemySecond);
+                    this.isEnemySecond,splitHp);
 
             // 雷撃
-            this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_raigeki"), kind.isRaigekiSecond());
+            this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_raigeki"), kind.isRaigekiSecond(),splitHp);
 
             // ダメージを反映 //
             if (this.airBaseInjection != null){
@@ -1134,8 +1136,31 @@ public class BattleExDto extends AbstractDto {
                 dockId = GsonUtil.toIntString(tree.get("api_deck_id"));
             }
 
-            int[] nowhps = GsonUtil.toIntArray(tree.get("api_nowhps"));
-            int[] maxhps = GsonUtil.toIntArray(tree.get("api_maxhps"));
+            int[] nowhps = null;
+            if(tree.containsKey("api_nowhps")){
+                nowhps = GsonUtil.toIntArray(tree.get("api_nowhps"));
+            }
+            int[] fNowHps = null;
+            if(tree.containsKey("api_f_nowhps")){
+                fNowHps = GsonUtil.toIntArray(tree.get("api_f_nowhps"));
+            }
+            int[] eNowHps = null;
+            if(tree.containsKey("api_e_nowhps")){
+                eNowHps = GsonUtil.toIntArray(tree.get("api_e_nowhps"));
+            }
+            int[] maxhps = null;
+            if(tree.containsKey("api_maxhps")) {
+                maxhps = GsonUtil.toIntArray(tree.get("api_maxhps"));
+            }
+            int[] fMaxHps = null;
+            if(tree.containsKey("api_f_maxhps")){
+                fMaxHps = GsonUtil.toIntArray(tree.get("api_f_maxhps"));
+            }
+            int[] eMaxHps = null;
+            if(tree.containsKey("api_e_maxhps")){
+                eMaxHps = GsonUtil.toIntArray(tree.get("api_e_maxhps"));
+            }
+
             int[] nowhpsCombined = GsonUtil.toIntArray(tree.get("api_nowhps_combined"));
             int[] maxhpsCombined = GsonUtil.toIntArray(tree.get("api_maxhps_combined"));
             boolean isFriendCombined = tree.containsKey("api_fParam_combined");
@@ -1143,13 +1168,18 @@ public class BattleExDto extends AbstractDto {
 
             int numFships = 6;
             int numFshipsCombined = 0;
-
-            for (int i = 1; i <= 6; ++i) {
-                if (maxhps[i] == -1) {
-                    numFships = i-1;
-                    break;
+            if(nowhps != null) {
+                for (int i = 1; i <= 6; ++i) {
+                    if (maxhps[i] == -1) {
+                        numFships = i - 1;
+                        break;
+                    }
                 }
             }
+            else{
+                numFships = fNowHps.length;
+            }
+
             if (tree.containsKey("api_fParam_combined")) {
                 numFshipsCombined = 6;
                 for (int i = 1; i <= 6; ++i) {
@@ -1172,15 +1202,30 @@ public class BattleExDto extends AbstractDto {
             int[][] eParams = GsonUtil.toIntArrayArray(tree.get("api_eParam"));
             int[] eLevel = GsonUtil.toIntArray(tree.get("api_ship_lv"));
             boolean isOldEnemyId = this.getBattleDate().before(getEnemyIDUpdatedDate());
-            for (int i = 1; i < shipKe.length; i++) {
-                int id = shipKe[i];
-                if (id != -1) {
-                    int[] slot = eSlots[i - 1];
-                    int[] param = eParams[i - 1];
-                    if(isOldEnemyId && id > 500){
-                        id += 1000;
+            if(shipKe[0] == -1) {
+                for (int i = 1; i < shipKe.length; i++) {
+                    int id = shipKe[i];
+                    if (id != -1) {
+                        int[] slot = eSlots[i - 1];
+                        int[] param = eParams[i - 1];
+                        if (isOldEnemyId && id > 500) {
+                            id += 1000;
+                        }
+                        this.enemy.add(new EnemyShipDto(id, slot, param, eLevel[i]));
                     }
-                    this.enemy.add(new EnemyShipDto(id, slot, param, eLevel[i]));
+                }
+            }
+            else{
+                for (int i = 0; i < shipKe.length; i++) {
+                    int id = shipKe[i];
+                    if (id != -1) {
+                        int[] slot = eSlots[i ];
+                        int[] param = eParams[i ];
+                        if (isOldEnemyId && id > 500) {
+                            id += 1000;
+                        }
+                        this.enemy.add(new EnemyShipDto(id, slot, param, eLevel[i]));
+                    }
                 }
             }
             if (isEnemyCombined) {
@@ -1241,21 +1286,35 @@ public class BattleExDto extends AbstractDto {
             }
 
             // この戦闘の開始前HPを取得
-            for (int i = 1; i < nowhps.length; i++) {
-                int hp = nowhps[i];
-                int maxHp = maxhps[i];
-                if (i <= 6) {
-                    if (i <= numFships) {
-                        this.maxFriendHp[i - 1] = maxHp;
-                        this.friendGaugeMax += this.startFriendHp[i - 1] = hp;
-                    }
-                } else {
-                    if ((i - 6) <= numEships) {
-                        this.maxEnemyHp[i - 1 - 6] = maxHp;
-                        this.enemyGaugeMax += this.startEnemyHp[i - 1 - 6] = hp;
+            if(nowhps != null) {
+                for (int i = 1; i < nowhps.length; i++) {
+                    int hp = nowhps[i];
+                    int maxHp = maxhps[i];
+                    if (i <= 6) {
+                        if (i <= numFships) {
+                            this.maxFriendHp[i - 1] = maxHp;
+                            this.friendGaugeMax += this.startFriendHp[i - 1] = hp;
+                        }
+                    } else {
+                        if ((i - 6) <= numEships) {
+                            this.maxEnemyHp[i - 1 - 6] = maxHp;
+                            this.enemyGaugeMax += this.startEnemyHp[i - 1 - 6] = hp;
+                        }
                     }
                 }
             }
+            else{
+                for(int i=0;i<fNowHps.length;i++){
+                    this.maxFriendHp[i] = fMaxHps[i];
+                    this.friendGaugeMax += this.startFriendHp[i] = fNowHps[i];
+                }
+                for(int i=0;i<eNowHps.length;i++){
+                    this.maxEnemyHp[i] = eMaxHps[i];
+                    this.enemyGaugeMax += this.startEnemyHp[i] = eNowHps[i];
+                }
+            }
+
+
             if (isFriendCombined || isEnemyCombined) {
                 for (int i = 1; i < nowhpsCombined.length; i++) {
                     int hp = nowhpsCombined[i];
@@ -1456,6 +1515,9 @@ public class BattleExDto extends AbstractDto {
             break;
         case 5:
             formation = "単横陣";
+            break;
+        case 6:
+            formation = "警戒陣";
             break;
         case 11:
             formation = "第一警戒航行序列";

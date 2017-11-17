@@ -5,11 +5,13 @@ package logbook.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.json.JsonObject;
 
 import com.dyuproject.protostuff.Tag;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import logbook.constants.AppConstants;
 import logbook.data.context.GlobalContext;
 import logbook.internal.Item;
@@ -66,6 +68,14 @@ public abstract class ShipBaseDto extends AbstractDto {
         this.max = params[1];
         this.slotParam = params[2];
     }
+    public ShipBaseDto(ShipInfoDto shipinfo, JsonObject object, Map<String,ItemDto> slotItemMap){
+        this.shipInfo = shipinfo;
+        this.setSlotFromJson(object);
+        ShipParameters[] params = ShipParameters.fromShip(object, this.getItem(), shipinfo);
+        this.param = params[0];
+        this.max = params[1];
+        this.slotParam = params[2];
+    }
 
     /**
      * 敵艦用コンストラクター
@@ -105,6 +115,13 @@ public abstract class ShipBaseDto extends AbstractDto {
         }
         return items;
     }
+    private static List<ItemDto> createItemDtoList(int[] slot,Map<String,ItemDto> slotItemMap) {
+        List<ItemDto> items = new ArrayList<>();
+        for (int itemid : slot) {
+            items.add(slotItemMap.get(String.valueOf(itemid)));
+        }
+        return items;
+    }
 
     /**
      * List<ItemInfoDto> から List<ItemDto> を作成
@@ -131,6 +148,16 @@ public abstract class ShipBaseDto extends AbstractDto {
     public void setSlotFromJson(JsonObject object) {
         this.slot = JsonUtils.getIntArray(object, "api_slot");
         this.slotItem2 = createItemDtoList(this.slot);
+        this.slotItem = new ArrayList<ItemInfoDto>();
+        for (ItemDto dto : this.slotItem2) {
+            if (dto != null) {
+                this.slotItem.add(dto.getInfo());
+            }
+        }
+    }
+    public void setSlotFromJson(JsonObject object,Map<String,ItemDto> slotItemMap) {
+        this.slot = JsonUtils.getIntArray(object, "api_slot");
+        this.slotItem2 = createItemDtoList(this.slot,slotItemMap);
         this.slotItem = new ArrayList<ItemInfoDto>();
         for (ItemDto dto : this.slotItem2) {
             if (dto != null) {
