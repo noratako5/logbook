@@ -62,7 +62,7 @@ public class FleetComposite extends Composite {
     /** 致命的 */
     public static final int FATAL = 2;
     /** 1艦隊に編成できる艦娘の数 */
-    private static final int MAXCHARA = 6;
+    private static final int MAXCHARA = 7;
     /** フォント大きい */
     private final static int LARGE = 2;
     /** フォント小さい */
@@ -297,6 +297,8 @@ public class FleetComposite extends Composite {
         }
         // 艦隊合計Lv
         int totallv = 0;
+        // 艦隊合計対潜値(装備込)
+        int totaltaisen = 0;
 
         int dockIndex = Integer.parseInt(dock.getId()) - 1;
         CondTiming condTiming = GlobalContext.getCondTiming();
@@ -340,6 +342,8 @@ public class FleetComposite extends Composite {
             float fuelraito = fuelmax != 0 ? (float) fuel / (float) fuelmax : 1f;
             // 艦隊合計Lv
             totallv += ship.getLv();
+            // 艦隊合計対潜値(装備込)
+            totaltaisen += ship.getTaisen();
             // 損失艦載機
             int[] maxeq = ship.getMaxeq();
             int[] onslot = ship.getOnSlot();
@@ -728,6 +732,9 @@ public class FleetComposite extends Composite {
         SakutekiString sakutekiString = new SakutekiString(ships, GlobalContext.hqLevel());
         this.addStyledText(this.message,
                 MessageFormat.format(AppConstants.MESSAGE_SAKUTEKI, sakutekiString.toString()), null);
+        this.addStyledText(this.message, "\n", null);
+        // 合計対潜値(装備込)
+        this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_TAISEN, totaltaisen), null);
         this.addStyledText(this.message, "\n", null);
         // 合計Lv
         this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_TOTAL_LV, totallv), null);

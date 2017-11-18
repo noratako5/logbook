@@ -1188,6 +1188,15 @@ public class BattleExDto extends AbstractDto {
                         break;
                     }
                 }
+                if (isFriendCombined) {
+                    numFshipsCombined = 6;
+                    for (int i = this.baseidx; i <= 6; ++i) {
+                        if (maxhpsCombined.getInt(i) == -1) {
+                            numFshipsCombined = i - baseidx;
+                            break;
+                        }
+                    }
+                }
             }
 
             if (this.friends.size() == 0) { // 再読み込みの場合はスキップ
@@ -1320,9 +1329,9 @@ public class BattleExDto extends AbstractDto {
                     int hp = nowhpsCombined[i];
                     int maxHp = maxhpsCombined[i];
                     if (i <= 6) {
-                        if (i <= numFshipsCombined) {
-                            this.maxFriendHpCombined[i - 1] = maxHp;
-                            this.friendGaugeMax += this.startFriendHpCombined[i - 1] = hp;
+                        if (i <= numFships) {
+                            this.maxFriendHp[i - baseidx] = maxHp;
+                            this.friendGaugeMax += this.startFriendHp[i - baseidx] = hp;
                         }
                     } else {
                         if ((i - 6) <= numEshipsCombined) {
@@ -1418,15 +1427,15 @@ public class BattleExDto extends AbstractDto {
         if (JsonUtils.hasKey(object, "api_escape")) {
             JsonObject jsonEscape = object.getJsonObject("api_escape");
             this.escapeInfo = new int[] {
-                    jsonEscape.getJsonArray("api_escape_idx").getInt(0) - 1,
-                    jsonEscape.getJsonArray("api_tow_idx").getInt(0) - 1
+                    jsonEscape.getJsonArray("api_escape_idx").getInt(0) - this.baseidx,
+                    jsonEscape.getJsonArray("api_tow_idx").getInt(0) - this.baseidx
             };
         }
         if (JsonUtils.hasKey(object, "api_lost_flag")) {
             this.lostflag = new boolean[6];
             JsonArray jsonLostflag = object.getJsonArray("api_lost_flag");
-            for (int i = 1; i < jsonLostflag.size(); i++) {
-                this.lostflag[i - 1] = (jsonLostflag.getInt(i) != 0);
+            for (int i = this.baseidx; i < jsonLostflag.size(); i++) {
+                this.lostflag[i - this.baseidx] = (jsonLostflag.getInt(i) != 0);
             }
         }
     }
@@ -1532,7 +1541,7 @@ public class BattleExDto extends AbstractDto {
             formation = "第四警戒航行序列";
             break;
         default:
-            formation = "単縦陣";
+            formation = "不明(" + f + ")";
             break;
         }
         return formation;
