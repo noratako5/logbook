@@ -1171,19 +1171,19 @@ public class BattleExDto extends AbstractDto {
             }
             int[] fNowHpsCombined = null;
             if(tree.containsKey("api_f_nowhps_combined")){
-                fNowHps = GsonUtil.toIntArray(tree.get("api_f_nowhps_combined"));
+                fNowHpsCombined = GsonUtil.toIntArray(tree.get("api_f_nowhps_combined"));
             }
             int[] fMaxHpsCombined = null;
             if(tree.containsKey("api_f_maxhps_combined")){
-                fMaxHps = GsonUtil.toIntArray(tree.get("api_f_maxhps_combined"));
+                fMaxHpsCombined = GsonUtil.toIntArray(tree.get("api_f_maxhps_combined"));
             }
             int[] eNowHpsCombined = null;
             if(tree.containsKey("api_e_nowhps_combined")){
-                eNowHps = GsonUtil.toIntArray(tree.get("api_e_nowhps_combined"));
+                eNowHpsCombined = GsonUtil.toIntArray(tree.get("api_e_nowhps_combined"));
             }
             int[] eMaxHpsCombined = null;
             if(tree.containsKey("api_e_maxhps_combined")){
-                eMaxHps = GsonUtil.toIntArray(tree.get("api_e_maxhps_combined"));
+                eMaxHpsCombined = GsonUtil.toIntArray(tree.get("api_e_maxhps_combined"));
             }
 
             int[] nowhpsCombined = GsonUtil.toIntArray(tree.get("api_nowhps_combined"));
@@ -1380,13 +1380,17 @@ public class BattleExDto extends AbstractDto {
                     }
                 }
                 else{
-                    for(int i=0;i<fNowHpsCombined.length;i++){
-                        this.maxFriendHpCombined[i] = fMaxHpsCombined[i];
-                        this.friendGaugeMax += this.startFriendHpCombined[i] = fNowHpsCombined[i];
+                    if(fNowHpsCombined != null) {
+                        for (int i = 0; i < fNowHpsCombined.length; i++) {
+                            this.maxFriendHpCombined[i] = fMaxHpsCombined[i];
+                            this.friendGaugeMax += this.startFriendHpCombined[i] = fNowHpsCombined[i];
+                        }
                     }
-                    for(int i=0;i<eNowHpsCombined.length;i++){
-                        this.maxEnemyHpCombined[i] = eMaxHpsCombined[i];
-                        this.enemyGaugeMax += this.startEnemyHpCombined[i] = eNowHpsCombined[i];
+                    if(eNowHpsCombined != null) {
+                        for (int i = 0; i < eNowHpsCombined.length; i++) {
+                            this.maxEnemyHpCombined[i] = eMaxHpsCombined[i];
+                            this.enemyGaugeMax += this.startEnemyHpCombined[i] = eNowHpsCombined[i];
+                        }
                     }
                 }
             }

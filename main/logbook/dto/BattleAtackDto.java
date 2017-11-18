@@ -209,16 +209,19 @@ public class BattleAtackDto {
     }
 
     private static BattleAtackDto makeRaigeki(boolean friendAtack,int[] rai_list, int[] dam_list, int[] cl_list, int[] ydam_list,boolean splitHp) {
-        int elems = rai_list.length - (splitHp?0:1); // 6 or 12??
-        int[] originMap = new int[elems];
-        int[] targetMap = new int[elems];
-        boolean[] targetEnabled = new boolean[elems];
+        int elemsOrigin = rai_list.length - (splitHp?0:1); // 6 or 12??
+        int elemsTarget = dam_list.length - (splitHp?0:1);
+
+        int[] originMap = new int[elemsOrigin];
+        int[] targetMap = new int[elemsTarget];
+        boolean[] targetEnabled = new boolean[elemsTarget];
+
         BattleAtackDto dto = new BattleAtackDto();
         dto.kind = AtackKind.RAIGEKI;
         dto.friendAtack = friendAtack;
 
         int idx = 0;
-        for (int i = 0; i < elems; ++i) {
+        for (int i = 0; i < elemsOrigin; ++i) {
             int rai = rai_list[i + (splitHp?0:1)];
             if (rai >= (splitHp?0:1)) {
                 originMap[i] = idx++;
@@ -231,7 +234,7 @@ public class BattleAtackDto {
         dto.ot = new int[idx];
 
         idx = 0;
-        for (int i = 0; i < elems; ++i) {
+        for (int i = 0; i < elemsTarget; ++i) {
             if (targetEnabled[i]) {
                 targetMap[i] = idx++;
             }
@@ -239,9 +242,8 @@ public class BattleAtackDto {
         dto.target = new int[idx];
         dto.damage = new int[idx];
 
-        for (int i = 0; i < elems; ++i) {
+        for (int i = 0; i < elemsOrigin; ++i) {
             int rai = rai_list[i + (splitHp?0:1)];
-            int dam = dam_list[i + (splitHp?0:1)];
             int cl = cl_list[i + (splitHp?0:1)];
             int ydam = ydam_list[i + (splitHp?0:1)];
             if (rai >= (splitHp?0:1)) {
@@ -250,6 +252,9 @@ public class BattleAtackDto {
                 dto.critical[originMap[i]] = cl;
                 dto.ot[originMap[i]] = targetMap[rai - (splitHp?0:1)];
             }
+        }
+        for(int i=0; i < elemsTarget; i++){
+            int dam = dam_list[i + (splitHp?0:1)];
             if (targetEnabled[i]) {
                 dto.target[targetMap[i]] = i;
                 dto.damage[targetMap[i]] = dam;
@@ -257,7 +262,7 @@ public class BattleAtackDto {
         }
         // 連合艦隊を考慮した配列構成になっているか
         // （6-5敵連合艦隊実装まで連合艦隊の雷撃は随伴艦隊だけが受けることになっていたのでelems==6だったが6-5敵連合艦隊では敵の全艦が攻撃を受ける対象となったのでelems==12になった）
-        dto.combineEnabled = (elems >= 12);
+        dto.combineEnabled = (elemsOrigin >= 12) || (elemsTarget >= 12);
         return dto;
     }
 
