@@ -220,7 +220,7 @@ public class BattleAtackDto {
         int idx = 0;
         for (int i = 0; i < elems; ++i) {
             int rai = rai_list[i + (splitHp?0:1)];
-            if (rai >= 0) {
+            if (rai >= (splitHp?0:1)) {
                 originMap[i] = idx++;
                 targetEnabled[rai - (splitHp?0:1)] = true;
             }
@@ -244,7 +244,7 @@ public class BattleAtackDto {
             int dam = dam_list[i + (splitHp?0:1)];
             int cl = cl_list[i + (splitHp?0:1)];
             int ydam = ydam_list[i + (splitHp?0:1)];
-            if (rai >= 0) {
+            if (rai >= (splitHp?0:1)) {
                 dto.origin[originMap[i]] = i;
                 dto.ydam[originMap[i]] = ydam;
                 dto.critical[originMap[i]] = cl;
@@ -333,6 +333,9 @@ public class BattleAtackDto {
         dto.friendAtack = friendAtack;
 
         int idx = 0;
+        if(plane_from == null){
+            plane_from = new int[]{};
+        }
         for (int i = 0; i < plane_from.length; ++i) {
             if (plane_from[i] != -1){ ++idx; }
         }
@@ -340,15 +343,18 @@ public class BattleAtackDto {
         idx = 0;
         for (int i = 0; i < plane_from.length; ++i) {
             if (plane_from[i] != -1)
-                dto.origin[idx++] = (plane_from[i] - 1) % 6;
+                dto.origin[idx++] = (plane_from[i] - 1);
         }
         idx = 0;
-        for (int i = 0; i < 6; ++i) {
+        if(dam_list == null){
+            dam_list = new int[]{};
+        }
+        for (int i = 0; i < (splitHp?dam_list.length:6); ++i) {
             int dam = dam_list[i + (splitHp?0:1)];
             if (dam > 0) { idx++; }
         }
         if (cdam_list != null) {
-            for (int i = 0; i < 6; ++i) {
+            for (int i = 0; i < (splitHp?cdam_list.length:6); ++i) {
                 int dam = cdam_list[i + (splitHp?0:1)];
                 if (dam > 0) { idx++; }
             }
@@ -357,7 +363,7 @@ public class BattleAtackDto {
         dto.damage = new int[idx];
         dto.critical = new int[idx];
         idx = 0;
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < (splitHp?dam_list.length:6); ++i) {
             int dam = dam_list[i + (splitHp?0:1)];
             int cl = cl_list[i + (splitHp?0:1)];
             if (dam > 0) {
@@ -369,7 +375,7 @@ public class BattleAtackDto {
             }
         }
         if (cdam_list != null) {
-            for (int i = 0; i < 6; ++i) {
+            for (int i = 0; i < (splitHp?cdam_list.length:6); ++i) {
                 int dam = cdam_list[i + (splitHp?0:1)];
                 int cl = ccl_list[i + (splitHp?0:1)];
                 if (dam > 0) {
@@ -400,7 +406,6 @@ public class BattleAtackDto {
      * 航空戦を読み込む
      * @param plane_from
      * @param raigeki
-     * @param combined
      * @return
      */
     public static List<BattleAtackDto> makeAir(JsonValue plane_from, JsonValue raigeki, JsonValue combined_,
@@ -545,7 +550,6 @@ public class BattleAtackDto {
     /**
      * 雷撃戦を読み込む
      * @param raigeki
-     * @param second
      * @return
      */
     public static List<BattleAtackDto> makeRaigeki(LinkedTreeMap raigeki, boolean isFriendSecond,boolean splitHp) {
