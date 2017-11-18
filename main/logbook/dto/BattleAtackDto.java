@@ -262,8 +262,8 @@ public class BattleAtackDto {
     }
 
 
-    private static BattleAtackDto makeAir(boolean friendAtack,
-            JsonArray plane_from, JsonArray dam_list, JsonArray cdam_list, JsonArray cl_list, JsonArray ccl_list,
+    private static BattleAtackDto makeAir(int baseidx,boolean friendAtack,
+            JsonValue plane_from_obj, JsonArray dam_list, JsonArray cdam_list, JsonArray cl_list, JsonArray ccl_list,
             boolean isBase) {
 
         JsonArray plane_from = ((plane_from_obj != null) && (plane_from_obj != JsonValue.NULL))

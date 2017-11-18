@@ -377,8 +377,17 @@ public class BattleExDto extends AbstractDto {
 
             // 支援艦隊
             int support_flag = GsonUtil.toInt(tree.get("api_support_flag"));
+            if(support_flag <= 0){
+                support_flag = GsonUtil.toInt(tree.get("api_n_support_flag"));
+            }
             if (support_flag > 0) {
-                LinkedTreeMap support = (LinkedTreeMap)tree.get("api_support_info");
+                LinkedTreeMap support = null;
+                if(tree.containsKey("api_support_info")) {
+                    support = (LinkedTreeMap) tree.get("api_support_info");
+                }
+                else{
+                    support = (LinkedTreeMap) tree.get("api_n_support_info");
+                }
                 LinkedTreeMap support_hourai = (LinkedTreeMap)support.get("api_support_hourai");
                 LinkedTreeMap support_air = (LinkedTreeMap)support.get("api_support_airatack");
                 if (support_hourai != null) {
@@ -684,7 +693,7 @@ public class BattleExDto extends AbstractDto {
                     int target = dto.target[i];
                     int damage = dto.damage[i];
                     if (dto.friendAtack) {
-                        if (target < 6) {
+                        if (target < this.nowEnemyHp.length) {
                             this.nowEnemyHp[target] -= damage;
                         }
                         else {
@@ -692,7 +701,7 @@ public class BattleExDto extends AbstractDto {
                         }
                     }
                     else {
-                        if (target < 6) {
+                        if (target < this.nowFriendHp.length) {
                             this.nowFriendHp[target] -= damage;
                         }
                         else {
@@ -1160,6 +1169,22 @@ public class BattleExDto extends AbstractDto {
             if(tree.containsKey("api_e_maxhps")){
                 eMaxHps = GsonUtil.toIntArray(tree.get("api_e_maxhps"));
             }
+            int[] fNowHpsCombined = null;
+            if(tree.containsKey("api_f_nowhps_combined")){
+                fNowHps = GsonUtil.toIntArray(tree.get("api_f_nowhps_combined"));
+            }
+            int[] fMaxHpsCombined = null;
+            if(tree.containsKey("api_f_maxhps_combined")){
+                fMaxHps = GsonUtil.toIntArray(tree.get("api_f_maxhps_combined"));
+            }
+            int[] eNowHpsCombined = null;
+            if(tree.containsKey("api_e_nowhps_combined")){
+                eNowHps = GsonUtil.toIntArray(tree.get("api_e_nowhps_combined"));
+            }
+            int[] eMaxHpsCombined = null;
+            if(tree.containsKey("api_e_maxhps_combined")){
+                eMaxHps = GsonUtil.toIntArray(tree.get("api_e_maxhps_combined"));
+            }
 
             int[] nowhpsCombined = GsonUtil.toIntArray(tree.get("api_nowhps_combined"));
             int[] maxhpsCombined = GsonUtil.toIntArray(tree.get("api_maxhps_combined"));
@@ -1181,21 +1206,17 @@ public class BattleExDto extends AbstractDto {
             }
 
             if (tree.containsKey("api_fParam_combined")) {
-                numFshipsCombined = 6;
-                for (int i = 1; i <= 6; ++i) {
-                    if (maxhpsCombined[i] == -1) {
-                        numFshipsCombined = i - 1;
-                        break;
-                    }
-                }
-                if (isFriendCombined) {
+                if(nowhps != null) {
                     numFshipsCombined = 6;
-                    for (int i = this.baseidx; i <= 6; ++i) {
-                        if (maxhpsCombined.getInt(i) == -1) {
-                            numFshipsCombined = i - baseidx;
+                    for (int i = 1; i <= 6; ++i) {
+                        if (maxhpsCombined[i] == -1) {
+                            numFshipsCombined = i - 1;
                             break;
                         }
                     }
+                }
+                else{
+                    numFshipsCombined = fNowHpsCombined.length;
                 }
             }
 
@@ -1228,8 +1249,8 @@ public class BattleExDto extends AbstractDto {
                 for (int i = 0; i < shipKe.length; i++) {
                     int id = shipKe[i];
                     if (id != -1) {
-                        int[] slot = eSlots[i ];
-                        int[] param = eParams[i ];
+                        int[] slot = eSlots[i];
+                        int[] param = eParams[i];
                         if (isOldEnemyId && id > 500) {
                             id += 1000;
                         }
@@ -1242,17 +1263,33 @@ public class BattleExDto extends AbstractDto {
                 int[][] eSlotsCombined = GsonUtil.toIntArrayArray(tree.get("api_eSlot_combined"));
                 int[][] eParamsCombined = GsonUtil.toIntArrayArray(tree.get("api_eParam_combined"));
                 int[] eLevelCombined = GsonUtil.toIntArray(tree.get("api_ship_lv_combined"));
-                for (int i = 1; i < shipKeCombined.length; i++) {
-                    int id = shipKeCombined[i];
-                    if (id != -1) {
-                        int[] slot = eSlotsCombined[i - 1];
-                        int[] param = eParamsCombined[i - 1];
-                        if(isOldEnemyId && id > 500){
-                            id += 1000;
+                if(shipKeCombined[0] == -1){
+                    for (int i = 1; i < shipKeCombined.length; i++) {
+                        int id = shipKeCombined[i];
+                        if (id != -1) {
+                            int[] slot = eSlotsCombined[i - 1];
+                            int[] param = eParamsCombined[i - 1];
+                            if(isOldEnemyId && id > 500){
+                                id += 1000;
+                            }
+                            this.enemyCombined.add(new EnemyShipDto(id, slot, param, eLevelCombined[i]));
                         }
-                        this.enemyCombined.add(new EnemyShipDto(id, slot, param, eLevelCombined[i]));
                     }
                 }
+                else{
+                    for (int i = 0; i < shipKeCombined.length; i++) {
+                        int id = shipKeCombined[i];
+                        if (id != -1) {
+                            int[] slot = eSlotsCombined[i];
+                            int[] param = eParamsCombined[i];
+                            if(isOldEnemyId && id > 500){
+                                id += 1000;
+                            }
+                            this.enemyCombined.add(new EnemyShipDto(id, slot, param, eLevelCombined[i]));
+                        }
+                    }
+                }
+
             }
             int numEships = this.enemy.size();
             int numEshipsCombined = this.enemyCombined.size();
@@ -1325,19 +1362,31 @@ public class BattleExDto extends AbstractDto {
 
 
             if (isFriendCombined || isEnemyCombined) {
-                for (int i = 1; i < nowhpsCombined.length; i++) {
-                    int hp = nowhpsCombined[i];
-                    int maxHp = maxhpsCombined[i];
-                    if (i <= 6) {
-                        if (i <= numFships) {
-                            this.maxFriendHp[i - baseidx] = maxHp;
-                            this.friendGaugeMax += this.startFriendHp[i - baseidx] = hp;
+                if(nowhps != null) {
+                    for (int i = 1; i < nowhpsCombined.length; i++) {
+                        int hp = nowhpsCombined[i];
+                        int maxHp = maxhpsCombined[i];
+                        if (i <= 6) {
+                            if (i <= numFshipsCombined) {
+                                this.maxFriendHpCombined[i - 1] = maxHp;
+                                this.friendGaugeMax += this.startFriendHpCombined[i - 1] = hp;
+                            }
+                        } else {
+                            if ((i - 6) <= numEshipsCombined) {
+                                this.maxEnemyHpCombined[i - 1 - 6] = maxHp;
+                                this.enemyGaugeMax += this.startEnemyHpCombined[i - 1 - 6] = hp;
+                            }
                         }
-                    } else {
-                        if ((i - 6) <= numEshipsCombined) {
-                            this.maxEnemyHpCombined[i - 1 - 6] = maxHp;
-                            this.enemyGaugeMax += this.startEnemyHpCombined[i - 1 - 6] = hp;
-                        }
+                    }
+                }
+                else{
+                    for(int i=0;i<fNowHpsCombined.length;i++){
+                        this.maxFriendHpCombined[i] = fMaxHpsCombined[i];
+                        this.friendGaugeMax += this.startFriendHpCombined[i] = fNowHpsCombined[i];
+                    }
+                    for(int i=0;i<eNowHpsCombined.length;i++){
+                        this.maxEnemyHpCombined[i] = eMaxHpsCombined[i];
+                        this.enemyGaugeMax += this.startEnemyHpCombined[i] = eNowHpsCombined[i];
                     }
                 }
             }
@@ -1427,15 +1476,15 @@ public class BattleExDto extends AbstractDto {
         if (JsonUtils.hasKey(object, "api_escape")) {
             JsonObject jsonEscape = object.getJsonObject("api_escape");
             this.escapeInfo = new int[] {
-                    jsonEscape.getJsonArray("api_escape_idx").getInt(0) - this.baseidx,
-                    jsonEscape.getJsonArray("api_tow_idx").getInt(0) - this.baseidx
+                    jsonEscape.getJsonArray("api_escape_idx").getInt(0) - 1,
+                    jsonEscape.getJsonArray("api_tow_idx").getInt(0) - 1
             };
         }
         if (JsonUtils.hasKey(object, "api_lost_flag")) {
             this.lostflag = new boolean[6];
             JsonArray jsonLostflag = object.getJsonArray("api_lost_flag");
-            for (int i = this.baseidx; i < jsonLostflag.size(); i++) {
-                this.lostflag[i - this.baseidx] = (jsonLostflag.getInt(i) != 0);
+            for (int i = 1; i < jsonLostflag.size(); i++) {
+                this.lostflag[i - 1] = (jsonLostflag.getInt(i) != 0);
             }
         }
     }
