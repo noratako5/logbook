@@ -1044,9 +1044,9 @@ public class BattleHtmlGenerator extends HTMLGenerator {
      * @param dam
      * @param after
      */
-    private void storeDamageAndHp(int[] start, int[] inDam, int offset, int[] dam, int[] after) {
+    private void storeDamageAndHp(int len, int[] start, int[] inDam, int offset, int[] dam, int[] after) {
         if (start != null) {
-            for (int i = 0; i < start.length; ++i) {
+            for (int i = 0; i < len; ++i) {
                 dam[i] = inDam[offset + i];
                 after[i] = Math.max(0, start[i] - inDam[offset + i]);
             }
@@ -1060,7 +1060,8 @@ public class BattleHtmlGenerator extends HTMLGenerator {
      * @return
      */
     private int[][][] calcHP(BattleExDto battle) {
-        int[][][] hp = new int[4][2 + (battle.getPhaseList().size() * 2)][6];
+        int len = (battle.getStartFriendHp().length == 7)?7: 6;
+        int[][][] hp = new int[4][2 + (battle.getPhaseList().size() * 2)][len];
         int[][] startHp = new int[][] {
                 battle.getStartFriendHp(),
                 battle.getStartFriendHpCombined(),
@@ -1081,10 +1082,10 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         for (int pi = 0; pi < battle.getPhaseList().size(); ++pi) {
             BattleExDto.Phase phase = battle.getPhaseList().get(pi);
             this.computeDamages(friendDamages, enemyDamages, phase);
-            this.storeDamageAndHp(startHp[0], friendDamages, 0, hp[0][(pi * 2) + 2], hp[0][(pi * 2) + 3]);
-            this.storeDamageAndHp(startHp[1], friendDamages, 6, hp[1][(pi * 2) + 2], hp[1][(pi * 2) + 3]);
-            this.storeDamageAndHp(startHp[2], enemyDamages, 0, hp[2][(pi * 2) + 2], hp[2][(pi * 2) + 3]);
-            this.storeDamageAndHp(startHp[3], enemyDamages, 6, hp[3][(pi * 2) + 2], hp[3][(pi * 2) + 3]);
+            this.storeDamageAndHp(len,startHp[0], friendDamages, 0, hp[0][(pi * 2) + 2], hp[0][(pi * 2) + 3]);
+            this.storeDamageAndHp(6,startHp[1], friendDamages, 6, hp[1][(pi * 2) + 2], hp[1][(pi * 2) + 3]);
+            this.storeDamageAndHp(6,startHp[2], enemyDamages, 0, hp[2][(pi * 2) + 2], hp[2][(pi * 2) + 3]);
+            this.storeDamageAndHp(6,startHp[3], enemyDamages, 6, hp[3][(pi * 2) + 2], hp[3][(pi * 2) + 3]);
             startHp = new int[][] {
                     hp[0][(pi * 2) + 3], hp[1][(pi * 2) + 3],
                     hp[2][(pi * 2) + 3], hp[3][(pi * 2) + 3] };

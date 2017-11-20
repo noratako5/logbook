@@ -675,7 +675,12 @@ public class BattleAtackDto {
      * @param hougeki
      */
     public static List<BattleAtackDto> makeHougeki(LinkedTreeMap hougeki, boolean isFriendSecond, boolean isEnemySecond,boolean splitHp) {
-        if (hougeki == null){ return null; }
+        if (hougeki == null){
+            return null;
+        }
+        if(hougeki.get("api_damage") == null){
+            return null;
+        }
 
         List<BattleAtackDto> seq = makeHougeki(
                 GsonUtil.toIntArray(hougeki.get("api_at_eflag")),

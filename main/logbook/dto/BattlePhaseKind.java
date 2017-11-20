@@ -47,7 +47,14 @@ public enum BattlePhaseKind {
     /** 連合艦隊vs連合艦隊水上打撃部隊の昼戦 */
     COMBINED_EACH_BATTLE_WATER(false, false, BattlePatternConstants.WATER_EACH_PATTERN, DataType.COMBINED_EACH_BATTLE_WATER),
     /** 連合艦隊vs連合艦隊の昼戦 */
-    COMBINED_EACH_BATTLE(false, false, BattlePatternConstants.BATTLE_EACH_PATTERN, DataType.COMBINED_EACH_BATTLE);
+    COMBINED_EACH_BATTLE(false, false, BattlePatternConstants.BATTLE_EACH_PATTERN, DataType.COMBINED_EACH_BATTLE),
+    /** 通常艦隊敵連合艦隊払暁戦の夜*/
+    COMBINED_EC_NIGHT_TO_DAY_NIGHT(true, false, BattlePatternConstants.NON_COMBINED_PTTERN,
+                                   DataType.COMBINED_EC_NIGHT_TO_DAY),
+    /** 通常艦隊敵連合艦隊払暁戦の昼*/
+    COMBINED_EC_NIGHT_TO_DAY_DAY(false, false, BattlePatternConstants.NON_COMBINED_PTTERN,
+            DataType.COMBINED_EC_NIGHT_TO_DAY);
+
 
     private final boolean night;
     private final boolean practice;

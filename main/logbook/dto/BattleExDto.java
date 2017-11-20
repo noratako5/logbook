@@ -337,103 +337,142 @@ public class BattleExDto extends AbstractDto {
             this.nowFriendHpCombined = isFriendCombined ? beforeFriendHpCombined.clone() : null;
             this.nowEnemyHpCombined = isEnemyCombined ? beforeEnemyHpCombined.clone() : null;
 
-            // 夜間触接
-            int[] jsonTouchPlane = GsonUtil.toIntArray(tree.get("api_touch_plane"));
-            this.touchPlane = jsonTouchPlane;
-
-            // 照明弾発射艦
-            int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
-            this.flarePos = jsonFlarePos;
-
             boolean splitHp = tree.containsKey("api_f_nowhps");
 
             // 攻撃シーケンスを読み取る //
-            LinkedTreeMap air_base_injection = (LinkedTreeMap)tree.get("api_air_base_injection");
-            if(air_base_injection != null){
-                this.airBaseInjection = new AirBattleDto(air_base_injection, isFriendCombined || isEnemyCombined, true,splitHp);
-            }
-            LinkedTreeMap air_injection_kouku = (LinkedTreeMap)tree.get("api_injection_kouku");
-            if(air_injection_kouku != null){
-                this.airInjection = new AirBattleDto(air_injection_kouku, isFriendCombined || isEnemyCombined, false,splitHp);
-            }
-            // 基地航空隊
-            Object air_base_attack = tree.get("api_air_base_attack");
-            if (air_base_attack instanceof List) {
-                this.airBase = new ArrayList<>();
-                for (Object item : (List)air_base_attack) {
-                    this.airBase.add(new AirBattleDto((LinkedTreeMap)item, isFriendCombined || isEnemyCombined, true,splitHp));
-                }
-            }
+            if(kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT){
+                // 夜間触接
+                int[] jsonTouchPlane = GsonUtil.toIntArray(tree.get("api_touch_plane"));
+                this.touchPlane = jsonTouchPlane;
 
-            // 航空戦（通常）
-            LinkedTreeMap kouku = (LinkedTreeMap)tree.get("api_kouku");
-            if (kouku != null) {
-                this.air = new AirBattleDto(kouku, isFriendCombined || isEnemyCombined, false,splitHp);
-                // 昼戦の触接はここ
-                this.touchPlane = this.air.touchPlane;
-                // 制空はここから取る
-                this.seiku = this.air.seiku;
-            }
+                // 照明弾発射艦
+                int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
+                this.flarePos = jsonFlarePos;
 
-            // 支援艦隊
-            int support_flag = GsonUtil.toInt(tree.get("api_support_flag"));
-            if(support_flag <= 0){
-                support_flag = GsonUtil.toInt(tree.get("api_n_support_flag"));
-            }
-            if (support_flag > 0) {
-                LinkedTreeMap support = null;
-                if(tree.containsKey("api_support_info")) {
-                    support = (LinkedTreeMap) tree.get("api_support_info");
-                }
-                else{
-                    support = (LinkedTreeMap) tree.get("api_n_support_info");
-                }
-                LinkedTreeMap support_hourai = (LinkedTreeMap)support.get("api_support_hourai");
-                LinkedTreeMap support_air = (LinkedTreeMap)support.get("api_support_airatack");
-                if (support_hourai != null) {
-                    int[] edam = GsonUtil.toIntArray(support_hourai.get("api_damage"));
-                    int[] ecl = GsonUtil.toIntArray(support_hourai.get("api_cl_list"));
-                    if (edam != null) {
-                        this.support = BattleAtackDto.makeSupport(edam,ecl,splitHp);
+                // 支援艦隊
+                int support_flag = GsonUtil.toInt(tree.get("api_n_support_flag"));
+                if (support_flag > 0) {
+                    LinkedTreeMap support = (LinkedTreeMap) tree.get("api_n_support_info");
+                    LinkedTreeMap support_hourai = (LinkedTreeMap) support.get("api_support_hourai");
+                    LinkedTreeMap support_air = (LinkedTreeMap) support.get("api_support_airatack");
+                    if (support_hourai != null) {
+                        int[] edam = GsonUtil.toIntArray(support_hourai.get("api_damage"));
+                        int[] ecl = GsonUtil.toIntArray(support_hourai.get("api_cl_list"));
+                        if (edam != null) {
+                            this.support = BattleAtackDto.makeSupport(edam, ecl, splitHp);
+                        }
+                    } else if (support_air != null) {
+                        LinkedTreeMap stage3 = (LinkedTreeMap) support_air.get("api_stage3");
+                        if (stage3 != null) {
+                            this.support = BattleAtackDto.makeSupportAir(GsonUtil.toIntArray(stage3.get("api_edam")), GsonUtil.toIntArray(stage3.get("api_ecl_flag")), splitHp);
+                        }
                     }
+                    this.supportType = toSupport(support_flag);
+                } else {
+                    this.supportType = "";
                 }
-                else if (support_air != null) {
-                    LinkedTreeMap stage3 = (LinkedTreeMap)support_air.get("api_stage3");
-                    if (stage3 != null) {
-                        this.support = BattleAtackDto.makeSupportAir(GsonUtil.toIntArray(stage3.get("api_edam")),GsonUtil.toIntArray(stage3.get("api_ecl_flag")),splitHp);
-                    }
-                }
-                this.supportType = toSupport(support_flag);
+
+                // 砲撃
+                this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_n_hougeki1"), false,
+                        this.isEnemySecond, splitHp);
+                this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_n_hougeki2"), false,
+                        this.isEnemySecond, splitHp);
             }
             else {
-                this.supportType = "";
+                if(kind != BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY) {
+                    // 夜間触接
+                    int[] jsonTouchPlane = GsonUtil.toIntArray(tree.get("api_touch_plane"));
+                    this.touchPlane = jsonTouchPlane;
+
+                    // 照明弾発射艦
+                    int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
+                    this.flarePos = jsonFlarePos;
+                }
+
+                LinkedTreeMap air_base_injection = (LinkedTreeMap) tree.get("api_air_base_injection");
+                if (air_base_injection != null) {
+                    this.airBaseInjection = new AirBattleDto(air_base_injection, isFriendCombined || isEnemyCombined, true, splitHp);
+                }
+                LinkedTreeMap air_injection_kouku = (LinkedTreeMap) tree.get("api_injection_kouku");
+                if (air_injection_kouku != null) {
+                    this.airInjection = new AirBattleDto(air_injection_kouku, isFriendCombined || isEnemyCombined, false, splitHp);
+                }
+                // 基地航空隊
+                Object air_base_attack = tree.get("api_air_base_attack");
+                if (air_base_attack instanceof List) {
+                    this.airBase = new ArrayList<>();
+                    for (Object item : (List) air_base_attack) {
+                        this.airBase.add(new AirBattleDto((LinkedTreeMap) item, isFriendCombined || isEnemyCombined, true, splitHp));
+                    }
+                }
+
+                // 航空戦（通常）
+                LinkedTreeMap kouku = (LinkedTreeMap) tree.get("api_kouku");
+                if (kouku != null) {
+                    this.air = new AirBattleDto(kouku, isFriendCombined || isEnemyCombined, false, splitHp);
+                    // 昼戦の触接はここ
+                    this.touchPlane = this.air.touchPlane;
+                    // 制空はここから取る
+                    this.seiku = this.air.seiku;
+                }
+
+                // 支援艦隊
+                int support_flag = GsonUtil.toInt(tree.get("api_support_flag"));
+                if (support_flag <= 0 && kind != BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY) {
+                    support_flag = GsonUtil.toInt(tree.get("api_n_support_flag"));
+                }
+                if (support_flag > 0) {
+                    LinkedTreeMap support = null;
+                    if (tree.containsKey("api_support_info")) {
+                        support = (LinkedTreeMap) tree.get("api_support_info");
+                    } else {
+                        support = (LinkedTreeMap) tree.get("api_n_support_info");
+                    }
+                    LinkedTreeMap support_hourai = (LinkedTreeMap) support.get("api_support_hourai");
+                    LinkedTreeMap support_air = (LinkedTreeMap) support.get("api_support_airatack");
+                    if (support_hourai != null) {
+                        int[] edam = GsonUtil.toIntArray(support_hourai.get("api_damage"));
+                        int[] ecl = GsonUtil.toIntArray(support_hourai.get("api_cl_list"));
+                        if (edam != null) {
+                            this.support = BattleAtackDto.makeSupport(edam, ecl, splitHp);
+                        }
+                    } else if (support_air != null) {
+                        LinkedTreeMap stage3 = (LinkedTreeMap) support_air.get("api_stage3");
+                        if (stage3 != null) {
+                            this.support = BattleAtackDto.makeSupportAir(GsonUtil.toIntArray(stage3.get("api_edam")), GsonUtil.toIntArray(stage3.get("api_ecl_flag")), splitHp);
+                        }
+                    }
+                    this.supportType = toSupport(support_flag);
+                } else {
+                    this.supportType = "";
+                }
+
+                //航空戦
+                LinkedTreeMap kouku2 = (LinkedTreeMap) tree.get("api_kouku2");
+                if (kouku2 != null) {
+                    this.air2 = new AirBattleDto(kouku2, isFriendCombined || isEnemyCombined, false, splitHp);
+                }
+
+                // 開幕対潜
+                this.openingTaisen = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_opening_taisen"), kind.isOpeningSecond(),
+                        this.isEnemySecond, splitHp);
+
+                // 開幕
+                this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap) tree.get("api_opening_atack"), kind.isOpeningSecond(), splitHp);
+
+                // 砲撃
+                this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_hougeki"), isCombined(),
+                        this.isEnemySecond, splitHp); // 夜戦
+                this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_hougeki1"), kind.isHougeki1Second(),
+                        this.isEnemySecond, splitHp);
+                this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_hougeki2"), kind.isHougeki2Second(),
+                        this.isEnemySecond, splitHp);
+                this.hougeki3 = BattleAtackDto.makeHougeki((LinkedTreeMap) tree.get("api_hougeki3"), kind.isHougeki3Second(),
+                        this.isEnemySecond, splitHp);
+
+                // 雷撃
+                this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap) tree.get("api_raigeki"), kind.isRaigekiSecond(), splitHp);
             }
-
-            //航空戦
-            LinkedTreeMap kouku2 = (LinkedTreeMap)tree.get("api_kouku2");
-            if (kouku2 != null){
-                this.air2 = new AirBattleDto(kouku2, isFriendCombined || isEnemyCombined, false,splitHp);
-            }
-
-            // 開幕対潜
-            this.openingTaisen = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_opening_taisen"), kind.isOpeningSecond(),
-                    this.isEnemySecond,splitHp);
-
-            // 開幕
-            this.opening = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_opening_atack"), kind.isOpeningSecond(),splitHp);
-
-            // 砲撃
-            this.hougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki"), isCombined(),
-                    this.isEnemySecond,splitHp); // 夜戦
-            this.hougeki1 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki1"), kind.isHougeki1Second(),
-                    this.isEnemySecond,splitHp);
-            this.hougeki2 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki2"), kind.isHougeki2Second(),
-                    this.isEnemySecond,splitHp);
-            this.hougeki3 = BattleAtackDto.makeHougeki((LinkedTreeMap)tree.get("api_hougeki3"), kind.isHougeki3Second(),
-                    this.isEnemySecond,splitHp);
-
-            // 雷撃
-            this.raigeki = BattleAtackDto.makeRaigeki((LinkedTreeMap)tree.get("api_raigeki"), kind.isRaigekiSecond(),splitHp);
 
             // ダメージを反映 //
             if (this.airBaseInjection != null){

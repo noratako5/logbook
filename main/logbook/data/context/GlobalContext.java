@@ -770,6 +770,10 @@ public final class GlobalContext {
         case COMBINED_EACH_BATTLE_WATER:
             doBattle(data, apidata, BattlePhaseKind.COMBINED_EACH_BATTLE_WATER);
             break;
+        case COMBINED_EC_NIGHT_TO_DAY:
+            doBattle(data, apidata, BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT);
+            doBattle(data, apidata, BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY);
+            break;
         // 海戦結果
         case BATTLE_RESULT:
             doBattleresult(data, apidata);
@@ -1247,6 +1251,11 @@ public final class GlobalContext {
         try {
             if (json instanceof JsonObject) {
                 JsonObject apidata = (JsonObject) json;
+                if(phaseKind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY){
+                    if(!apidata.containsKey("api_day_flag") || apidata.getInt("api_day_flag") != 1){
+                        return;
+                    }
+                }
                 if (battle == null) {
                     battle = new BattleExDto(data.getCreateDate());
                     battle.setBasicInfo(maxChara - shipMap.size(), maxSlotitem - itemMap.size());
