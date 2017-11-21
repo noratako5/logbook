@@ -1450,6 +1450,15 @@ public class BattleExDto extends AbstractDto {
                     this.friends.get(i).setEscaped(Arrays.copyOfRange(this.escaped, i * 6, (i + 1) * 6));
                 }
             }
+            else{
+                this.escaped = new boolean[7];
+                if (tree.containsKey("api_escape_idx")) {
+                    for (int jsonShip : GsonUtil.toIntArray(tree.get("api_escape_idx"))) {
+                        this.escaped[jsonShip - 1] = true;
+                    }
+                }
+                this.friends.get(0).setEscaped(this.escaped);
+            }
         }
 
         if (this.phaseList.size() > 0) {
@@ -1518,10 +1527,16 @@ public class BattleExDto extends AbstractDto {
         this.hqLv = object.getInt("api_member_lv");
         if (JsonUtils.hasKey(object, "api_escape")) {
             JsonObject jsonEscape = object.getJsonObject("api_escape");
-            this.escapeInfo = new int[] {
-                    jsonEscape.getJsonArray("api_escape_idx").getInt(0) - 1,
-                    jsonEscape.getJsonArray("api_tow_idx").getInt(0) - 1
-            };
+            if(jsonEscape.containsKey("api_tow_idx")) {
+                this.escapeInfo = new int[]{
+                        jsonEscape.getJsonArray("api_escape_idx").getInt(0) - 1,
+                        jsonEscape.getJsonArray("api_tow_idx").getInt(0) - 1
+                };
+            }else{
+                this.escapeInfo = new int[]{
+                        jsonEscape.getJsonArray("api_escape_idx").getInt(0) - 1
+                };
+            }
         }
         if (JsonUtils.hasKey(object, "api_lost_flag")) {
             this.lostflag = new boolean[6];
@@ -1574,10 +1589,17 @@ public class BattleExDto extends AbstractDto {
         this.hqLv = GsonUtil.toInt(tree.get("api_member_lv"));
         if (tree.get("api_escape")!=null) {
             LinkedTreeMap escape = (LinkedTreeMap)tree.get("api_escape");
-            this.escapeInfo = new int[] {
-                    GsonUtil.toIntArray(escape.get("api_escape_idx"))[0] - 1,
-                    GsonUtil.toIntArray(escape.get("api_tow_idx"))[0] - 1
-            };
+            if(escape.containsKey("api_tow_idx")) {
+                this.escapeInfo = new int[]{
+                        GsonUtil.toIntArray(escape.get("api_escape_idx"))[0] - 1,
+                        GsonUtil.toIntArray(escape.get("api_tow_idx"))[0] - 1
+                };
+            }
+            else {
+                this.escapeInfo = new int[]{
+                        GsonUtil.toIntArray(escape.get("api_escape_idx"))[0] - 1
+                };
+            }
         }
         if (tree.get("api_lost_flag")!=null) {
             this.lostflag = new boolean[6];

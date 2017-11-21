@@ -985,7 +985,13 @@ public class BattleResultServer {
             List<BattleExDto> battleAll = file.readAllWithoutReadFromJson(buffer);
             battleAll
                 .parallelStream()
-                .forEach(b->b.readFromJson());
+                .forEach(b-> {
+                    try{
+                        b.readFromJson();
+                    }catch (Exception e) {
+                        LOG.get().warn("出撃ログの読み込みに失敗しました (" + b.getBattleDate().toString() + ")", e);
+                    }}
+                );
             ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
             battleAll
                 .stream()

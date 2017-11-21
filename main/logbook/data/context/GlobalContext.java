@@ -1432,12 +1432,19 @@ public final class GlobalContext {
                     // 退避を選択したので退避した艦を追加しておく
                     boolean[] escaped = battle.getEscaped().clone();
                     escaped[escapeInfo[0]] = true;
-                    escaped[escapeInfo[1]] = true;
-                    for (int i = 0; i < 2; ++i) {
-                        battle.getFriends().get(i).setEscaped(
-                                Arrays.copyOfRange(escaped, i * 6, (i + 1) * 6));
+                    if(escapeInfo.length > 1) {
+                        escaped[escapeInfo[1]] = true;
                     }
 
+                    if(escapeInfo.length == 1){
+                        battle.getFriends().get(0).setEscaped(Arrays.copyOfRange(escaped,0,7));
+                    }
+                    else {
+                        for (int i = 0; i < 2; ++i) {
+                            battle.getFriends().get(i).setEscaped(
+                                    Arrays.copyOfRange(escaped, i * 6, (i + 1) * 6));
+                        }
+                    }
                     // 更新
                     battle.getDock().setUpdate(true);
                     battle.getDockCombined().setUpdate(true);

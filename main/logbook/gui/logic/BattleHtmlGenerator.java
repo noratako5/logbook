@@ -1046,11 +1046,23 @@ public class BattleHtmlGenerator extends HTMLGenerator {
      */
     private void storeDamageAndHp(int len, int[] start, int[] inDam, int offset, int[] dam, int[] after) {
         if (start != null) {
+            len = Math.min(start.length,len);
             for (int i = 0; i < len; ++i) {
                 dam[i] = inDam[offset + i];
                 after[i] = Math.max(0, start[i] - inDam[offset + i]);
             }
         }
+    }
+
+    private int[] setLen(int[] src,int len){
+        if(src == null){
+            return null;
+        }
+        int[] result = new int[len];
+        for(int i=0;i<src.length && i<len;i++){
+            result[i] = src[i];
+        }
+        return result;
     }
 
     /**
@@ -1063,19 +1075,19 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         int len = (battle.getStartFriendHp().length == 7)?7: 6;
         int[][][] hp = new int[4][2 + (battle.getPhaseList().size() * 2)][len];
         int[][] startHp = new int[][] {
-                battle.getStartFriendHp(),
-                battle.getStartFriendHpCombined(),
-                battle.getStartEnemyHp(),
-                battle.getStartEnemyHpCombined() };
+                setLen(battle.getStartFriendHp(),len),
+                setLen(battle.getStartFriendHpCombined(),6),
+                setLen(battle.getStartEnemyHp(),6),
+                setLen(battle.getStartEnemyHpCombined(),6) };
 
-        hp[0][0] = battle.getStartFriendHp();
-        hp[1][0] = battle.getStartFriendHpCombined();
-        hp[2][0] = battle.getStartEnemyHp();
-        hp[3][0] = battle.getStartEnemyHpCombined();
-        hp[0][1] = battle.getMaxFriendHp();
-        hp[1][1] = battle.getMaxFriendHpCombined();
-        hp[2][1] = battle.getMaxEnemyHp();
-        hp[3][1] = battle.getMaxEnemyHpCombined();
+        hp[0][0] = setLen(battle.getStartFriendHp(),len);
+        hp[1][0] = setLen(battle.getStartFriendHpCombined(),6);
+        hp[2][0] = setLen(battle.getStartEnemyHp(),6);
+        hp[3][0] = setLen(battle.getStartEnemyHpCombined(),6);
+        hp[0][1] = setLen(battle.getMaxFriendHp(),len);
+        hp[1][1] = setLen(battle.getMaxFriendHpCombined(),6);
+        hp[2][1] = setLen(battle.getMaxEnemyHp(),6);
+        hp[3][1] = setLen(battle.getMaxEnemyHpCombined(),6);
 
         int[] friendDamages = new int[12];
         int[] enemyDamages = new int[12];
