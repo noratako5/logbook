@@ -11,6 +11,8 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import logbook.util.JsonUtils;
+
 import com.dyuproject.protostuff.Tag;
 import com.google.gson.internal.LinkedTreeMap;
 
@@ -21,6 +23,7 @@ import logbook.util.GsonUtil;
  * @author Nekopanda
  */
 public class BattleAtackDto {
+
     /** 攻撃の種類 */
     @Tag(1)
     public AtackKind kind;
@@ -59,6 +62,7 @@ public class BattleAtackDto {
         ArrayList<Integer> flatten_df_list = new ArrayList<Integer>();
         ArrayList<Integer> flatten_damage_list = new ArrayList<Integer>();
         ArrayList<Integer> flatten_cl_list = new ArrayList<Integer>();
+        // 7隻実装以降は常にある
         boolean hasEflag = (at_efalg != null);
 
         for (int i = baseidx; i < at_list.size(); ++i) {
@@ -71,6 +75,7 @@ public class BattleAtackDto {
                 int damd = damage.getInt(d);
                 int cld = cl.getInt(d);
                 if (dfd != -1) {
+                    // hasEflagがない場合は最大6隻
                     flatten_df_list.add(hasEflag ? (dfd - baseidx) : ((dfd - baseidx) % 6));
                     flatten_damage_list.add(damd);
                     flatten_cl_list.add(cld);
@@ -80,10 +85,12 @@ public class BattleAtackDto {
             if (length > 0) {
                 BattleAtackDto dto = new BattleAtackDto();
                 dto.kind = AtackKind.HOUGEKI;
+                // hasEflagがない場合は最大6隻
                 dto.friendAtack = hasEflag ? (at_efalg.getInt(i) == 0) : (at <= 6);
                 if (at_type != null) {
                     dto.type = at_type.getInt(i);
                 }
+                // hasEflagがない場合は最大6隻
                 dto.origin = new int[] { hasEflag ? (at - baseidx) : ((at - baseidx) % 6) };
                 dto.target = new int[length];
                 dto.damage = new int[length];
@@ -154,16 +161,18 @@ public class BattleAtackDto {
 
     private static BattleAtackDto makeRaigeki(int baseidx, boolean friendAtack,
             JsonArray rai_list, JsonArray dam_list, JsonArray cl_list, JsonArray ydam_list) {
-        int elems = rai_list.size() - baseidx; // 6 or 12
-        int[] originMap = new int[elems];
-        int[] targetMap = new int[elems];
-        boolean[] targetEnabled = new boolean[elems];
+        // originとtargetの個数が違うようになった
+        int oelems = rai_list.size() - baseidx;
+        int telems = dam_list.size() - baseidx;
+        int[] originMap = new int[oelems];
+        int[] targetMap = new int[telems];
+        boolean[] targetEnabled = new boolean[telems];
         BattleAtackDto dto = new BattleAtackDto();
         dto.kind = AtackKind.RAIGEKI;
         dto.friendAtack = friendAtack;
 
         int idx = 0;
-        for (int i = 0; i < elems; ++i) {
+        for (int i = 0; i < oelems; ++i) {
             int rai = rai_list.getInt(i + baseidx);
             if (rai >= baseidx) {
                 originMap[i] = idx++;
@@ -176,7 +185,7 @@ public class BattleAtackDto {
         dto.ot = new int[idx];
 
         idx = 0;
-        for (int i = 0; i < elems; ++i) {
+        for (int i = 0; i < telems; ++i) {
             if (targetEnabled[i]) {
                 targetMap[i] = idx++;
             }
@@ -184,9 +193,8 @@ public class BattleAtackDto {
         dto.target = new int[idx];
         dto.damage = new int[idx];
 
-        for (int i = 0; i < elems; ++i) {
+        for (int i = 0; i < oelems; ++i) {
             int rai = rai_list.getInt(i + baseidx);
-            int dam = dam_list.getInt(i + baseidx);
             int cl = cl_list.getInt(i + baseidx);
             int ydam = ydam_list.getInt(i + baseidx);
             if (rai >= baseidx) {
@@ -195,6 +203,9 @@ public class BattleAtackDto {
                 dto.critical[originMap[i]] = cl;
                 dto.ot[originMap[i]] = targetMap[rai - baseidx];
             }
+        }
+        for (int i = 0; i < telems; ++i) {
+            int dam = dam_list.getInt(i + baseidx);
             if (targetEnabled[i]) {
                 dto.target[targetMap[i]] = i;
                 dto.damage[targetMap[i]] = dam;
@@ -203,7 +214,7 @@ public class BattleAtackDto {
 
         // 連合艦隊を考慮した配列構成になっているか
         // （6-5敵連合艦隊実装まで連合艦隊の雷撃は随伴艦隊だけが受けることになっていたのでelems==6だったが6-5敵連合艦隊では敵の全艦が攻撃を受ける対象となったのでelems==12になった）
-        dto.combineEnabled = (elems == 12);
+        dto.combineEnabled = ((oelems > 6) || (telems > 6));
 
         return dto;
     }
@@ -267,80 +278,76 @@ public class BattleAtackDto {
     }
 
 
-    private static BattleAtackDto makeAir(int baseidx,boolean friendAtack,
-            JsonValue plane_from_obj, JsonArray dam_list, JsonArray cdam_list, JsonArray cl_list, JsonArray ccl_list,
-            boolean isBase) {
-
-        JsonArray plane_from = ((plane_from_obj != null) && (plane_from_obj != JsonValue.NULL))
-                ? ((JsonArray) plane_from_obj)
-                : null;
-
-        int elems = dam_list.size() - baseidx;
-        BattleAtackDto dto = new BattleAtackDto();
-        dto.kind = isBase ? AtackKind.AIRBASE : AtackKind.AIR;
-        dto.friendAtack = friendAtack;
-
-        int idx = 0;
-        if (plane_from != null) {
-            for (int i = 0; i < plane_from.size(); ++i) {
-                if (plane_from.getInt(i) != -1)
-                    ++idx;
-            }
-        }
-        dto.origin = new int[idx];
-        idx = 0;
-        if (plane_from != null) {
-            for (int i = 0; i < plane_from.size(); ++i) {
-                if (plane_from.getInt(i) != -1)
-                    // api_plane_fromは1始まりのまま
-                    dto.origin[idx++] = (plane_from.getInt(i) - 1);
-            }
-        }
-        idx = 0;
-        for (int i = 0; i < elems; ++i) {
-            int dam = dam_list.getInt(i + baseidx);
-            if (dam > 0) {
-                idx++;
-            }
-        }
-        if (cdam_list != null) {
-            for (int i = 0; i < elems; ++i) {
-                int dam = cdam_list.getInt(i + baseidx);
-                if (dam > 0) {
-                    idx++;
-                }
-            }
-        }
-        dto.target = new int[idx];
-        dto.damage = new int[idx];
-        dto.critical = new int[idx];
-        idx = 0;
-        for (int i = 0; i < elems; ++i) {
-            int dam = dam_list.getInt(i + baseidx);
-            int cl = cl_list.getInt(i + baseidx);
-            if (dam > 0) {
-                dto.target[idx] = i;
-                dto.damage[idx] = dam;
-                // クリティカルフラグを砲撃と合わせる
-                dto.critical[idx] = cl + baseidx;
-                idx++;
-            }
-        }
-        if (cdam_list != null) {
-            for (int i = 0; i < elems; ++i) {
-                int dam = cdam_list.getInt(i + baseidx);
-                int cl = ccl_list.getInt(i + baseidx);
-                if (dam > 0) {
-                    dto.target[idx] = i + 6;
-                    dto.damage[idx] = dam;
-                    // クリティカルフラグを砲撃と合わせる
-                    dto.critical[idx] = cl + 1;
-                    idx++;
-                }
-            }
-        }
-
-        return dto;
+    private static BattleAtackDto makeAir(int baseidx, boolean friendAtack,
+                                          JsonValue plane_from_obj, JsonArray dam_list, JsonArray cdam_list, JsonArray cl_list, JsonArray ccl_list,
+                                          boolean isBase) {
+        return null;
+//        int elems = dam_list.size() - baseidx;
+//        BattleAtackDto dto = new BattleAtackDto();
+//        dto.kind = isBase ? AtackKind.AIRBASE : AtackKind.AIR;
+//        dto.friendAtack = friendAtack;
+//
+//        int idx = 0;
+//        if (plane_from != null) {
+//            for (int i = 0; i < plane_from.size(); ++i) {
+//                if (plane_from.getInt(i) != -1)
+//                    ++idx;
+//            }
+//        }
+//        dto.origin = new int[idx];
+//        idx = 0;
+//        if (plane_from != null) {
+//            for (int i = 0; i < plane_from.size(); ++i) {
+//                if (plane_from.getInt(i) != -1)
+//                    // api_plane_fromは1始まりのまま
+//                    dto.origin[idx++] = (plane_from.getInt(i) - 1) % secondBase;
+//            }
+//        }
+//        idx = 0;
+//        for (int i = 0; i < elems; ++i) {
+//            int dam = dam_list.getInt(i + baseidx);
+//            if (dam > 0) {
+//                idx++;
+//            }
+//        }
+//        if (cdam_list != null) {
+//            for (int i = 0; i < elems; ++i) {
+//                int dam = cdam_list.getInt(i + baseidx);
+//                if (dam > 0) {
+//                    idx++;
+//                }
+//            }
+//        }
+//        dto.target = new int[idx];
+//        dto.damage = new int[idx];
+//        dto.critical = new int[idx];
+//        idx = 0;
+//        for (int i = 0; i < elems; ++i) {
+//            int dam = dam_list.getInt(i + baseidx);
+//            int cl = cl_list.getInt(i + baseidx);
+//            if (dam > 0) {
+//                dto.target[idx] = i;
+//                dto.damage[idx] = dam;
+//                // クリティカルフラグを砲撃と合わせる
+//                dto.critical[idx] = cl + baseidx;
+//                idx++;
+//            }
+//        }
+//        if (cdam_list != null) {
+//            for (int i = 0; i < elems; ++i) {
+//                int dam = cdam_list.getInt(i + baseidx);
+//                int cl = ccl_list.getInt(i + baseidx);
+//                if (dam > 0) {
+//                    dto.target[idx] = i + secondBase;
+//                    dto.damage[idx] = dam;
+//                    // クリティカルフラグを砲撃と合わせる
+//                    dto.critical[idx] = cl + 1;
+//                    idx++;
+//                }
+//            }
+//        }
+//
+//        return dto;
     }
     private static BattleAtackDto makeAir(boolean friendAtack,int[] plane_from,int[] dam_list,int[] cdam_list,int[] cl_list,int[] ccl_list,
             boolean isBase,boolean splitHp) {
@@ -406,15 +413,15 @@ public class BattleAtackDto {
 
         return dto;
     }
-    private void makeOriginCombined() {
+    private void makeOriginCombined(int secondBase) {
         for (int i = 0; i < this.origin.length; ++i) {
-            this.origin[i] += 6;
+            this.origin[i] += secondBase;
         }
     }
 
-    private void makeTargetCombined() {
+    private void makeTargetCombined(int secondBase) {
         for (int i = 0; i < this.target.length; ++i) {
-            this.target[i] += 6;
+            this.target[i] += secondBase;
         }
     }
 
@@ -424,54 +431,54 @@ public class BattleAtackDto {
      * @param raigeki
      * @return
      */
-    public static List<BattleAtackDto> makeAir(int baseidx, JsonValue plane_from, JsonValue raigeki,
-            JsonValue combined_,
+    public static List<BattleAtackDto> makeAir(int baseidx, int secondBase,
+            JsonArray plane_from, JsonObject raigeki,
+            JsonObject combined,
             boolean isBase) {
-        if ((raigeki == null) || (raigeki == JsonValue.NULL) || (plane_from == null) || (plane_from == JsonValue.NULL))
-            return null;
-
-        JsonObject raigeki_obj = (JsonObject) raigeki;
-        JsonArray fdamCombined = null;
-        JsonArray fclCombined = null;
-        JsonArray edamCombined = null;
-        JsonArray eclCombined = null;
-        if ((combined_ != null) && (combined_ != JsonValue.NULL)) {
-            JsonObject combined = (JsonObject) combined_;
-            if (combined.containsKey("api_fdam")) {
-                fdamCombined = combined.getJsonArray("api_fdam");
-                fclCombined = combined.getJsonArray("api_fcl_flag");
-            }
-            if (combined.containsKey("api_edam")) {
-                edamCombined = combined.getJsonArray("api_edam");
-                eclCombined = combined.getJsonArray("api_ecl_flag");
-            }
-        }
-
-        BattleAtackDto fatack = makeAir(
-                baseidx,
-                true,
-                ((JsonArray) plane_from).get(0),
-                raigeki_obj.getJsonArray("api_edam"),
-                edamCombined,
-                raigeki_obj.getJsonArray("api_ecl_flag"),
-                eclCombined,
-                isBase);
-
-        if (isBase) {
-            return Arrays.asList(new BattleAtackDto[] { fatack });
-        }
-
-        BattleAtackDto eatack = makeAir(
-                baseidx,
-                false,
-                ((JsonArray) plane_from).get(1),
-                raigeki_obj.getJsonArray("api_fdam"),
-                fdamCombined,
-                raigeki_obj.getJsonArray("api_fcl_flag"),
-                fclCombined,
-                false);
-
-        return Arrays.asList(new BattleAtackDto[] { fatack, eatack });
+        return null;
+//        if ((raigeki == null) || (plane_from == null))
+//            return null;
+//
+//        JsonArray fdamCombined = null;
+//        JsonArray fclCombined = null;
+//        JsonArray edamCombined = null;
+//        JsonArray eclCombined = null;
+//        if (combined != null) {
+//            if (combined.containsKey("api_fdam")) {
+//                fdamCombined = JsonUtils.getJsonArray(combined, "api_fdam");
+//                fclCombined = JsonUtils.getJsonArray(combined, "api_fcl_flag");
+//            }
+//            if (combined.containsKey("api_edam")) {
+//                edamCombined = JsonUtils.getJsonArray(combined, "api_edam");
+//                eclCombined = JsonUtils.getJsonArray(combined, "api_ecl_flag");
+//            }
+//        }
+//
+//        BattleAtackDto fatack = makeAir(
+//                baseidx, secondBase,
+//                true,
+//                JsonUtils.getJsonArray(plane_from, 0),
+//                JsonUtils.getJsonArray(raigeki, "api_edam"),
+//                edamCombined,
+//                JsonUtils.getJsonArray(raigeki, "api_ecl_flag"),
+//                eclCombined,
+//                isBase);
+//
+//        if (isBase) {
+//            return Arrays.asList(new BattleAtackDto[] { fatack });
+//        }
+//
+//        BattleAtackDto eatack = makeAir(
+//                baseidx, secondBase,
+//                false,
+//                JsonUtils.getJsonArray(plane_from, 1),
+//                JsonUtils.getJsonArray(raigeki, "api_fdam"),
+//                fdamCombined,
+//                JsonUtils.getJsonArray(raigeki, "api_fcl_flag"),
+//                fclCombined,
+//                false);
+//
+//        return Arrays.asList(new BattleAtackDto[] { fatack, eatack });
     }
     /**
      * 航空戦を読み込むGson版
@@ -529,49 +536,49 @@ public class BattleAtackDto {
      * @param isFriendSecond 味方が連合艦隊か
      * @return
      */
-    public static List<BattleAtackDto> makeRaigeki(int baseidx, JsonValue raigeki, boolean isFriendSecond) {
-        if ((raigeki == null) || (raigeki == JsonValue.NULL))
+    public static List<BattleAtackDto> makeRaigeki(
+            int baseidx, int secondBase,
+            JsonObject raigeki, boolean isFriendSecond) {
+        if (raigeki == null)
             return null;
-
-        JsonObject raigeki_obj = (JsonObject) raigeki;
 
         List<BattleAtackDto> attaks = new ArrayList<BattleAtackDto>();
 
         BattleAtackDto fatack = null;
         BattleAtackDto eatack = null;
 
-        if (raigeki_obj.get("api_frai") != JsonValue.NULL) {
+        if (JsonUtils.hasKey(raigeki, "api_frai")) {
 
             fatack = makeRaigeki(
                     baseidx,
                     true,
-                    raigeki_obj.getJsonArray("api_frai"),
-                    raigeki_obj.getJsonArray("api_edam"),
-                    raigeki_obj.getJsonArray("api_fcl"),
-                    raigeki_obj.getJsonArray("api_fydam"));
+                    JsonUtils.getJsonArray(raigeki, "api_frai"),
+                    JsonUtils.getJsonArray(raigeki, "api_edam"),
+                    JsonUtils.getJsonArray(raigeki, "api_fcl"),
+                    JsonUtils.getJsonArray(raigeki, "api_fydam"));
 
-            if (fatack.combineEnabled == false) {
-                // 味方の随伴艦のみが雷撃を行う場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
+            if ((baseidx == 1) && (fatack.combineEnabled == false)) {
+                // 旧APIとの互換性: 味方の随伴艦のみが雷撃を行う場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
                 if (isFriendSecond) {
-                    fatack.makeOriginCombined();
+                    fatack.makeOriginCombined(secondBase);
                 }
             }
             attaks.add(fatack);
         }
 
-        if (raigeki_obj.get("api_erai") != JsonValue.NULL) {
+        if (JsonUtils.hasKey(raigeki, "api_erai")) {
             eatack = makeRaigeki(
                     baseidx,
                     false,
-                    raigeki_obj.getJsonArray("api_erai"),
-                    raigeki_obj.getJsonArray("api_fdam"),
-                    raigeki_obj.getJsonArray("api_ecl"),
-                    raigeki_obj.getJsonArray("api_eydam"));
+                    JsonUtils.getJsonArray(raigeki, "api_erai"),
+                    JsonUtils.getJsonArray(raigeki, "api_fdam"),
+                    JsonUtils.getJsonArray(raigeki, "api_ecl"),
+                    JsonUtils.getJsonArray(raigeki, "api_eydam"));
 
-            if ((fatack != null) && (fatack.combineEnabled == false)) {
-                // 味方の随伴艦のみが雷撃を受ける場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
+            if ((baseidx == 1) && (fatack != null) && (fatack.combineEnabled == false)) {
+                // 旧APIとの互換性: 味方の随伴艦のみが雷撃を受ける場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
                 if (isFriendSecond) {
-                    eatack.makeTargetCombined();
+                    eatack.makeTargetCombined(secondBase);
                 }
             }
             attaks.add(eatack);
@@ -599,7 +606,7 @@ public class BattleAtackDto {
         if (fatack.combineEnabled == false) {
             // 味方の随伴艦のみが雷撃を行う場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
             if (isFriendSecond) {
-                fatack.makeOriginCombined();
+                fatack.makeOriginCombined(6);
             }
         }
 
@@ -614,7 +621,7 @@ public class BattleAtackDto {
         if (fatack.combineEnabled == false) {
             // 味方の随伴艦のみが雷撃を受ける場合(6-5実装以前の連合艦隊はこれ。6-5実装以降の連合艦隊は不明)
             if (isFriendSecond) {
-                eatack.makeTargetCombined();
+                eatack.makeTargetCombined(6);
             }
         }
 
@@ -623,51 +630,55 @@ public class BattleAtackDto {
 
     /**
      * api_hougeki* を読み込む
+     * @param baseidx 基点(0 or 1)
+     * @param secondBase 最初の艦隊の最大艦数(6 or 7)
      * @param hougeki
      */
-    public static List<BattleAtackDto> makeHougeki(int baseidx, JsonValue hougeki, boolean isFriendSecond,
-            boolean isEnemySecond) {
-        if ((hougeki == null) || (hougeki == JsonValue.NULL))
-            return null;
-
-        JsonObject hougeki_obj = (JsonObject) hougeki;
-
-        if (hougeki_obj.get("api_damage") == JsonValue.NULL)
-            return null;
-
-        List<BattleAtackDto> seq = makeHougeki(
-                baseidx,
-                hougeki_obj.containsKey("api_at_eflag") ? hougeki_obj.getJsonArray("api_at_eflag") : null,
-                hougeki_obj.getJsonArray("api_at_list"),
-                hougeki_obj.getJsonArray("api_at_type"),
-                hougeki_obj.getJsonArray("api_df_list"),
-                hougeki_obj.getJsonArray("api_cl_list"),
-                hougeki_obj.getJsonArray("api_damage"));
-
-        // 味方連合艦隊を反映
-        if (isFriendSecond && !hougeki_obj.containsKey("api_at_eflag")) {
-            for (BattleAtackDto dto : seq) {
-                if (dto.friendAtack) {
-                    dto.makeOriginCombined();
-                }
-                else {
-                    dto.makeTargetCombined();
-                }
-            }
-        }
-        // 敵連合艦隊を反映（現状夜戦のみに適用）
-        if (isEnemySecond) {
-            for (BattleAtackDto dto : seq) {
-                if (!dto.friendAtack) {
-                    dto.makeOriginCombined();
-                }
-                else {
-                    dto.makeTargetCombined();
-                }
-            }
-        }
-
-        return seq;
+    public static List<BattleAtackDto> makeHougeki(
+            int baseidx, int secondBase,
+            JsonObject hougeki,
+            boolean isFriendSecond, boolean isEnemySecond) {
+        return null;
+        //使ってないので追うの諦める
+//        if (hougeki == null)
+//            return null;
+//
+//        if (JsonUtils.hasKey(hougeki, "api_damage") == false)
+//            return null;
+//
+//        List<BattleAtackDto> seq = makeHougeki(
+//                baseidx,
+//                hougeki_obj.containsKey("api_at_eflag") ? hougeki_obj.getJsonArray("api_at_eflag") : null,
+//                hougeki_obj.getJsonArray("api_at_list"),
+//                hougeki_obj.getJsonArray("api_at_type"),
+//                hougeki_obj.getJsonArray("api_df_list"),
+//                hougeki_obj.getJsonArray("api_cl_list"),
+//                hougeki_obj.getJsonArray("api_damage"));
+//
+//        // 味方連合艦隊を反映
+//        if (isFriendSecond && !hougeki_obj.containsKey("api_at_eflag")) {
+//            for (BattleAtackDto dto : seq) {
+//                if (dto.friendAtack) {
+//                    dto.makeOriginCombined(secondBase);
+//                }
+//                else {
+//                    dto.makeTargetCombined(secondBase);
+//                }
+//            }
+//        }
+//        // 旧APIとの互換性: 敵連合艦隊を反映（現状夜戦のみに適用）
+//        if ((baseidx == 1) && isEnemySecond) {
+//            for (BattleAtackDto dto : seq) {
+//                if (!dto.friendAtack) {
+//                    dto.makeOriginCombined(secondBase);
+//                }
+//                else {
+//                    dto.makeTargetCombined(secondBase);
+//                }
+//            }
+//        }
+//
+//        return seq;
     }
 
     /**
@@ -694,10 +705,10 @@ public class BattleAtackDto {
         if (isFriendSecond && !hougeki.containsKey("api_at_eflag")) {
             for (BattleAtackDto dto : seq) {
                 if (dto.friendAtack) {
-                    dto.makeOriginCombined();
+                    dto.makeOriginCombined(6);
                 }
                 else {
-                    dto.makeTargetCombined();
+                    dto.makeTargetCombined(6);
                 }
             }
         }
@@ -705,10 +716,10 @@ public class BattleAtackDto {
         if (isEnemySecond) {
             for (BattleAtackDto dto : seq) {
                 if (!dto.friendAtack) {
-                    dto.makeOriginCombined();
+                    dto.makeOriginCombined(6);
                 }
                 else {
-                    dto.makeTargetCombined();
+                    dto.makeTargetCombined(6);
                 }
             }
         }
@@ -720,16 +731,16 @@ public class BattleAtackDto {
      * @param dam_list
      * @return
      */
-    public static List<BattleAtackDto> makeSupport(JsonArray dam_list) {
+    public static List<BattleAtackDto> makeSupport(int baseidx, JsonArray dam_list) {
         BattleAtackDto dto = new BattleAtackDto();
         dto.kind = AtackKind.SUPPORT;
         dto.friendAtack = true;
 
         int idx = 0;
         // dam_listの要素数は敵が連合艦隊の場合、艦数+1=13
-        int elems = dam_list.size() - 1;
+        int elems = dam_list.size() - baseidx;
         for (int i = 0; i < elems; ++i) {
-            int dam = dam_list.getInt(i + 1);
+            int dam = dam_list.getInt(i + baseidx);
             if (dam > 0) {
                 idx++;
             }
@@ -738,7 +749,7 @@ public class BattleAtackDto {
         dto.damage = new int[idx];
         idx = 0;
         for (int i = 0; i < elems; ++i) {
-            int dam = dam_list.getInt(i + 1);
+            int dam = dam_list.getInt(i + baseidx);
             if (dam > 0) {
                 dto.target[idx] = i;
                 dto.damage[idx] = dam;

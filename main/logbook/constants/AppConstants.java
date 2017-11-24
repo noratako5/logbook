@@ -343,6 +343,9 @@ public class AppConstants {
     /** メッセージ 対潜:{0} */
     public static final String MESSAGE_TAISEN = "対潜:{0}。";
 
+    /** メッセージ 対空:{0} */
+    public static final String MESSAGE_TAIKU = "対空:{0}。";
+
     /** メッセージ  艦隊合計Lv:{0} */
     public static final String MESSAGE_TOTAL_LV = "艦隊合計Lv:{0}。";
 
@@ -455,6 +458,9 @@ public class AppConstants {
             new int[] { 13, 14 }, // 潜水艦
             new int[] { 1, 12, 15, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 }, // その他
     };
+
+    /** 1艦隊に編成できる艦娘の数 */
+    public static final int MAXCHARA = 7;
 
     /** ドロップ報告書用スクリプト */
     public static final File SCRIPT_DIR = new File("./script");

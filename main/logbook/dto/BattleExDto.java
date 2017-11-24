@@ -217,6 +217,13 @@ public class BattleExDto extends AbstractDto {
     @Tag(52)
     private int combinedKind = 0;
 
+    /** 新旧API */
+    @Tag(91)
+    private int baseidx = 0;
+
+    @Tag(92)
+    private int secondBase = 0;
+    
     /////////////////////////////////////////////////
 
     /**
@@ -252,7 +259,7 @@ public class BattleExDto extends AbstractDto {
         @Tag(22)
         private final boolean isEnemySecond;
 
-        /** 自分は連合艦隊編成か？（第二艦隊が存在するか？） */
+        /** 自分は連合艦隊の第二艦隊か？*/
         @Tag(100)
         private final boolean isFriendSecond;
 
@@ -476,26 +483,26 @@ public class BattleExDto extends AbstractDto {
 
             // ダメージを反映 //
             if (this.airBaseInjection != null){
-                this.doAtack(this.airBaseInjection.atacks);
+                this.doAtack(this.airBaseInjection.atacks, battle.secondBase);
             }
             if (this.airInjection != null){
-                this.doAtack(this.airInjection.atacks);
+                this.doAtack(this.airInjection.atacks, battle.secondBase);
             }
             if (this.airBase != null)
                 for (AirBattleDto attack : this.airBase)
-                    this.doAtack(attack.atacks);
+                    this.doAtack(attack.atacks, battle.secondBase);
             if (this.air != null)
-                this.doAtack(this.air.atacks);
-            this.doAtack(this.support);
+                this.doAtack(this.air.atacks, battle.secondBase);
+            this.doAtack(this.support, battle.secondBase);
             if (this.air2 != null)
-                this.doAtack(this.air2.atacks);
-            this.doAtack(this.openingTaisen);
-            this.doAtack(this.opening);
-            this.doAtack(this.hougeki);
-            this.doAtack(this.hougeki1);
-            this.doAtack(this.raigeki);
-            this.doAtack(this.hougeki2);
-            this.doAtack(this.hougeki3);
+                this.doAtack(this.air2.atacks, battle.secondBase);
+            this.doAtack(this.openingTaisen, battle.secondBase);
+            this.doAtack(this.opening, battle.secondBase);
+            this.doAtack(this.hougeki, battle.secondBase);
+            this.doAtack(this.hougeki1, battle.secondBase);
+            this.doAtack(this.raigeki, battle.secondBase);
+            this.doAtack(this.hougeki2, battle.secondBase);
+            this.doAtack(this.hougeki3, battle.secondBase);
 
             this.json = json;
         }
@@ -563,6 +570,9 @@ public class BattleExDto extends AbstractDto {
                 if (hp <= 0) {
                     hps[index] = 0;
                 }
+                return;
+            }
+            else if(index >= ships.size()){
                 return;
             }
             ShipDto ship = ships.get(index);
@@ -723,7 +733,7 @@ public class BattleExDto extends AbstractDto {
         }
 
         // ダメージを反映
-        private void doAtack(List<BattleAtackDto> seq) {
+        private void doAtack(List<BattleAtackDto> seq, int secondBase) {
             if (seq == null)
                 return;
 
@@ -731,6 +741,9 @@ public class BattleExDto extends AbstractDto {
                 for (int i = 0; i < dto.target.length; ++i) {
                     int target = dto.target[i];
                     int damage = dto.damage[i];
+                    if(damage == 0){
+                        continue;
+                    }
                     if (dto.friendAtack) {
                         if (target < this.nowEnemyHp.length) {
                             this.nowEnemyHp[target] -= damage;
@@ -744,7 +757,7 @@ public class BattleExDto extends AbstractDto {
                             this.nowFriendHp[target] -= damage;
                         }
                         else {
-                            this.nowFriendHpCombined[target - 6] -= damage;
+                            this.nowFriendHpCombined[target - secondBase] -= damage;
                         }
                     }
                 }
@@ -1230,8 +1243,11 @@ public class BattleExDto extends AbstractDto {
             boolean isFriendCombined = tree.containsKey("api_fParam_combined");
             boolean isEnemyCombined = tree.containsKey("api_eParam_combined");
 
-            int numFships = 6;
+            int numFships = 6; // 旧API用初期値
             int numFshipsCombined = 0;
+
+            this.secondBase = 6;
+
             if(nowhps != null) {
                 for (int i = 1; i <= 6; ++i) {
                     if (maxhps[i] == -1) {
@@ -1257,6 +1273,11 @@ public class BattleExDto extends AbstractDto {
                 else{
                     numFshipsCombined = fNowHpsCombined.length;
                 }
+            }
+
+            // 第一艦隊が6隻より大きかったらsecondBaseも大きくする
+            if (this.secondBase < numFships) {
+                this.secondBase = numFships;
             }
 
             if (this.friends.size() == 0) { // 再読み込みの場合はスキップ
@@ -1434,7 +1455,7 @@ public class BattleExDto extends AbstractDto {
                 }
             }
             if (isFriendCombined) {
-                // 退避
+                // 退避（連合艦隊は今の所最大が6+6=12隻なのでそれで固定）
                 this.escaped = new boolean[12];
                 if (tree.containsKey("api_escape_idx")) {
                     for (int jsonShip : GsonUtil.toIntArray(tree.get("api_escape_idx"))) {
@@ -2088,7 +2109,7 @@ public class BattleExDto extends AbstractDto {
     }
 
     /**
-     * MVP艦が何番目の艦か (0～)
+     * MVP艦が何番目の艦か (1～)
      * MVPがいない時は-1
      * @return mvp
      */
@@ -2382,5 +2403,17 @@ public class BattleExDto extends AbstractDto {
 
     public void setCombinedKind(int combinedKind) {
         this.combinedKind = combinedKind;
+    }
+
+    /**
+     * 第一艦隊の最大隻数＝第2艦隊のベースインデックス
+     * @return numFirstMax
+     */
+    public int getSecondBase() {
+        if (this.secondBase == 0) {
+            // 旧データ対応
+            return 6;
+        }
+        return this.secondBase;
     }
 }

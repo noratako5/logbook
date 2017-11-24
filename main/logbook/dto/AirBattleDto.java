@@ -85,27 +85,25 @@ public class AirBattleDto {
             }
         }
 
-        JsonValue jsonStage2 = kouku.get("api_stage2");
-        if ((jsonStage2 != null) && (jsonStage2 != JsonValue.NULL)) {
-            JsonObject jsonStage2Obj = kouku.getJsonObject("api_stage2");
-            this.stage2 = readPlaneCount(jsonStage2Obj);
+        JsonObject jsonStage2 = JsonUtils.getJsonObject(kouku, "api_stage2");
+        if (jsonStage2 != null) {
+            this.stage2 = readPlaneCount(jsonStage2);
 
-            JsonValue jsonAirFire = jsonStage2Obj.get("api_air_fire");
-            if ((jsonAirFire != null) && (jsonAirFire != JsonValue.NULL)) {
-                JsonObject af = jsonStage2Obj.getJsonObject("api_air_fire");
+            JsonObject jsonAirFire = JsonUtils.getJsonObject(jsonStage2, "api_air_fire");
+            if (jsonAirFire != null) {
                 this.airFire = new int[] {
-                        af.getInt("api_idx"),
-                        af.getInt("api_kind")
+                        jsonAirFire.getInt("api_idx"),
+                        jsonAirFire.getInt("api_kind")
                 };
-                this.airFireItems = JsonUtils.getIntArray(af, "api_use_items");
+                this.airFireItems = JsonUtils.getIntArray(jsonAirFire, "api_use_items");
             }
         }
 
         this.atacks = BattleAtackDto.makeAir(
-                baseidx,
-                kouku.get("api_plane_from"),
-                kouku.get("api_stage3"),
-                isCombined ? kouku.get("api_stage3_combined") : null,
+                baseidx, 6,
+                JsonUtils.getJsonArray(kouku, "api_plane_from"),
+                JsonUtils.getJsonObject(kouku, "api_stage3"),
+                isCombined ? JsonUtils.getJsonObject(kouku, "api_stage3_combined") : null,
                 isBase);
     }
 

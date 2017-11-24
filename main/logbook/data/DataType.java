@@ -67,7 +67,7 @@ public enum DataType {
     COMBINED_EACH_BATTLE("/kcsapi/api_req_combined_battle/each_battle"),
     /** 戦闘(連合艦隊vs連合艦隊) */
     COMBINED_EACH_BATTLE_WATER("/kcsapi/api_req_combined_battle/each_battle_water"),
-    /** 戦闘(敵連合艦隊払暁戦) */
+    /** 戦闘(連合艦隊　夜昼戦）*/
     COMBINED_EC_NIGHT_TO_DAY("/kcsapi/api_req_combined_battle/ec_night_to_day"),
     /** 戦闘結果 */
     BATTLE_RESULT("/kcsapi/api_req_sortie/battleresult"),

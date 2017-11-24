@@ -109,6 +109,45 @@ import logbook.thread.ThreadStateObserver;
 import logbook.util.JIntellitypeWrapper;
 import logbook.util.SwtUtils;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.ShellAdapter;
+import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Tray;
+import org.eclipse.swt.widgets.TrayItem;
+import org.eclipse.wb.swt.SWTResourceManager;
+
+import com.melloware.jintellitype.HotkeyListener;
+
 /**
  * メイン画面
  *
@@ -136,11 +175,17 @@ public final class ApplicationMain extends WindowBase {
     public static void logPrint(final String mes) {
         if (main.display.getThread() == Thread.currentThread()) {
             main.printMessage(mes);
-        } else {
+        }
+        else {
             main.display.asyncExec(new Runnable() {
                 @Override
                 public void run() {
-                    main.printMessage(mes);
+                    try {
+                        main.printMessage(mes);
+                    }
+                    catch (Exception e) {
+                        LOG.get().warn("ログの追加に失敗", e);
+                    }
                 }
             });
         }
@@ -490,7 +535,8 @@ public final class ApplicationMain extends WindowBase {
             };
             dummyHolderMouseListener.mouseDown(null);
             dummyLabel.addMouseListener(dummyHolderMouseListener);
-        } else {
+        }
+        else {
             this.subwindowHost = new Shell(this.display, SWT.TOOL);
         }
 
@@ -760,7 +806,8 @@ public final class ApplicationMain extends WindowBase {
             MenuItem cmdshiplist = new MenuItem(cmdmenu, SWT.CHECK);
             if (i == 0) {
                 cmdshiplist.setAccelerator(SWT.CTRL + ('S'));
-            } else {
+            }
+            else {
                 cmdshiplist.setAccelerator(SWT.CTRL + ('1' + i));
             }
             this.shipTableWindows[i] = new ShipTable(this.subwindowHost, cmdshiplist, i);
@@ -1260,7 +1307,8 @@ public final class ApplicationMain extends WindowBase {
                     // 他のウィンドウを連動させる
                     if (minimum) {
                         ApplicationMain.this.childIconified();
-                    } else {
+                    }
+                    else {
                         ApplicationMain.this.childDeiconified();
                     }
                 }
@@ -1288,7 +1336,8 @@ public final class ApplicationMain extends WindowBase {
                             LayoutLogic.hide(control, false);
                         }
                     }
-                } else {
+                }
+                else {
                     shell.setSize(ApplicationMain.this.getRestoreSize());
                 }
                 shell.setRedraw(true);
@@ -1342,7 +1391,8 @@ public final class ApplicationMain extends WindowBase {
                     Clipboard clipboard = new Clipboard(Display.getDefault());
                     clipboard.setContents(new Object[] { new DeckBuilder().getDeckBuilderURL(isUseCopyDeckBuilder) },
                             new Transfer[] { TextTransfer.getInstance() });
-                } else {
+                }
+                else {
                     Shell shell = new Shell(Display.getDefault(), SWT.TOOL);
                     MessageBox mes = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK);
                     mes.setText(AppConstants.TITLEBAR_TEXT);
@@ -1407,7 +1457,8 @@ public final class ApplicationMain extends WindowBase {
                     Clipboard clipboard = new Clipboard(Display.getDefault());
                     clipboard.setContents(new Object[] { new FleetFormatter().get(isLockedOnlyFleetFormat) },
                             new Transfer[] { TextTransfer.getInstance() });
-                } else {
+                }
+                else {
                     Shell shell = new Shell(Display.getDefault(), SWT.TOOL);
                     MessageBox mes = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK);
                     mes.setText(AppConstants.TITLEBAR_TEXT);
@@ -1789,26 +1840,31 @@ public final class ApplicationMain extends WindowBase {
                     display.asyncExec(new Runnable() {
                         @Override
                         public void run() {
-                            if (ApplicationMain.this.shell.isDisposed()) {
-                                // ウインドウが閉じられていたらなにもしない
-                                return;
-                            }
-
-                            MessageBox box = new MessageBox(ApplicationMain.this.shell, SWT.YES | SWT.NO
-                                    | SWT.ICON_QUESTION);
-                            box.setText("新しいバージョン");
-                            box.setMessage("新しいバージョンがあります。ホームページを開きますか？\r\n"
-                                    + "現在のバージョン:" + AppConstants.VERSION + "\r\n"
-                                    + "新しいバージョン:" + okversions[0] + "\r\n"
-                                    + "※自動アップデートチェックは[その他]-[設定]からOFFに出来ます");
-
-                            // OKを押されたらホームページへ移動する
-                            if (box.open() == SWT.YES) {
-                                try {
-                                    Desktop.getDesktop().browse(AppConstants.HOME_PAGE_URI);
-                                } catch (Exception e) {
-                                    LOG.get().warn("ウェブサイトに移動が失敗しました", e);
+                            try {
+                                if (ApplicationMain.this.shell.isDisposed()) {
+                                    // ウインドウが閉じられていたらなにもしない
+                                    return;
                                 }
+
+                                MessageBox box = new MessageBox(ApplicationMain.this.shell, SWT.YES | SWT.NO
+                                        | SWT.ICON_QUESTION);
+                                box.setText("新しいバージョン");
+                                box.setMessage("新しいバージョンがあります。ホームページを開きますか？\r\n"
+                                        + "現在のバージョン:" + AppConstants.VERSION + "\r\n"
+                                        + "新しいバージョン:" + okversions[0] + "\r\n"
+                                        + "※自動アップデートチェックは[その他]-[設定]からOFFに出来ます");
+
+                                // OKを押されたらホームページへ移動する
+                                if (box.open() == SWT.YES) {
+                                    try {
+                                        Desktop.getDesktop().browse(AppConstants.HOME_PAGE_URI);
+                                    } catch (Exception e) {
+                                        LOG.get().warn("ウェブサイトに移動が失敗しました", e);
+                                    }
+                                }
+                            }
+                            catch (Exception e) {
+                                LOG.get().warn("更新確認でエラー", e);
                             }
                         }
                     });

@@ -70,8 +70,13 @@ public final class BackgroundInitializer extends Thread {
                 this.display.asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        for (ShipInfoDto ship : MasterData.getMaster().getShips().values()) {
-                            ShipParameterRecord.update(ship, null);
+                        try {
+                            for (ShipInfoDto ship : MasterData.getMaster().getShips().values()) {
+                                ShipParameterRecord.update(ship, null);
+                            }
+                        }
+                        catch (Exception e) {
+                            LOG.get().warn("データ更新でエラー", e);
                         }
                     }
                 });
@@ -92,8 +97,13 @@ public final class BackgroundInitializer extends Thread {
                 this.display.asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        GlobalContext.addMissionResultList(missionResultList);
-                        ApplicationMain.logPrint("遠征ログ読み込み完了(" + missionResultList.size() + "件)");
+                        try {
+                            GlobalContext.addMissionResultList(missionResultList);
+                            ApplicationMain.logPrint("遠征ログ読み込み完了(" + missionResultList.size() + "件)");
+                        }
+                        catch (Exception e) {
+                            LOG.get().warn("GUI更新でエラー", e);
+                        }
                     }
                 });
             }
@@ -109,8 +119,13 @@ public final class BackgroundInitializer extends Thread {
                 this.display.asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        GlobalContext.addGetshipList(createShipList);
-                        ApplicationMain.logPrint("建造ログ読み込み完了(" + createShipList.size() + "件)");
+                        try {
+                            GlobalContext.addGetshipList(createShipList);
+                            ApplicationMain.logPrint("建造ログ読み込み完了(" + createShipList.size() + "件)");
+                        }
+                        catch (Exception e) {
+                            LOG.get().warn("GUI更新でエラー", e);
+                        }
                     }
                 });
             }
@@ -126,8 +141,13 @@ public final class BackgroundInitializer extends Thread {
                 this.display.asyncExec(new Runnable() {
                     @Override
                     public void run() {
-                        GlobalContext.addCreateItemList(createItemList);
-                        ApplicationMain.logPrint("開発ログ読み込み完了(" + createItemList.size() + "件)");
+                        try {
+                            GlobalContext.addCreateItemList(createItemList);
+                            ApplicationMain.logPrint("開発ログ読み込み完了(" + createItemList.size() + "件)");
+                        }
+                        catch (Exception e) {
+                            LOG.get().warn("GUI更新でエラー", e);
+                        }
                     }
                 });
             }
@@ -142,10 +162,15 @@ public final class BackgroundInitializer extends Thread {
             this.display.asyncExec(new Runnable() {
                 @Override
                 public void run() {
-                    final int numLogRecord = BattleResultServer.get().size();
-                    ApplicationMain.logPrint("出撃ログ読み込み完了(" + numLogRecord + "件)");
-                    if (failCount > 0) {
-                        ApplicationMain.logPrint("注意:" + failCount + "件の出撃ログ読み込みに失敗しています");
+                    try {
+                        final int numLogRecord = BattleResultServer.get().size();
+                        ApplicationMain.logPrint("出撃ログ読み込み完了(" + numLogRecord + "件)");
+                        if (failCount > 0) {
+                            ApplicationMain.logPrint("注意:" + failCount + "件の出撃ログ読み込みに失敗しています");
+                        }
+                    }
+                    catch (Exception e) {
+                        LOG.get().warn("GUI更新でエラー", e);
                     }
                 }
             });

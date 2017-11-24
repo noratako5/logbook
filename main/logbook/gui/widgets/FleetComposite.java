@@ -62,7 +62,7 @@ public class FleetComposite extends Composite {
     /** 致命的 */
     public static final int FATAL = 2;
     /** 1艦隊に編成できる艦娘の数 */
-    private static final int MAXCHARA = 7;
+    private static final int MAXCHARA = AppConstants.MAXCHARA;;
     /** フォント大きい */
     private final static int LARGE = 2;
     /** フォント小さい */
@@ -299,6 +299,8 @@ public class FleetComposite extends Composite {
         int totallv = 0;
         // 艦隊合計対潜値(装備込)
         int totaltaisen = 0;
+        // 艦隊合計対空値(装備込)
+        int totaltaiku = 0;
 
         int dockIndex = Integer.parseInt(dock.getId()) - 1;
         CondTiming condTiming = GlobalContext.getCondTiming();
@@ -344,6 +346,8 @@ public class FleetComposite extends Composite {
             totallv += ship.getLv();
             // 艦隊合計対潜値(装備込)
             totaltaisen += ship.getTaisen();
+            // 艦隊合計対空値(装備込)
+            totaltaiku += ship.getTaiku();
             // 損失艦載機
             int[] maxeq = ship.getMaxeq();
             int[] onslot = ship.getOnSlot();
@@ -526,21 +530,26 @@ public class FleetComposite extends Composite {
                 updator = new Runnable() {
                     @Override
                     public void run() {
-                        long rest = TimeLogic.getRest(new Date(), condClearDate);
-                        String str;
-                        String tip = null;
-                        String reststr = TimeLogic.toDateRestString(rest);
-                        if (reststr != null) {
-                            str = "疲労あと" + reststr;
-                            tip = format.format(condClearDate);
+                        try {
+                            long rest = TimeLogic.getRest(new Date(), condClearDate);
+                            String str;
+                            String tip = null;
+                            String reststr = TimeLogic.toDateRestString(rest);
+                            if (reststr != null) {
+                                str = "疲労あと" + reststr;
+                                tip = format.format(condClearDate);
+                            }
+                            else {
+                                str = "疲労まもなく回復";
+                            }
+                            timeLabel.setText(str);
+                            timeLabel.setToolTipText(tip);
+                            timeLabel.setForeground(SWTResourceManager.getColor(SWT.COLOR_DARK_GREEN));
+                            timeLabel.getParent().layout();
                         }
-                        else {
-                            str = "疲労まもなく回復";
+                        catch (Exception e) {
+                            LOG.get().warn("披露表示更新でエラー", e);
                         }
-                        timeLabel.setText(str);
-                        timeLabel.setToolTipText(tip);
-                        timeLabel.setForeground(SWTResourceManager.getColor(SWT.COLOR_DARK_GREEN));
-                        timeLabel.getParent().layout();
                     }
                 };
             }
@@ -736,8 +745,13 @@ public class FleetComposite extends Composite {
         // 合計対潜値(装備込)
         this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_TAISEN, totaltaisen), null);
         this.addStyledText(this.message, "\n", null);
+        // 合計対空値(装備込)
+        this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_TAIKU, totaltaiku), null);
+        this.addStyledText(this.message, "\n", null);
         // 合計Lv
         this.addStyledText(this.message, MessageFormat.format(AppConstants.MESSAGE_TOTAL_LV, totallv), null);
+
+        this.addStyledText(this.message, "\n", null);
 
         if (dram > 0) {
             // ドラム缶合計数
@@ -921,50 +935,55 @@ public class FleetComposite extends Composite {
 
         @Override
         public void run() {
-            String str = "";
-            String tip = null;
+            try {
+                String str = "";
+                String tip = null;
 
-            Date now = TimerContext.get().getLastUpdated();
-            AkashiTimer.RepairState repairState = TimerContext.get().getAkashiRepairState(this.dockIndex);
-            if (repairState.isRepairing()) {
-                AkashiTimer.ShipState state = repairState.get().get(this.dockPosition);
-                if (state != null) {
-                    if (now.before(state.getFinish())) {
-                        String reststr = TimeLogic.toDateRestString(TimeLogic.getRest(now, state.getFinish()), true);
-                        String nextstr = TimeLogic.toDateRestString(state.getNext() / 1000, true);
-                        boolean showRemain;
-                        switch (AppConfig.get().getAkashiTimerFormat()) {
-                        case 1:
-                            showRemain = false;
-                            break;
-                        case 2:
-                            showRemain = ((this.showCount++ / 4) % 2) == 0;
-                            break;
-                        default:
-                            showRemain = true;
-                            break;
-                        }
-                        if (showRemain) {
-                            str = "修理あと" + reststr;
+                Date now = TimerContext.get().getLastUpdated();
+                AkashiTimer.RepairState repairState = TimerContext.get().getAkashiRepairState(this.dockIndex);
+                if (repairState.isRepairing()) {
+                    AkashiTimer.ShipState state = repairState.get().get(this.dockPosition);
+                    if (state != null) {
+                        if (now.before(state.getFinish())) {
+                            String reststr = TimeLogic
+                                    .toDateRestString(TimeLogic.getRest(now, state.getFinish()), true);
+                            String nextstr = TimeLogic.toDateRestString(state.getNext() / 1000, true);
+                            boolean showRemain;
+                            switch (AppConfig.get().getAkashiTimerFormat()) {
+                            case 1:
+                                showRemain = false;
+                                break;
+                            case 2:
+                                showRemain = ((this.showCount++ / 4) % 2) == 0;
+                                break;
+                            default:
+                                showRemain = true;
+                                break;
+                            }
+                            if (showRemain) {
+                                str = "修理あと" + reststr;
+                            }
+                            else {
+                                str = "次回復まで" + nextstr;
+                            }
+                            tip = "現在までに+" + state.getCurrentGain() + "回復\n" +
+                                    "次の回復まで" + nextstr + "\n" +
+                                    "全回復まで" + reststr +
+                                    "(" + format.format(state.getFinish()) + ")";
                         }
                         else {
-                            str = "次回復まで" + nextstr;
+                            str = "修理まもなく完了";
                         }
-                        tip = "現在までに+" + state.getCurrentGain() + "回復\n" +
-                                "次の回復まで" + nextstr + "\n" +
-                                "全回復まで" + reststr +
-                                "(" + format.format(state.getFinish()) + ")";
-                    }
-                    else {
-                        str = "修理まもなく完了";
                     }
                 }
-            }
 
-            this.label.setText(str);
-            this.label.setToolTipText(tip);
-            this.label.setForeground(SWTResourceManager.getColor(SWT.COLOR_DARK_BLUE));
-            this.label.getParent().layout();
+                this.label.setText(str);
+                this.label.setToolTipText(tip);
+                this.label.setForeground(SWTResourceManager.getColor(SWT.COLOR_DARK_BLUE));
+                this.label.getParent().layout();
+            } catch (Exception e) {
+                LOG.get().warn("泊地修理更新でエラー", e);
+            }
         }
     }
 }
