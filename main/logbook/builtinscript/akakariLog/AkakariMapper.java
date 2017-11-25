@@ -155,7 +155,7 @@ public class AkakariMapper {
             return msgMapper.readValue(raw,AkakariSyutsugekiLog[].class);
         }
         catch (Exception e) {
-            LOG.get().warn("load failed", e);
+            LOG.get().warn("load failed"+file.toString(), e);
             return null;
         }
     }

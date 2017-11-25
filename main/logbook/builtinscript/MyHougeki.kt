@@ -73,7 +73,7 @@ private fun MyHougekiRowBodyConstructEC(
     val api_hougeki = arg.dayPhaseOrNull?.tree?.get(apiName) as? LinkedTreeMap<*,*>
     if(api_hougeki == null){ return }
     var prevHP = startHP
-    val hougekiHP = startHP.createAttackHP(attackList).first
+    val hougekiHP = startHP.createAttackHP(attackList,arg.battle).first
     val api_at_eflag = GsonUtil.toIntArray(api_hougeki["api_at_eflag"])
     val api_at_list = GsonUtil.toIntArray(api_hougeki["api_at_list"])
     val api_at_type = GsonUtil.toIntArray(api_hougeki["api_at_type"])

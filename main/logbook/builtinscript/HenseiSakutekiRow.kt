@@ -14,7 +14,7 @@ fun HenseiSakutekiRowHeader(): ArrayList<String> {
     header.add("装備スコア合計")
     header.add("司令部スコア")
     header.add("人数スコア")
-    for (i in 1..6) {
+    for (i in 1..7) {
         val index = i.toString()
         ShipSakutekiRowHeader().forEach{ s -> header.add("自軍$index.$s") }
     }
@@ -44,7 +44,7 @@ fun HenseiSakutekiRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
     row.add(itemScore.Kirisute(10))
     row.add(levelScore.Kirisute(0))
     row.add(countScore.toString())
-    for (i in 0..5) {
+    for (i in 0..6) {
         row.addAll(arg.friendSakutekiRows[indexList.tryGet(i)?:i])
     }
     if (arg.filter.filterOutput(row)) {

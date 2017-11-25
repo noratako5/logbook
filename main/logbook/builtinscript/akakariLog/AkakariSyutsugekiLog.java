@@ -172,6 +172,9 @@ public class AkakariSyutsugekiLog {
             if(req == null){
                 continue;
             }
+            if(data.body == null){
+                continue;
+            }
             if(req.get("api_area_id")!=null && req.get("api_base_id")!=null){
                 int areaId = JacksonUtil.toInt(req.get("api_area_id"));
                 int baseId = JacksonUtil.toInt(req.get("api_base_id"));

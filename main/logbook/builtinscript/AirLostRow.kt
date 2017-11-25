@@ -31,7 +31,7 @@ fun AirLostRowHeader(): ArrayList<String> {
         ShipRowHeader()
                 .forEach { s -> header.add("敵艦$index.$s") }
     }
-    for (i in 1..6) {
+    for (i in 1..7) {
         val index = i.toString()
         ShipRowHeader()
                 .forEach { s -> header.add("味方艦$index.$s") }
@@ -96,10 +96,10 @@ private fun AirLostRowBodyConstruct(
         val fbak_flag = GsonUtil.toIntArray(this["api_fbak_flag"])
         val ebak_flag = GsonUtil.toIntArray(this["api_ebak_flag"])
         for (i in frai_flag.indices) {
-            if (frai_flag[i] == 1) { frai_count++ }
-            if (erai_flag[i] == 1) { erai_count++ }
-            if (fbak_flag[i] == 1) { fbak_count++ }
-            if (ebak_flag[i] == 1) { ebak_count++ }
+            if (frai_flag.tryGet(i) ?: -1 == 1) { frai_count++ }
+            if (erai_flag.tryGet(i) ?: -1 == 1) { erai_count++ }
+            if (fbak_flag.tryGet(i) ?: -1 == 1) { fbak_count++ }
+            if (ebak_flag.tryGet(i) ?: -1 == 1) { ebak_count++ }
         }
     }
     val combined = api_kouku?.get("api_stage3_combined") as? LinkedTreeMap<*, *>
@@ -108,14 +108,24 @@ private fun AirLostRowBodyConstruct(
         val fbak_flag = GsonUtil.toIntArray(this["api_fbak_flag"])
         val erai_flag = GsonUtil.toIntArray(this["api_erai_flag"])
         val ebak_flag = GsonUtil.toIntArray(this["api_ebak_flag"])
-        for (i in frai_flag.indices) {
-            if (frai_flag[i] == 1) { frai_count++ }
-            if (fbak_flag[i] == 1) { fbak_count++ }
+        if(frai_flag != null) {
+            for (i in frai_flag.indices) {
+                if (frai_flag.tryGet(i) ?: -1 == 1) {
+                    frai_count++
+                }
+                if (fbak_flag.tryGet(i) ?: -1 == 1) {
+                    fbak_count++
+                }
+            }
         }
         if (erai_flag != null) {
             for (i in erai_flag.indices) {
-                if (erai_flag[i] == 1) { erai_count++ }
-                if (ebak_flag[i] == 1) { ebak_count++ }
+                if (erai_flag.tryGet(i) ?: -1 == 1) {
+                    erai_count++
+                }
+                if (ebak_flag.tryGet(i) ?: -1 == 1) {
+                    ebak_count++
+                }
             }
         }
     }
@@ -124,7 +134,7 @@ private fun AirLostRowBodyConstruct(
     row.add(erai_count.toString())
     row.add(ebak_count.toString())
     for (i in 0..5) { row.addAll(arg.enemyRows[i].updateShipRowBody(prevHP[HP_INDEX_ENEMY][i], arg.battle.maxEnemyHp?.tryGet(i)?:-1)) }
-    for (i in 0..5) { row.addAll(arg.friendRows[i].updateShipRowBody(prevHP[HP_INDEX_FRIEND][i], arg.battle.maxFriendHp?.tryGet(i)?:-1)) }
+    for (i in 0..6) { row.addAll(arg.friendRows[i].updateShipRowBody(prevHP[HP_INDEX_FRIEND][i], arg.battle.maxFriendHp?.tryGet(i)?:-1)) }
     for (i in 0..5) { row.addAll(arg.enemyCombinedRows[i].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][i], arg.battle.maxEnemyHpCombined?.tryGet(i)?:-1)) }
     for (i in 0..5) { row.addAll(arg.combinedRows[i].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][i],arg.battle.maxFriendHpCombined?.tryGet(i)?:-1)) }
     row.add(arg.combinedFlagString)

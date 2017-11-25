@@ -24,7 +24,7 @@ fun AkakariAirRowHeader(): ArrayList<String> {
     header.add("対空カットイン.表示装備1")
     header.add("対空カットイン.表示装備2")
     header.add("対空カットイン.表示装備3")
-    for (i in 1..6) {
+    for (i in 1..7) {
         val index = i.toString()
         ShipSummaryRowHeader()
                 .forEach { s -> header.add("攻撃艦$index.$s") }
@@ -81,37 +81,72 @@ private fun AkakariAirRowBodyConstruct(
         val ecl_flag = GsonUtil.toIntArray(this["api_ecl_flag"])
         val fdam = GsonUtil.toDoubleArray(this["api_fdam"])
         val edam = GsonUtil.toDoubleArray(this["api_edam"])
-
-        for (df in 1..6) {
-            if (arg.battle.enemy.size <= df - 1) {
-                continue
+        if(arg.isSplitHp){
+            for (df in 0..6) {
+                if (arg.battle.enemy.size <= df) {
+                    continue
+                }
+                val row = ArrayList<String>(rowHead)
+                arg.friendSummaryRows.forEach { b -> row.addAll(b) }
+                row.add(erai_flag?.tryGet(df)?.toString() ?: "")
+                row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
+                row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
+                row.add(edam?.tryGet(df)?.toInt()?.toString() ?: "")
+                row.add(edam?.tryGet(df)?.toKabauString() ?: "")
+                row.addAll(arg.enemyAkakariRows[df].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY][df], arg.battle.maxEnemyHp?.tryGet(df) ?: -1))
+                if (arg.filter.filterDefenceCountItem(arg.battle.enemy.tryGet(df)) && arg.filter.filterOutput(row)) {
+                    body.add(row)
+                }
             }
-            val row = ArrayList<String>(rowHead)
-            arg.friendSummaryRows.forEach { b -> row.addAll(b) }
-            row.add(erai_flag?.tryGet(df)?.toString() ?: "")
-            row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
-            row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
-            row.add(edam?.tryGet(df)?.toInt()?.toString() ?: "")
-            row.add(edam?.tryGet(df)?.toKabauString() ?: "")
-            row.addAll(arg.enemyAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY][df - 1], arg.battle.maxEnemyHp?.tryGet(df - 1) ?: -1))
-            if (arg.filter.filterDefenceCountItem(arg.battle.enemy.tryGet(df - 1)) && arg.filter.filterOutput(row)) {
-                body.add(row)
+            for (df in 0..6) {
+                if (arg.battle.dock.ships.size <= df) {
+                    continue
+                }
+                val row = ArrayList<String>(rowHead)
+                arg.enemySummaryRows.forEach { b -> row.addAll(b) }
+                row.add(frai_flag?.tryGet(df)?.toString() ?: "")
+                row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
+                row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
+                row.add(fdam?.tryGet(df)?.toInt()?.toString() ?: "")
+                row.add(fdam?.tryGet(df)?.toKabauString() ?: "")
+                row.addAll(arg.friendAkakariRows[df].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND][df], arg.battle.maxFriendHp?.tryGet(df) ?: -1))
+                if (arg.filter.filterDefenceCountItem(arg.battle.dock.ships.tryGet(df)) && arg.filter.filterOutput(row)) {
+                    body.add(row)
+                }
             }
         }
-        for (df in 1..6) {
-            if (arg.battle.dock.ships.size <= df - 1) {
-                continue
+        else {
+            for (df in 1..6) {
+                if (arg.battle.enemy.size <= df - 1) {
+                    continue
+                }
+                val row = ArrayList<String>(rowHead)
+                arg.friendSummaryRows.forEach { b -> row.addAll(b) }
+                row.add(erai_flag?.tryGet(df)?.toString() ?: "")
+                row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
+                row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
+                row.add(edam?.tryGet(df)?.toInt()?.toString() ?: "")
+                row.add(edam?.tryGet(df)?.toKabauString() ?: "")
+                row.addAll(arg.enemyAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY][df - 1], arg.battle.maxEnemyHp?.tryGet(df - 1) ?: -1))
+                if (arg.filter.filterDefenceCountItem(arg.battle.enemy.tryGet(df - 1)) && arg.filter.filterOutput(row)) {
+                    body.add(row)
+                }
             }
-            val row = ArrayList<String>(rowHead)
-            arg.enemySummaryRows.forEach { b -> row.addAll(b) }
-            row.add(frai_flag?.tryGet(df)?.toString() ?: "")
-            row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
-            row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
-            row.add(fdam?.tryGet(df)?.toInt()?.toString() ?: "")
-            row.add(fdam?.tryGet(df)?.toKabauString() ?: "")
-            row.addAll(arg.friendAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND][df - 1], arg.battle.maxFriendHp?.tryGet(df - 1) ?: -1))
-            if (arg.filter.filterDefenceCountItem(arg.battle.dock.ships.tryGet(df - 1)) && arg.filter.filterOutput(row)) {
-                body.add(row)
+            for (df in 1..6) {
+                if (arg.battle.dock.ships.size <= df - 1) {
+                    continue
+                }
+                val row = ArrayList<String>(rowHead)
+                arg.enemySummaryRows.forEach { b -> row.addAll(b) }
+                row.add(frai_flag?.tryGet(df)?.toString() ?: "")
+                row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
+                row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
+                row.add(fdam?.tryGet(df)?.toInt()?.toString() ?: "")
+                row.add(fdam?.tryGet(df)?.toKabauString() ?: "")
+                row.addAll(arg.friendAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND][df - 1], arg.battle.maxFriendHp?.tryGet(df - 1) ?: -1))
+                if (arg.filter.filterDefenceCountItem(arg.battle.dock.ships.tryGet(df - 1)) && arg.filter.filterOutput(row)) {
+                    body.add(row)
+                }
             }
         }
     }
@@ -126,38 +161,78 @@ private fun AkakariAirRowBodyConstruct(
         val fdam = GsonUtil.toDoubleArray(this["api_fdam"])
         val edam = GsonUtil.toDoubleArray(this["api_edam"])
         if (arg.battle.isCombined && frai_flag != null) {
-            for (df in 1..6) {
-                if (arg.battle.dockCombined.ships.size <= df - 1) {
-                    continue
+            if(arg.isSplitHp){
+                for (df in 0..6) {
+                    if (arg.battle.dockCombined.ships.size <= df) {
+                        continue
+                    }
+                    val row = ArrayList<String>(rowHead)
+                    arg.enemySummaryRows.forEach { b -> row.addAll(b) }
+                    row.add(frai_flag.tryGet(df)?.toString() ?: "")
+                    row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(fdam?.tryGet(df)?.toInt()?.toString() ?: "")
+                    row.add(fdam?.tryGet(df)?.toKabauString() ?: "")
+                    row.addAll(arg.combinedAkakariRows[df].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df], arg.battle.maxFriendHpCombined.tryGet(df) ?: -1))
+                    if (arg.filter.filterDefenceCountItem(arg.battle.dockCombined.ships.get(df)) && arg.filter.filterOutput(row)) {
+                        body.add(row)
+                    }
                 }
-                val row = ArrayList<String>(rowHead)
-                arg.enemySummaryRows.forEach { b -> row.addAll(b) }
-                row.add(frai_flag.tryGet(df)?.toString() ?: "")
-                row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
-                row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
-                row.add(fdam?.tryGet(df)?.toInt()?.toString() ?: "")
-                row.add(fdam?.tryGet(df)?.toKabauString() ?: "")
-                row.addAll(arg.combinedAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df - 1], arg.battle.maxFriendHpCombined.tryGet(df - 1) ?: -1))
-                if (arg.filter.filterDefenceCountItem(arg.battle.dockCombined.ships.get(df - 1)) && arg.filter.filterOutput(row)) {
-                    body.add(row)
+            }
+            else {
+                for (df in 1..6) {
+                    if (arg.battle.dockCombined.ships.size <= df - 1) {
+                        continue
+                    }
+                    val row = ArrayList<String>(rowHead)
+                    arg.enemySummaryRows.forEach { b -> row.addAll(b) }
+                    row.add(frai_flag.tryGet(df)?.toString() ?: "")
+                    row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(fdam?.tryGet(df)?.toInt()?.toString() ?: "")
+                    row.add(fdam?.tryGet(df)?.toKabauString() ?: "")
+                    row.addAll(arg.combinedAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df - 1], arg.battle.maxFriendHpCombined.tryGet(df - 1) ?: -1))
+                    if (arg.filter.filterDefenceCountItem(arg.battle.dockCombined.ships.get(df - 1)) && arg.filter.filterOutput(row)) {
+                        body.add(row)
+                    }
                 }
             }
         }
         if (arg.battle.isEnemyCombined && erai_flag != null) {
-            for (df in 1..6) {
-                if (arg.battle.enemyCombined.size <= df - 1) {
-                    continue
+            if(arg.isSplitHp){
+                for (df in 0..6) {
+                    if (arg.battle.enemyCombined.size <= df) {
+                        continue
+                    }
+                    val row = ArrayList<String>(rowHead)
+                    arg.friendSummaryRows.forEach { b -> row.addAll(b) }
+                    row.add(erai_flag.tryGet(df)?.toString() ?: "")
+                    row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(edam?.tryGet(df)?.toInt()?.toString() ?: "")
+                    row.add(edam?.tryGet(df)?.toKabauString() ?: "")
+                    row.addAll(arg.enemyCombinedAkakariRows[df].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df], arg.battle.maxEnemyHpCombined.tryGet(df) ?: -1))
+                    if (arg.filter.filterDefenceCountItem(arg.battle.enemyCombined[df]) && arg.filter.filterOutput(row)) {
+                        body.add(row)
+                    }
                 }
-                val row = ArrayList<String>(rowHead)
-                arg.friendSummaryRows.forEach { b -> row.addAll(b) }
-                row.add(erai_flag.tryGet(df)?.toString() ?: "")
-                row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
-                row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
-                row.add(edam?.tryGet(df)?.toInt()?.toString() ?: "")
-                row.add(edam?.tryGet(df)?.toKabauString() ?: "")
-                row.addAll(arg.enemyCombinedAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df - 1], arg.battle.maxEnemyHpCombined.tryGet(df - 1) ?: -1))
-                if (arg.filter.filterDefenceCountItem(arg.battle.enemyCombined[df - 1]) && arg.filter.filterOutput(row)) {
-                    body.add(row)
+            }
+            else {
+                for (df in 1..6) {
+                    if (arg.battle.enemyCombined.size <= df - 1) {
+                        continue
+                    }
+                    val row = ArrayList<String>(rowHead)
+                    arg.friendSummaryRows.forEach { b -> row.addAll(b) }
+                    row.add(erai_flag.tryGet(df)?.toString() ?: "")
+                    row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
+                    row.add(edam?.tryGet(df)?.toInt()?.toString() ?: "")
+                    row.add(edam?.tryGet(df)?.toKabauString() ?: "")
+                    row.addAll(arg.enemyCombinedAkakariRows[df - 1].updateAkakariShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df - 1], arg.battle.maxEnemyHpCombined.tryGet(df - 1) ?: -1))
+                    if (arg.filter.filterDefenceCountItem(arg.battle.enemyCombined[df - 1]) && arg.filter.filterOutput(row)) {
+                        body.add(row)
+                    }
                 }
             }
         }
@@ -166,29 +241,31 @@ private fun AkakariAirRowBodyConstruct(
 
 fun AkakariAirRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
     val body = ArrayList<ArrayList<String>>()
-    arg.dayPhaseOrNull?.run {
-        val phase = this
-        AkakariAirRowBodyConstruct(
-                arg = arg,
-                air = phase.airInjection,
-                apiName = "api_injection_kouku",
-                startHP = arg.battleHP.dayPhase!!.injectionAirStartHP,
-                body = body
-        )
-        AkakariAirRowBodyConstruct(
-                arg = arg,
-                air = phase.air,
-                apiName = "api_kouku",
-                startHP = arg.battleHP.dayPhase!!.air1StartHP,
-                body = body
-        )
-        AkakariAirRowBodyConstruct(
-                arg = arg,
-                air = phase.air2,
-                apiName = "api_kouku2",
-                startHP = arg.battleHP.dayPhase!!.air2StartHP,
-                body = body
-        )
+    if(arg.hasAkakariInfo) {
+        arg.dayPhaseOrNull?.run {
+            val phase = this
+            AkakariAirRowBodyConstruct(
+                    arg = arg,
+                    air = phase.airInjection,
+                    apiName = "api_injection_kouku",
+                    startHP = arg.battleHP.dayPhase!!.injectionAirStartHP,
+                    body = body
+            )
+            AkakariAirRowBodyConstruct(
+                    arg = arg,
+                    air = phase.air,
+                    apiName = "api_kouku",
+                    startHP = arg.battleHP.dayPhase!!.air1StartHP,
+                    body = body
+            )
+            AkakariAirRowBodyConstruct(
+                    arg = arg,
+                    air = phase.air2,
+                    apiName = "api_kouku2",
+                    startHP = arg.battleHP.dayPhase!!.air2StartHP,
+                    body = body
+            )
+        }
     }
     return body
 }

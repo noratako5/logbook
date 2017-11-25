@@ -9,7 +9,7 @@ import java.util.stream.Collectors
 fun HenseiRowHeader(): ArrayList<String> {
     val header = DamageDayNightRowHeader()
     header.add("昼戦|夜戦")
-    for (i in 1..6) {
+    for (i in 1..7) {
         val index = i.toString()
         ShipRowHeader().forEach{ s -> header.add("自軍$index.$s") }
     }
@@ -36,7 +36,7 @@ fun HenseiRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
         val row = ArrayList<String>()
         row.addAll(DamageDayRowBody(arg))
         row.add("昼戦")
-        for (i in 0..5) {
+        for (i in 0..6) {
             row.addAll(arg.friendRows[i].updateShipRowBody(arg.battleHP.dayPhase!!.dayPhaseStartHP[HP_INDEX_FRIEND][i], arg.battle.maxFriendHp?.tryGet(i) ?: -1))
         }
         for (i in 0..5) {
@@ -58,7 +58,7 @@ fun HenseiRowBody(arg:ScriptArg): ArrayList<ArrayList<String>> {
         val row = ArrayList<String>()
         row.addAll(DamageDayRowBody(arg))
         row.add("夜戦")
-        for (i in 0..5) {
+        for (i in 0..6) {
             row.addAll(arg.friendRows[i].updateShipRowBody(arg.battleHP.nightPhase!!.nightPhaseStartHP[HP_INDEX_FRIEND][i], arg.battle.maxFriendHp?.tryGet(i) ?: -1))
         }
         for (i in 0..5) {

@@ -87,6 +87,8 @@ data class ScriptArg(
         get() = battleCache.enemyCombinedAkakariRows
     val hasAkakariInfo:Boolean
         get() = (AkakariSyutsugekiLogReader.battleDateToShipArray(battle.battleDate)!= null)
+    val isSplitHp:Boolean
+        get() = battle.isSplistHp
 }
 
 
@@ -133,7 +135,7 @@ data class BattleCache(
         get(){
             if(enemyRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipRowBodyBase(battle.enemy?.tryGet(i), battle.maxEnemyHp?.tryGet(i)?:0, i)) }
+                for (i in 0..6) { rows.add(ShipRowBodyBase(battle.enemy?.tryGet(i), battle.maxEnemyHp?.tryGet(i)?:0, i)) }
                 enemyRowsOrNull = rows
             }
             return enemyRowsOrNull!!
@@ -142,7 +144,7 @@ data class BattleCache(
         get(){
             if(friendRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipRowBodyBase(battle.dock?.ships?.tryGet(i), battle.maxFriendHp?.tryGet(i)?:0, i)) }
+                for (i in 0..6) { rows.add(ShipRowBodyBase(battle.dock?.ships?.tryGet(i), battle.maxFriendHp?.tryGet(i)?:0, i)) }
                 friendRowsOrNull = rows
             }
             return friendRowsOrNull!!
@@ -151,7 +153,7 @@ data class BattleCache(
         get(){
             if(enemyCombinedRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipRowBodyBase(battle.enemyCombined?.tryGet(i), battle.maxEnemyHpCombined?.tryGet(i)?:0, i+6)) }
+                for (i in 0..6) { rows.add(ShipRowBodyBase(battle.enemyCombined?.tryGet(i), battle.maxEnemyHpCombined?.tryGet(i)?:0, i+6)) }
                 enemyCombinedRowsOrNull = rows
             }
             return enemyCombinedRowsOrNull!!
@@ -160,7 +162,7 @@ data class BattleCache(
         get(){
             if(combinedRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipRowBodyBase(battle.dockCombined?.ships?.tryGet(i), battle.maxFriendHpCombined?.tryGet(i)?:0, i+6)) }
+                for (i in 0..6) { rows.add(ShipRowBodyBase(battle.dockCombined?.ships?.tryGet(i), battle.maxFriendHpCombined?.tryGet(i)?:0, i+6)) }
                 combinedRowsOrNull = rows
             }
             return combinedRowsOrNull!!
@@ -169,7 +171,7 @@ data class BattleCache(
         get(){
             if(enemySummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipSummaryRowBody(battle.enemy?.tryGet(i))) }
+                for (i in 0..6) { rows.add(ShipSummaryRowBody(battle.enemy?.tryGet(i))) }
                 enemySummaryRowsOrNull = rows
             }
             return enemySummaryRowsOrNull!!
@@ -178,7 +180,7 @@ data class BattleCache(
         get(){
             if(friendSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipSummaryRowBody(battle.dock?.ships?.tryGet(i))) }
+                for (i in 0..6) { rows.add(ShipSummaryRowBody(battle.dock?.ships?.tryGet(i))) }
                 friendSummaryRowsOrNull = rows
             }
             return friendSummaryRowsOrNull!!
@@ -187,7 +189,7 @@ data class BattleCache(
         get(){
             if(enemyCombinedSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipSummaryRowBody(battle.enemyCombined?.tryGet(i))) }
+                for (i in 0..6) { rows.add(ShipSummaryRowBody(battle.enemyCombined?.tryGet(i))) }
                 enemyCombinedSummaryRowsOrNull = rows
             }
             return enemyCombinedSummaryRowsOrNull!!
@@ -196,7 +198,7 @@ data class BattleCache(
         get(){
             if(combinedSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipSummaryRowBody(battle.dockCombined?.ships?.tryGet(i))) }
+                for (i in 0..6) { rows.add(ShipSummaryRowBody(battle.dockCombined?.ships?.tryGet(i))) }
                 combinedSummaryRowsOrNull = rows
             }
             return combinedSummaryRowsOrNull!!
@@ -205,7 +207,7 @@ data class BattleCache(
         get(){
             if(friendSakutekiRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipSakutekiRowBody(battle.dock?.ships?.tryGet(i),i)) }
+                for (i in 0..6) { rows.add(ShipSakutekiRowBody(battle.dock?.ships?.tryGet(i),i)) }
                 friendSakutekiRowsOrNull = rows
             }
             return friendSakutekiRowsOrNull!!
@@ -214,7 +216,7 @@ data class BattleCache(
         get(){
             if(combinedSakutekiRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(ShipSakutekiRowBody(battle.dockCombined?.ships?.tryGet(i),i)) }
+                for (i in 0..6) { rows.add(ShipSakutekiRowBody(battle.dockCombined?.ships?.tryGet(i),i)) }
                 combinedSakutekiRowsOrNull = rows
             }
             return combinedSakutekiRowsOrNull!!
@@ -246,7 +248,7 @@ data class BattleCache(
         get(){
             if(enemyIndexSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.enemy?.tryGet(i))) }
+                for (i in 0..6) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.enemy?.tryGet(i))) }
                 enemyIndexSummaryRowsOrNull = rows
             }
             return enemyIndexSummaryRowsOrNull!!
@@ -255,7 +257,7 @@ data class BattleCache(
         get(){
             if(friendIndexSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.dock?.ships?.tryGet(i))) }
+                for (i in 0..6) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.dock?.ships?.tryGet(i))) }
                 friendIndexSummaryRowsOrNull = rows
             }
             return friendIndexSummaryRowsOrNull!!
@@ -265,7 +267,7 @@ data class BattleCache(
         get(){
             if(enemyCombinedIndexSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.enemyCombined?.tryGet(i))) }
+                for (i in 0..6) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.enemyCombined?.tryGet(i))) }
                 enemyCombinedIndexSummaryRowsOrNull = rows
             }
             return enemyCombinedIndexSummaryRowsOrNull!!
@@ -274,7 +276,7 @@ data class BattleCache(
         get(){
             if(combinedIndexSummaryRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.dockCombined?.ships?.tryGet(i))) }
+                for (i in 0..6) { rows.add(HougekiIndexRowShipSummaryRowBody(battle.dockCombined?.ships?.tryGet(i))) }
                 combinedIndexSummaryRowsOrNull = rows
             }
             return combinedIndexSummaryRowsOrNull!!
@@ -284,7 +286,7 @@ data class BattleCache(
         get(){
             if(enemyAkakariRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.enemy?.tryGet(i), battle.maxEnemyHp?.tryGet(i)?:0, i,battle.battleDate)) }
+                for (i in 0..6) { rows.add(AkakariShipRowBodyBase(battle.enemy?.tryGet(i), battle.maxEnemyHp?.tryGet(i)?:0, i,battle.battleDate)) }
                 enemyAkakariRowsOrNull = rows
             }
             return enemyAkakariRowsOrNull!!
@@ -293,7 +295,7 @@ data class BattleCache(
         get(){
             if(friendAkakariRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.dock?.ships?.tryGet(i), battle.maxFriendHp?.tryGet(i)?:0, i,battle.battleDate)) }
+                for (i in 0..6) { rows.add(AkakariShipRowBodyBase(battle.dock?.ships?.tryGet(i), battle.maxFriendHp?.tryGet(i)?:0, i,battle.battleDate)) }
                 friendAkakariRowsOrNull = rows
             }
             return friendAkakariRowsOrNull!!
@@ -303,7 +305,7 @@ data class BattleCache(
         get(){
             if(enemyCombinedAkakariRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.enemyCombined?.tryGet(i), battle.maxEnemyHpCombined?.tryGet(i)?:0, i+6,battle.battleDate)) }
+                for (i in 0..6) { rows.add(AkakariShipRowBodyBase(battle.enemyCombined?.tryGet(i), battle.maxEnemyHpCombined?.tryGet(i)?:0, i+6,battle.battleDate)) }
                 enemyCombinedAkakariRowsOrNull = rows
             }
             return enemyCombinedAkakariRowsOrNull!!
@@ -312,7 +314,7 @@ data class BattleCache(
         get(){
             if(combinedAkakariRowsOrNull == null){
                 val rows = ArrayList<ArrayList<String>>()
-                for (i in 0..5) { rows.add(AkakariShipRowBodyBase(battle.dockCombined?.ships?.tryGet(i), battle.maxFriendHpCombined?.tryGet(i)?:0, i+6,battle.battleDate)) }
+                for (i in 0..6) { rows.add(AkakariShipRowBodyBase(battle.dockCombined?.ships?.tryGet(i), battle.maxFriendHpCombined?.tryGet(i)?:0, i+6,battle.battleDate)) }
                 combinedAkakariRowsOrNull = rows
             }
             return combinedAkakariRowsOrNull!!

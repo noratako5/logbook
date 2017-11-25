@@ -49,7 +49,7 @@ private fun HougekiRowBodyConstruct(
 )
 {
     if(attackList == null){ return }
-    if(arg.battle.isEnemyCombined){
+    if(arg.battle.isEnemyCombined || arg.isSplitHp){
         HougekiRowBodyConstructEC(arg = arg,attackList = attackList,apiName = apiName,hougekiCount = hougekiCount,startHP = startHP,body = body)
         return
     }
@@ -68,7 +68,7 @@ private fun HougekiRowBodyConstruct(
             else if (isSecond) {"連合第2艦隊"}
             else {"連合第1艦隊"}
 
-    val hougekiHP = startHP.createAttackHP(attackList).first
+    val hougekiHP = startHP.createAttackHP(attackList,arg.battle).first
 
     val api_at_list = GsonUtil.toIntArray(api_hougeki["api_at_list"])
     val api_at_type = GsonUtil.toIntArray(api_hougeki["api_at_type"])
@@ -142,7 +142,7 @@ private fun HougekiRowBodyConstructEC(
     val api_hougeki = arg.dayPhaseOrNull?.tree?.get(apiName) as? LinkedTreeMap<*,*>
     if(api_hougeki == null){ return }
     var prevHP = startHP
-    val hougekiHP = startHP.createAttackHP(attackList).first
+    val hougekiHP = startHP.createAttackHP(attackList,arg.battle).first
     val api_at_eflag = GsonUtil.toIntArray(api_hougeki["api_at_eflag"])
     val api_at_list = GsonUtil.toIntArray(api_hougeki["api_at_list"])
     val api_at_type = GsonUtil.toIntArray(api_hougeki["api_at_type"])
@@ -151,63 +151,171 @@ private fun HougekiRowBodyConstructEC(
     val api_cl_list = GsonUtil.toIntArrayArray(api_hougeki["api_cl_list"])
     val api_damage = GsonUtil.toDoubleArrayArray(api_hougeki["api_damage"])
     val dayPhaseRow =  DamageDayRowBody(arg)
-    for (i in 1..api_at_list.size - 1) {
-        val eflag = api_at_eflag[i]
-        val at = api_at_list[i]
-        val atType = api_at_type[i]
-        val dfList = api_df_list[i]
-        val siList = api_si_list[i]
-        val clList = api_cl_list[i]
-        val damageList = api_damage[i]
+    if(arg.isSplitHp){
+        for (i in 0..api_at_list.size - 1) {
+            val eflag = api_at_eflag[i]
+            val at = api_at_list[i]
+            val atType = api_at_type[i]
+            val dfList = api_df_list[i]
+            val siList = api_si_list[i]
+            val clList = api_cl_list[i]
+            val damageList = api_damage[i]
 
-        val attackFleetName = if (eflag == 0) "自軍" else "敵軍"
-        val itemName = arrayOf("","","")
-        for (j in itemName.indices) {
-            if (j < siList.size && siList[j] > 0) {
-                itemName[j] = Item.get(siList[j]).name
+            val attackFleetName = if (eflag == 0) "自軍" else "敵軍"
+            val itemName = arrayOf("", "", "")
+            for (j in itemName.indices) {
+                if (j < siList.size && siList[j] > 0) {
+                    itemName[j] = Item.get(siList[j]).name
+                }
+            }
+
+            for (j in dfList.indices) {
+                val df = dfList[j]
+                val damage = damageList[j].toInt()
+                val kabau = damageList[j] - damage.toDouble() > 0.05
+                val cl = clList[j]
+                val fleetName =
+                        if (arg.battle.isCombined.not()) {
+                            "通常艦隊"
+                        }
+                        else if ((eflag == 1 && df >= 6) || (eflag == 0 && at >= 6)) {
+                            "連合第2艦隊"
+                        }
+                        else {
+                            "連合第1艦隊"
+                        }
+                val row = ArrayList<String>(dayPhaseRow)
+                row.add("砲撃戦")
+                row.add(fleetName)
+                row.add(hougekiCount)
+                row.add(attackFleetName)
+                row.add(atType.toString())
+                row.add(itemName[0])
+                row.add(itemName[1])
+                row.add(itemName[2])
+                row.add(cl.toString())
+                row.add(damage.toString())
+                row.add(if (kabau) "1" else "0")
+                if (eflag == 0) {
+                    if (at < arg.battle.dock.ships.size) {
+                        row.addAll(arg.friendRows[at].updateShipRowBody(prevHP[HP_INDEX_FRIEND][at], arg.battle.maxFriendHp[at]))
+                    }
+                    else {
+                        row.addAll(arg.combinedRows[at - 6].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][at - 6], arg.battle.maxFriendHpCombined.tryGet(at - 6)?:-1))
+                    }
+                    if (df < 6) {
+                        row.addAll(arg.enemyRows[df].updateShipRowBody(prevHP[HP_INDEX_ENEMY][df], arg.battle.maxEnemyHp[df]))
+                    }
+                    else {
+                        row.addAll(arg.enemyCombinedRows[df - 6].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df - 6], arg.battle.maxEnemyHpCombined.tryGet(df-6)?:-1))
+                    }
+                }
+                else {
+                    if (at < 6) {
+                        row.addAll(arg.enemyRows[at].updateShipRowBody(prevHP[HP_INDEX_ENEMY][at], arg.battle.maxEnemyHp[at]))
+                    }
+                    else {
+                        row.addAll(arg.enemyCombinedRows[at - 6].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at - 6], arg.battle.maxEnemyHpCombined?.tryGet(at-6)?:-1))
+                    }
+                    if (df < arg.battle.dock.ships.size) {
+                        row.addAll(arg.friendRows[df].updateShipRowBody(prevHP[HP_INDEX_FRIEND][df], arg.battle.maxFriendHp[df]))
+                    }
+                    else {
+                        row.addAll(arg.combinedRows[df - 6].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df - 6], arg.battle.maxFriendHpCombined?.tryGet(df-6)?:-1))
+                    }
+                }
+                row.add(arg.combinedFlagString)
+                row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
+                if (arg.filter.filterHougekiAttackDefenceEC(arg.battle, at, df, eflag) && arg.filter.filterOutput(row)) {
+                    body.add(row)
+                }
+                if (i < hougekiHP.size && j < hougekiHP[i].size) {
+                    prevHP = hougekiHP[i][j]
+                }
             }
         }
+    }
+    else {
+        for (i in 1..api_at_list.size - 1) {
+            val eflag = api_at_eflag[i]
+            val at = api_at_list[i]
+            val atType = api_at_type[i]
+            val dfList = api_df_list[i]
+            val siList = api_si_list[i]
+            val clList = api_cl_list[i]
+            val damageList = api_damage[i]
 
-        for (j in dfList.indices) {
-            val df = dfList[j]
-            val damage = damageList[j].toInt()
-            val kabau = damageList[j] - damage.toDouble() > 0.05
-            val cl = clList[j]
-            val fleetName =
-                if (arg.battle.isCombined.not()) {"通常艦隊"}
-                else if ((eflag == 1 && df > 6) || (eflag == 0 && at > 6)) {"連合第2艦隊"}
-                else {"連合第1艦隊"}
-            val row = ArrayList<String>(dayPhaseRow)
-            row.add("砲撃戦")
-            row.add(fleetName)
-            row.add(hougekiCount)
-            row.add(attackFleetName)
-            row.add(atType.toString())
-            row.add(itemName[0])
-            row.add(itemName[1])
-            row.add(itemName[2])
-            row.add(cl.toString())
-            row.add(damage.toString())
-            row.add(if (kabau) "1" else "0")
-            if (eflag == 0) {
-                if (at < 7) { row.addAll(arg.friendRows[at-1].updateShipRowBody(prevHP[HP_INDEX_FRIEND][at-1],arg.battle.maxFriendHp[at-1])) }
-                else { row.addAll(arg.combinedRows[at-7].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][at-7], arg.battle.maxFriendHpCombined[at-7])) }
-                if (df < 7) { row.addAll(arg.enemyRows[df-1].updateShipRowBody(prevHP[HP_INDEX_ENEMY][df-1],arg.battle.maxEnemyHp[df-1])) }
-                else { row.addAll(arg.enemyCombinedRows[df-7].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df-7],arg.battle.maxEnemyHpCombined[df-7])) }
+            val attackFleetName = if (eflag == 0) "自軍" else "敵軍"
+            val itemName = arrayOf("", "", "")
+            for (j in itemName.indices) {
+                if (j < siList.size && siList[j] > 0) {
+                    itemName[j] = Item.get(siList[j]).name
+                }
             }
-            else {
-                if (at < 7) { row.addAll(arg.enemyRows[at-1].updateShipRowBody(prevHP[HP_INDEX_ENEMY][at-1],arg.battle.maxEnemyHp[at-1])) }
-                else { row.addAll(arg.enemyCombinedRows[at-7].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at-7],arg.battle.maxEnemyHpCombined[at-7])) }
-                if (df < 7) { row.addAll(arg.friendRows[df-1].updateShipRowBody(prevHP[HP_INDEX_FRIEND][df-1],arg.battle.maxFriendHp[df-1])) }
-                else { row.addAll(arg.combinedRows[df-7].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df-7], arg.battle.maxFriendHpCombined[df-7])) }
-            }
-            row.add(arg.combinedFlagString)
-            row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
-            if (arg.filter.filterHougekiAttackDefenceEC(arg.battle, at, df, eflag) && arg.filter.filterOutput(row)) {
-                body.add(row)
-            }
-            if (i - 1 < hougekiHP.size && j < hougekiHP[i-1].size) {
-                prevHP = hougekiHP[i-1][j]
+
+            for (j in dfList.indices) {
+                val df = dfList[j]
+                val damage = damageList[j].toInt()
+                val kabau = damageList[j] - damage.toDouble() > 0.05
+                val cl = clList[j]
+                val fleetName =
+                        if (arg.battle.isCombined.not()) {
+                            "通常艦隊"
+                        }
+                        else if ((eflag == 1 && df > 6) || (eflag == 0 && at > 6)) {
+                            "連合第2艦隊"
+                        }
+                        else {
+                            "連合第1艦隊"
+                        }
+                val row = ArrayList<String>(dayPhaseRow)
+                row.add("砲撃戦")
+                row.add(fleetName)
+                row.add(hougekiCount)
+                row.add(attackFleetName)
+                row.add(atType.toString())
+                row.add(itemName[0])
+                row.add(itemName[1])
+                row.add(itemName[2])
+                row.add(cl.toString())
+                row.add(damage.toString())
+                row.add(if (kabau) "1" else "0")
+                if (eflag == 0) {
+                    if (at < 7) {
+                        row.addAll(arg.friendRows[at - 1].updateShipRowBody(prevHP[HP_INDEX_FRIEND][at - 1], arg.battle.maxFriendHp[at - 1]))
+                    }
+                    else {
+                        row.addAll(arg.combinedRows[at - 7].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][at - 7], arg.battle.maxFriendHpCombined[at - 7]))
+                    }
+                    if (df < 7) {
+                        row.addAll(arg.enemyRows[df - 1].updateShipRowBody(prevHP[HP_INDEX_ENEMY][df - 1], arg.battle.maxEnemyHp[df - 1]))
+                    }
+                    else {
+                        row.addAll(arg.enemyCombinedRows[df - 7].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df - 7], arg.battle.maxEnemyHpCombined[df - 7]))
+                    }
+                }
+                else {
+                    if (at < 7) {
+                        row.addAll(arg.enemyRows[at - 1].updateShipRowBody(prevHP[HP_INDEX_ENEMY][at - 1], arg.battle.maxEnemyHp[at - 1]))
+                    }
+                    else {
+                        row.addAll(arg.enemyCombinedRows[at - 7].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at - 7], arg.battle.maxEnemyHpCombined[at - 7]))
+                    }
+                    if (df < 7) {
+                        row.addAll(arg.friendRows[df - 1].updateShipRowBody(prevHP[HP_INDEX_FRIEND][df - 1], arg.battle.maxFriendHp[df - 1]))
+                    }
+                    else {
+                        row.addAll(arg.combinedRows[df - 7].updateShipRowBody(prevHP[HP_INDEX_FRIEND_COMBINED][df - 7], arg.battle.maxFriendHpCombined[df - 7]))
+                    }
+                }
+                row.add(arg.combinedFlagString)
+                row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
+                if (arg.filter.filterHougekiAttackDefenceEC(arg.battle, at, df, eflag) && arg.filter.filterOutput(row)) {
+                    body.add(row)
+                }
+                if (i - 1 < hougekiHP.size && j < hougekiHP[i - 1].size) {
+                    prevHP = hougekiHP[i - 1][j]
+                }
             }
         }
     }

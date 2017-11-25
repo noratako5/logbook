@@ -2416,4 +2416,15 @@ public class BattleExDto extends AbstractDto {
         }
         return this.secondBase;
     }
+
+    public boolean isSplistHp(){
+        if(this.phaseList.size() == 0){
+            return false;
+        }
+        LinkedTreeMap tree = this.phaseList.get(0).getTree();
+        if(tree == null){
+            return false;
+        }
+        return tree.containsKey("api_f_nowhps");
+    }
 }
