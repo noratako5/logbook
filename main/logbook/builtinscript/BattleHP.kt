@@ -1,5 +1,6 @@
 package logbook.builtinscript
 import logbook.dto.BattleExDto
+import logbook.dto.BattlePhaseKind
 import java.util.ArrayList
 
 class BattleHP(battle:BattleExDto){
@@ -52,9 +53,17 @@ class DayPhaseHP(battle:BattleExDto,dayPhase:BattleExDto.Phase){
                 airBaseStartHP.add(airBaseEndHP[i])
             }
         }
-        air1StartHP = firstAirBaseStartHP.createNextHPAirBase(dayPhase.airBase,battle)
-        supportStartHP = air1StartHP.createNextHPAir(dayPhase.air,battle)
-        openingTaisenStartHP = supportStartHP.createNextHP(dayPhase.support,battle)
+
+        if(dayPhase.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY) {
+            supportStartHP = firstAirBaseStartHP.createNextHPAirBase(dayPhase.airBase,battle)
+            air1StartHP = supportStartHP.createNextHP(dayPhase.support, battle)
+            openingTaisenStartHP = air1StartHP.createNextHPAir(dayPhase.air, battle)
+        }
+        else {
+            air1StartHP = firstAirBaseStartHP.createNextHPAirBase(dayPhase.airBase,battle)
+            supportStartHP = air1StartHP.createNextHPAir(dayPhase.air, battle)
+            openingTaisenStartHP = supportStartHP.createNextHP(dayPhase.support, battle)
+        }
         openingRaigekiStartHP = openingTaisenStartHP.createNextHP(dayPhase.openingTaisen,battle)
         air2StartHP = openingRaigekiStartHP.createNextHP(dayPhase.opening,battle)
         hougeki1StartHP = air2StartHP.createNextHPAir(dayPhase.air2,battle)

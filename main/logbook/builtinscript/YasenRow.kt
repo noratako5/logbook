@@ -120,13 +120,13 @@ private fun YasenRowBodyConstruct(
                     row.add(damage.toString())
                     row.add(if (kabau) "1" else "0")
                     if (eflag == 0) {
-                        row.addAll(friendRows[at].updateShipRowBody(prevHP[friendHPIndex][at], friendMaxHP[at]))
+                        row.addAll(friendRows[at - (if (isSecond)  6 else 0)].updateShipRowBody(prevHP[friendHPIndex][at - (if (isSecond)  6 else 0)], friendMaxHP[at - (if (isSecond)  6 else 0)]))
                     }
                     else {
                         row.addAll(enemyRows[at].updateShipRowBody(prevHP[enemyHPIndex][at], enemyMaxHP[at]))
                     }
                     if (eflag == 1) {
-                        row.addAll(friendRows[df].updateShipRowBody(prevHP[friendHPIndex][df], friendMaxHP[df]))
+                        row.addAll(friendRows[df - (if (isSecond)  6 else 0)].updateShipRowBody(prevHP[friendHPIndex][df - (if (isSecond)  6 else 0)], friendMaxHP[df - (if (isSecond)  6 else 0)]))
                     }
                     else {
                         row.addAll(enemyRows[df].updateShipRowBody(prevHP[enemyHPIndex][df], enemyMaxHP[df]))
@@ -280,10 +280,10 @@ private fun YasenRowBodyConstructEC(
                     row.add(damage.toString())
                     row.add(if (kabau) "1" else "0")
                     if (eflag == 0) {
-                        row.addAll(friendRows[at].updateShipRowBody(prevHP[friendHPIndex][at], friendMaxHP[at]))
+                        row.addAll(friendRows[at - (if (isSecond)  6 else 0)].updateShipRowBody(prevHP[friendHPIndex][at - (if (isSecond)  6 else 0)], friendMaxHP[at - (if (isSecond)  6 else 0)]))
                     }
                     else if(enemyIsSecond){
-                        row.addAll(arg.enemyCombinedRows[at].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at], arg.battle.maxEnemyHpCombined[at]))
+                        row.addAll(arg.enemyCombinedRows[at-6].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at-6], arg.battle.maxEnemyHpCombined[at-6]))
                     }
                     else if(at < 6){
                         row.addAll(arg.enemyRows[at].updateShipRowBody(prevHP[HP_INDEX_ENEMY][at], arg.battle.maxEnemyHp[at]))
@@ -292,10 +292,10 @@ private fun YasenRowBodyConstructEC(
                         row.addAll(arg.enemyCombinedRows[at - 6].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][at - 6], arg.battle.maxEnemyHpCombined[at - 6]))
                     }
                     if(eflag == 1){
-                        row.addAll(friendRows[df].updateShipRowBody(prevHP[friendHPIndex][df], friendMaxHP[df]))
+                        row.addAll(friendRows[df - (if (isSecond)  6 else 0)].updateShipRowBody(prevHP[friendHPIndex][df - (if (isSecond)  6 else 0)], friendMaxHP[df - (if (isSecond)  6 else 0)]))
                     }
                     else if(enemyIsSecond){
-                        row.addAll(arg.enemyCombinedRows[df].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df], arg.battle.maxEnemyHpCombined[df]))
+                        row.addAll(arg.enemyCombinedRows[df-6].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df-6], arg.battle.maxEnemyHpCombined[df-6]))
                     }
                     else if (df < 6) {
                         row.addAll(arg.enemyRows[df].updateShipRowBody(prevHP[HP_INDEX_ENEMY][df], arg.battle.maxEnemyHp[df]))

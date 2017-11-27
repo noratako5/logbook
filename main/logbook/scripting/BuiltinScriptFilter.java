@@ -1099,11 +1099,11 @@ public class BuiltinScriptFilter {
         if(battle.isSplistHp()) {
             ShipBaseDto attack =
                     (eflag == 1) ? battle.getEnemy().get(at) :
-                    (isSecond) ? battle.getDockCombined().getShips().get(at) :
+                    (isSecond) ? battle.getDockCombined().getShips().get(at%6) :
                     battle.getDock().getShips().get(at);
             ShipBaseDto defence =
                     (eflag == 0) ? battle.getEnemy().get(df) :
-                    (isSecond) ? battle.getDockCombined().getShips().get(df) :
+                    (isSecond) ? battle.getDockCombined().getShips().get(df%6) :
                     battle.getDock().getShips().get(df);
             return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
         }
@@ -1116,19 +1116,19 @@ public class BuiltinScriptFilter {
         if(battle.isSplistHp()) {
             ShipBaseDto attack =
                     (eflag == 1) ?
-                            ((enemyIsSecond) ? battle.getEnemyCombined().get(at) :
+                            ((enemyIsSecond) ? battle.getEnemyCombined().get(at%6) :
                             (at<6)? battle.getEnemy().get(at)
                             :battle.getEnemyCombined().get(at-6))
                     :
-                            ((isSecond) ? battle.getDockCombined().getShips().get(at)
+                            ((isSecond) ? battle.getDockCombined().getShips().get(at%6)
                             : battle.getDock().getShips().get(at));
             ShipBaseDto defence =
                     (eflag == 0) ?
-                            ((enemyIsSecond) ? battle.getEnemyCombined().get(df) :
+                            ((enemyIsSecond) ? battle.getEnemyCombined().get(df%6) :
                             (df<6)? battle.getEnemy().get(df)
                             :battle.getEnemyCombined().get(df-6))
                     :
-                            ((isSecond) ? battle.getDockCombined().getShips().get(df)
+                            ((isSecond) ? battle.getDockCombined().getShips().get(df%6)
                             : battle.getDock().getShips().get(df));
             return this.filterAttackCountItem(attack) && this.filterDefenceCountItem(defence);
         }

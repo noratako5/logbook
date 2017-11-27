@@ -415,13 +415,17 @@ public class BattleAtackDto {
     }
     private void makeOriginCombined(int secondBase) {
         for (int i = 0; i < this.origin.length; ++i) {
-            this.origin[i] += secondBase;
+            if(this.origin[i] < secondBase) {
+                this.origin[i] += secondBase;
+            }
         }
     }
 
     private void makeTargetCombined(int secondBase) {
         for (int i = 0; i < this.target.length; ++i) {
-            this.target[i] += secondBase;
+            if(this.target[i] < secondBase) {
+                this.target[i] += secondBase;
+            }
         }
     }
 

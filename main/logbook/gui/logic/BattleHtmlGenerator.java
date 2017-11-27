@@ -906,30 +906,59 @@ public class BattleHtmlGenerator extends HTMLGenerator {
                         friendShips, enemyShips, friendHp, enemyHp);
             }
         }
-
-        // 航空戦 → 支援艦隊による攻撃 →　開幕対潜 → 開幕 → 航空戦２回目
-        for (int i = 0; i < airList.size(); ++i) {
-            this.genAirBattle(airList.get(i), "航空戦(" + (i + 1) + "/" + airList.size() + ")",
-                    friendShips, enemyShips, friendHp, enemyHp);
-
-            if (i == 0) {
-                if (phase.getSupport() != null) {
-                    for (BattleAtackDto atack : phase.getSupport()) {
-                        this.inline("span", "支援艦隊による攻撃", null);
-                        this.begin("table", DAMAGE_TABLE_CLASS[1]);
-                        this.genDamageTableContent(atack, enemyShips, enemyHp);
-                        this.end(); // table
+        if(phase.getKind() == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY){
+            // 支援艦隊による航空攻撃　→ 航空戦 →　開幕対潜 → 開幕 → 航空戦２回目
+            for (int i = 0; i < airList.size(); ++i) {
+                if(i==0){
+                    if (phase.getSupport() != null) {
+                        for (BattleAtackDto atack : phase.getSupport()) {
+                            this.inline("span", "支援艦隊による攻撃", null);
+                            this.begin("table", DAMAGE_TABLE_CLASS[1]);
+                            this.genDamageTableContent(atack, enemyShips, enemyHp);
+                            this.end(); // table
+                        }
                     }
                 }
-                if (phase.getOpeningTaisen() != null) {
-                    this.inline("h3", "対潜先制爆雷攻撃", null);
-                    this.begin("table", null);
-                    this.genHougekiTableContent(phase.getOpeningTaisen(), friendShips, enemyShips, friendHp, enemyHp);
-                    this.end(); // table
+                this.genAirBattle(airList.get(i), "航空戦(" + (i + 1) + "/" + airList.size() + ")",
+                        friendShips, enemyShips, friendHp, enemyHp);
+                if (i == 0) {
+                    if (phase.getOpeningTaisen() != null) {
+                        this.inline("h3", "対潜先制爆雷攻撃", null);
+                        this.begin("table", null);
+                        this.genHougekiTableContent(phase.getOpeningTaisen(), friendShips, enemyShips, friendHp, enemyHp);
+                        this.end(); // table
+                    }
+                    if (phase.getOpening() != null) {
+                        this.genRaigekiBattle(phase.getOpening(), "開幕",
+                                friendShips, enemyShips, friendHp, enemyHp);
+                    }
                 }
-                if (phase.getOpening() != null) {
-                    this.genRaigekiBattle(phase.getOpening(), "開幕",
-                            friendShips, enemyShips, friendHp, enemyHp);
+            }
+        }
+        else {
+            // 航空戦 → 支援艦隊による攻撃 →　開幕対潜 → 開幕 → 航空戦２回目
+            for (int i = 0; i < airList.size(); ++i) {
+                this.genAirBattle(airList.get(i), "航空戦(" + (i + 1) + "/" + airList.size() + ")",
+                        friendShips, enemyShips, friendHp, enemyHp);
+                if (i == 0) {
+                    if (phase.getSupport() != null) {
+                        for (BattleAtackDto atack : phase.getSupport()) {
+                            this.inline("span", "支援艦隊による攻撃", null);
+                            this.begin("table", DAMAGE_TABLE_CLASS[1]);
+                            this.genDamageTableContent(atack, enemyShips, enemyHp);
+                            this.end(); // table
+                        }
+                    }
+                    if (phase.getOpeningTaisen() != null) {
+                        this.inline("h3", "対潜先制爆雷攻撃", null);
+                        this.begin("table", null);
+                        this.genHougekiTableContent(phase.getOpeningTaisen(), friendShips, enemyShips, friendHp, enemyHp);
+                        this.end(); // table
+                    }
+                    if (phase.getOpening() != null) {
+                        this.genRaigekiBattle(phase.getOpening(), "開幕",
+                                friendShips, enemyShips, friendHp, enemyHp);
+                    }
                 }
             }
         }
