@@ -40,6 +40,9 @@ public class AkakariSyutsugekiLogRecorder {
                 log = AkakariSyutsugekiLog.dataOrNull(startSlotItemArray, startPort);
             }
             switch (data.getDataType()) {
+                case START2:
+                    //これを捨てないとF5撤退を何度も繰り返した時にメモリが死ぬ
+                    return;
                 case PORT:
                     startPort = data;
                     break;

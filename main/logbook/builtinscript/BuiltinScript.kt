@@ -9,7 +9,7 @@ import java.util.*
 
 
 //全出力用　砲撃戦夜戦は中身が重複するので除外
-val Keys = listOf<String>("砲撃戦","夜戦","雷撃戦","航空戦","航空戦撃墜","基地航空戦","編成","編成索敵","砲撃順","赤仮砲撃戦","赤仮夜戦","赤仮雷撃戦","赤仮航空戦","赤仮基地航空戦")
+val Keys = listOf<String>("砲撃戦","夜戦","雷撃戦","航空戦","航空戦撃墜","基地航空戦","編成","編成索敵","砲撃順","赤仮砲撃戦","赤仮夜戦","赤仮雷撃戦","赤仮航空戦","赤仮基地航空戦","赤仮支援")
 private val LOG = LoggerHolder("builtinScript")
 
 //ヘッダをパラメータ入れて細かく増減させそうなので一旦キャッシュを無効化
@@ -32,6 +32,7 @@ fun HeaderWithKey(key: String): Array<String> {
             "赤仮雷撃戦"-> AkakariRaigekiRowHeader().toTypedArray()
             "赤仮航空戦"-> AkakariAirRowHeader().toTypedArray()
             "赤仮基地航空戦"-> AkakariBaseAirRowHeader().toTypedArray()
+            "赤仮支援"-> AkakariSienRowHeader().toTypedArray()
             //"My雷撃戦" -> MyRaigekiRowHeader().toTypedArray()
             //"My砲撃戦" -> MyHougekiRowHeader().toTypedArray()
             else-> arrayOf()
@@ -78,6 +79,7 @@ fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
                     "赤仮雷撃戦"-> AkakariRaigekiRowBody(arg)
                     "赤仮航空戦"-> AkakariAirRowBody(arg)
                     "赤仮基地航空戦"-> AkakariBaseAirRowBody(arg)
+                    "赤仮支援" -> AkakariSienRowBody(arg)
                     //"My雷撃戦" -> MyRaigekiRowBody(arg)
                     //"My砲撃戦" -> MyHougekiRowBody(arg)
                     else -> arrayListOf()

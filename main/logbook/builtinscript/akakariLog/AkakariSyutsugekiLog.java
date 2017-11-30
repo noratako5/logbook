@@ -8,11 +8,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import logbook.data.AkakariData;
 import logbook.data.Data;
 import logbook.data.DataType;
+import logbook.dto.ItemDto;
+import logbook.dto.ItemInfoDto;
+import logbook.dto.ShipDto;
+import logbook.dto.ShipInfoDto;
 import logbook.internal.LoggerHolder;
 import logbook.util.JacksonUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.json.Json;
+import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -41,6 +46,9 @@ public class AkakariSyutsugekiLog {
     private AkakariSyutsugekiAirBaseData firstAirBase;
     @JsonIgnore
     private AkakariSyutsugekiAirBaseData lastAirBase;
+    @JsonIgnore
+    private Map<String,ItemDto>itemMap;
+
 
     ///情報不足とかあったらnull返す
     @Nullable
@@ -232,5 +240,47 @@ public class AkakariSyutsugekiLog {
         }
         this.lastAirBase = airBase;
         return airBase;
+    }
+
+    @JsonIgnore
+    public ShipDto shipIdToStartShip(String id){
+        ObjectNode ship = null;
+        for(JsonNode node : this.start_port.ship){
+            if(!(node instanceof ObjectNode)){
+                continue;
+            }
+            ObjectNode objectNode = (ObjectNode)node;
+            if(objectNode.get("api_id").asText().equals(id)){
+                ship = objectNode;
+                break;
+            }
+        }
+        if(ship == null){
+            return null;
+        }
+        JsonNode shipMaster = AkakariMasterLogReader.dateAndIdToShipMasterJson(this.start_port.date,ship.get("api_ship_id").asText());
+        if(shipMaster == null){
+            return null;
+        }
+
+        Map<String,ItemInfoDto>infoMap = AkakariMasterLogReader.dateToItemInfoDto(this.start_port.date);
+        if(infoMap == null){
+            return null;
+        }
+        if(this.itemMap == null) {
+            Map<String, ItemDto> itemMap = new HashMap<>();
+            for (JsonNode json : this.start_port.slot_item) {
+                if (!(json instanceof ObjectNode)) {
+                    continue;
+                }
+                ObjectNode item = (ObjectNode) json;
+                ItemDto itemDto = new ItemDto(infoMap.get(item.get("api_slotitem_id").asText()), Json.createReader(new StringReader(item.toString())).readObject());
+                itemMap.put(item.get("api_id").asText(), itemDto);
+            }
+            this.itemMap = itemMap;
+        }
+
+        ShipInfoDto info = new ShipInfoDto(Json.createReader(new StringReader(shipMaster.toString())).readObject());
+        return new ShipDto(info,Json.createReader(new StringReader(ship.toString())).readObject(),this.itemMap);
     }
 }

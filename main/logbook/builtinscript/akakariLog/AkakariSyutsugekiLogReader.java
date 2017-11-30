@@ -173,7 +173,10 @@ public class AkakariSyutsugekiLogReader {
         battleDateToShipArrayCache.put(battleDate,result);
         return result;
     }
-
+    @Nullable
+    public static AkakariSyutsugekiLog battleDateToLog(Date battleDate){
+        return startPortDateToLog(battleDateToStartPortDate(battleDate));
+    }
     @Nullable
     public static ObjectNode shipAfterBattle(Date battleDate, int shipId){
         ArrayNode shipArray = battleDateToShipArray(battleDate);

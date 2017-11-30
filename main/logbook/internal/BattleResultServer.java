@@ -862,24 +862,26 @@ public class BattleResultServer {
         return loadBuiltinBattleResultsBody(key, targets,0);
     }
     public static List<Comparable[]> loadBuiltinBattleResultsBody(String key,List<BattleResultDto> targets,int startIndex){
-        DataFile nowFile = null;
-        List<BattleResult> resultList = new ArrayList<>();
+        HashMap<String,List<BattleResult>> resultMap = new HashMap<>();
         List<Comparable[][]>bodyList = new ArrayList<>();
         for(BattleResultDto item:targets){
             if(item instanceof BattleResult){
                 BattleResult result = (BattleResult)item;
-                if(nowFile == null || !nowFile.file.equals(result.file.file)){
-                    if(resultList.size() > 0){
-                        bodyList.addAll(loadBuiltinBattleResults(key, nowFile, resultList));
-                    }
-                    resultList.clear();
-                    nowFile = result.file;
+                if(result.file.getPath() == null){
+                    continue;
                 }
-                resultList.add(result);
+                if(resultMap.containsKey(result.file.getPath())){
+                    resultMap.get(result.file.getPath()).add(result);
+                }
+                else {
+                    List<BattleResult>list = new ArrayList<>();
+                    list.add(result);
+                    resultMap.put(result.file.getPath(),list);
+                }
             }
         }
-        if(resultList.size() > 0){
-            bodyList.addAll(loadBuiltinBattleResults(key, nowFile, resultList));
+        for(List<BattleResult> list:resultMap.values()){
+            bodyList.addAll(loadBuiltinBattleResults(key, list.get(0).file, list));
         }
         List<Comparable[]>body = new ArrayList<>();
         for(Comparable[][] item:bodyList){
@@ -898,12 +900,14 @@ public class BattleResultServer {
             List<BattleExDto> battleAll = file.readAllWithoutReadFromJson();
             ArrayList<BattleExDto> battle = new ArrayList<BattleExDto>();
             Map<Date,BattleResult> map = new HashMap<>();
+            Set<Date>dateSet = new HashSet<>();
             for(BattleResult item:resultList){
                 map.put(item.getBattleDate(), item);
             }
             for(BattleExDto b : battleAll){
-                if (b.isCompleteResult() && map.containsKey(b.getBattleDate())) {
+                if (b.isCompleteResult() && map.containsKey(b.getBattleDate()) && !dateSet.contains(b.getBattleDate())) {
                     battle.add(b);
+                    dateSet.add(b.getBattleDate());
                 }
             }
             List<Comparable[][]> result=

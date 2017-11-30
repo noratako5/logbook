@@ -12,6 +12,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
 import java.util.*
 import logbook.builtinscript.HeaderWithKey
+import logbook.constants.AppConstants
 import logbook.dto.BattleResultDto
 import logbook.internal.BattleResultFilter
 import logbook.internal.BattleResultServer
@@ -100,13 +101,13 @@ class BuiltinCombatReportTable
                     if(tmp.size >= 500) {
                         val body = BattleResultServer.loadBuiltinBattleResultsBody(this.key, tmp, index)
                         index += body.size
-                        CreateReportLogic.writeCsv(file, header, body, append, Charset.forName("UTF-8"))
+                        CreateReportLogic.writeCsv(file, header, body, append, AppConstants.CHARSET)
                         append = true
                         tmp.clear()
                     }
                 }
                 val body = BattleResultServer.loadBuiltinBattleResultsBody(this.key, tmp, index)
-                CreateReportLogic.writeCsv(file, header, body, append, Charset.forName("UTF-8"))
+                CreateReportLogic.writeCsv(file, header, body, append, AppConstants.CHARSET)
                 tmp.clear()
             }
             catch (e: IOException) {

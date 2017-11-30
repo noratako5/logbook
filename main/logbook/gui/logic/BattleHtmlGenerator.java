@@ -541,7 +541,8 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         for (int i = 0; i < atack.damage.length; ++i) {
             this.begin("tr", null);
             this.inline("td", this.getShipName(targetShips, atack.target[i]), TEXT_CLASS[ci][1]);
-            this.inline("td", getDamageString(atack.damage[i], 0), DAMAGE_CLASS[ci][1]);
+            int critical = atack.critical != null ? atack.critical[i] : 0;
+            this.inline("td", getDamageString(atack.damage[i], critical), DAMAGE_CLASS[ci][1]);
             this.inline("td", doDamage(targetHp, atack.target, atack.damage, i), TEXT_CLASS[ci][1]);
             this.end(); // tr
         }
@@ -962,7 +963,14 @@ public class BattleHtmlGenerator extends HTMLGenerator {
                 }
             }
         }
-
+        if (phase.isNight() && phase.getSupport() != null) {
+            for (BattleAtackDto atack : phase.getSupport()) {
+                this.inline("span", "支援艦隊による攻撃", null);
+                this.begin("table", DAMAGE_TABLE_CLASS[1]);
+                this.genDamageTableContent(atack, enemyShips, enemyHp);
+                this.end(); // table
+            }
+        }
         // 夜戦
         if (phase.getHougeki() != null) {
             //
