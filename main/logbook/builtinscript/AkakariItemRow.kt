@@ -44,7 +44,7 @@ fun AkakariItemRowBody(ship: ShipBaseDto?,date:Date?): ArrayList<String> {
     val itemInfoExDto: ItemInfoDto? = itemExDto?.info
     val onSlots: IntArray? = ship?.onSlot
 
-    val shipJson = shipDto?.let{AkakariSyutsugekiLogReader.shipAfterBattle(date,it.id)}
+    val shipJson = shipDto?.let{AkakariSyutsugekiLogReader.shipAfterBattle(date,it.id)?:AkakariSyutsugekiLogReader.shipEndPort(date,it.id)}
     val onSlotsAfterBattle =
             shipJson
                     ?.let{ it.get("api_onslot") as? ArrayNode}

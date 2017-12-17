@@ -52,6 +52,19 @@ fun DamageDayRowBodyAir(arg:ScriptArg,air: AirBattleDto?): ArrayList<String> {
     body.add("")
     return body
 }
+fun DamageDayRowBodySienAir(arg:ScriptArg): ArrayList<String> {
+    val battle = arg.battle
+    val body = PhaseRowBody(arg)
+    body.add(battle.sakuteki?.get(0)?:"")
+    body.add(battle.sakuteki?.get(1)?:"")
+    body.add("")
+    body.add(battle.formationMatch?:"")
+    body.add("")
+    body.add("")
+    body.add("")
+    body.add("")
+    return body
+}
 fun DamageNightRowBody(arg:ScriptArg): ArrayList<String> {
     val battle = arg.battle
     val phaseOrNull =

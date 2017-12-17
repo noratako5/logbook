@@ -194,6 +194,24 @@ public class AkakariSyutsugekiLogReader {
         return null;
     }
     @Nullable
+    public static ObjectNode shipEndPort(Date battleDate, int shipId){
+        AkakariSyutsugekiLog log = battleDateToLog(battleDate);
+        ArrayNode shipArray = log.end_port.ship;
+        if(shipArray == null){
+            return null;
+        }
+        for(JsonNode node : shipArray){
+            if(node instanceof  ObjectNode){
+                int id = JacksonUtil.toInt(node.get("api_id"));
+                if(id == shipId){
+                    return (ObjectNode)node;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Nullable
     public static AkakariSyutsugekiAirBaseData battleDateToStartAirBaseData(Date battleDate){
         AkakariSyutsugekiLog log = startPortDateToLog(battleDateToStartPortDate(battleDate));
         if(log == null){

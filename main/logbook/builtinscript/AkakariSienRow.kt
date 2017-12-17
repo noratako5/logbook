@@ -14,6 +14,7 @@ import java.util.*
 fun AkakariSienRowHeader(): ArrayList<String> {
     val header = DamageDayNightRowHeader()
     header.add("戦闘種別")
+    header.add("支援種別")
     for (i in 1..6) {
         val index = i.toString()
         AkakariSienShipSummaryRowHeader()
@@ -51,6 +52,9 @@ private fun AkakariSienRowBodyConstruct(
     }
     val rowHead = if(phase.isNight) DamageNightRowBody(arg) else DamageDayRowBody(arg)
     rowHead.add(if(phase.isNight) "夜戦" else "砲撃戦")
+
+    val type = GsonUtil.toInt(phase.tree.get("api_support_flag"))
+    rowHead.add(if(type==2) "砲撃" else if (type == 3) "雷撃" else "不明")
     val shipIds = GsonUtil.toIntArray(api_support_hourai.get("api_ship_id"))
     val shipList = ArrayList<ShipDto>()
     if(arg.hasAkakariInfo){
