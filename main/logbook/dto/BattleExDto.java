@@ -860,7 +860,7 @@ public class BattleExDto extends AbstractDto {
          */
         public BattleAtackDto[][] getAtackSequence() {
             return new BattleAtackDto[][] {
-                    this.friendlyHougeki == null ? null : this.toArray(this.friendlyHougeki),
+                    this.friendlyHougeki == null ? null : this.friendlyHougeki.stream().filter(attack -> attack.friendAtack).toArray(BattleAtackDto[]::new),
                     ((this.airBaseInjection == null) || (this.airBaseInjection.atacks == null)) ? null : this
                             .toArray(this.airBaseInjection.atacks),
                     ((this.airInjection == null) || (this.airInjection.atacks == null)) ? null : this
