@@ -10,7 +10,7 @@ private var _itemSakutekiRowHeader: ArrayList<String>? = null
 fun ItemSakutekiRowHeader(): ArrayList<String> {
     if (_itemSakutekiRowHeader == null) {
         val header = ArrayList<String>()
-        for (i in 1..5) {
+        for (i in 1..6) {
             header.add(String.format("装備%d.名前", i))
             header.add(String.format("装備%d.カテゴリ", i))
             header.add(String.format("装備%d.索敵", i))
@@ -46,7 +46,7 @@ fun ItemSakutekiRowBody(ship: ShipBaseDto?): ArrayList<String> {
     val itemInfoDtos: List<ItemInfoDto>? = ship?.item
     val itemInfoExDto: ItemInfoDto? = itemExDto?.info
     val onSlots: IntArray? = ship?.onSlot
-    for(i in 0..3){
+    for(i in 0..4){
         body.addAll(ItemSakutekiRowBodyConstruct(itemDtos?.tryGet(i),itemInfoDtos?.tryGet(i),onSlots?.tryGet(i)))
     }
     body.addAll(ItemSakutekiRowBodyConstruct(itemExDto,itemInfoExDto,null))

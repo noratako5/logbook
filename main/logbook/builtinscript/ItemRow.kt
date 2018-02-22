@@ -10,7 +10,7 @@ private var _itemRowHeader: ArrayList<String>? = null
 fun ItemRowHeader(): ArrayList<String> {
     if (_itemRowHeader == null) {
         val header = ArrayList<String>()
-        for (i in 1..5) {
+        for (i in 1..6) {
             header.add(String.format("装備%d.名前", i))
             header.add(String.format("装備%d.改修", i))
             header.add(String.format("装備%d.熟練度", i))
@@ -38,7 +38,7 @@ fun ItemRowBody(ship: ShipBaseDto?): ArrayList<String> {
     val itemInfoDtos: List<ItemInfoDto>? = ship?.item
     val itemInfoExDto: ItemInfoDto? = itemExDto?.info
     val onSlots: IntArray? = ship?.onSlot
-    for(i in 0..3){
+    for(i in 0..4){
         body.addAll(ItemRowBodyConstruct(itemDtos?.tryGet(i),itemInfoDtos?.tryGet(i),onSlots?.tryGet(i)))
     }
     body.addAll(ItemRowBodyConstruct(itemExDto,itemInfoExDto,null))

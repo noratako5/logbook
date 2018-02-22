@@ -5,40 +5,28 @@ package logbook.dto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.Calendar;
 
 import javax.json.JsonArray;
-import javax.json.JsonNumber;
 import javax.json.JsonObject;
-import javax.json.JsonValue;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 
 import com.dyuproject.protostuff.Tag;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 
-import logbook.config.AppConfig;
 import logbook.data.DataType;
 import logbook.data.context.GlobalContext;
-import logbook.gui.logic.DateTimeString;
 import logbook.internal.EnemyData;
-import logbook.internal.Item;
 import logbook.internal.LoggerHolder;
 import logbook.internal.UseItem;
-import logbook.scripting.BuiltinScriptFilter;
 import logbook.util.GsonUtil;
 import logbook.util.JsonUtils;
-import logbook.builtinscript.*;
 
 /**
  * １回の会敵情報
@@ -56,7 +44,16 @@ public class BattleExDto extends AbstractDto {
         }
         return  enemyIDUpdatedDate;
     }
-
+    private static Date flarePosUpdatedDate = null;
+    private static Date getFlarePosUpdatedDate(){
+        if(flarePosUpdatedDate == null) {
+            Calendar c = Calendar.getInstance(TimeZone.getTimeZone("JST"));
+            c.clear();
+            c.set(2018, 2 - 1, 17, 0, 00, 00);
+            flarePosUpdatedDate = c.getTime();
+        }
+        return  flarePosUpdatedDate;
+    }
 
 
     /** 日付 */
@@ -315,6 +312,13 @@ public class BattleExDto extends AbstractDto {
 
         //json1回読んだらとりあえずここに詰めとく
         transient LinkedTreeMap treeCacheOrNull;
+        transient List<BattleAtackDto> friendlyHougeki = null;
+        //マスタデータは後から書き換わることがあるので毎回生成するのはアウト　タグ番号決めて保存する必要があるので本家対応待ち又は赤仮ログでゴリ押しのいずれか
+        transient List<EnemyShipDto> friendlyShips = null;
+        transient int[] nowFriendlyHp = null;
+        transient int[] maxFriendlyHp = null;
+        transient int[] friendlyFlarePos;
+        transient int[] friendlyTouchPlane;
         public LinkedTreeMap getTree(){
             if(this.json != null && treeCacheOrNull == null){
                 treeCacheOrNull = getGson().fromJson(this.json,LinkedTreeMap.class);
@@ -346,6 +350,39 @@ public class BattleExDto extends AbstractDto {
 
             boolean splitHp = tree.containsKey("api_f_nowhps");
 
+            //友軍艦隊フェーズ
+            if(tree.containsKey(("api_friendly_battle"))) {
+                this.friendlyShips = new ArrayList<>();
+                LinkedTreeMap friendInfo  = (LinkedTreeMap) tree.get("api_friendly_info");
+                int[] shipIds = GsonUtil.toIntArray(friendInfo.get("api_ship_id"));
+                int[][] slots = GsonUtil.toIntArrayArray(friendInfo.get("api_Slot"));
+                int[][] params = GsonUtil.toIntArrayArray(friendInfo.get("api_Param"));
+                int[] levels = GsonUtil.toIntArray((friendInfo.get("api_ship_lv")));
+                for (int i = 0; i < shipIds.length; i++) {
+                    int id = shipIds[i];
+                    int[] slot = slots[i];
+                    int[] param = params[i];
+                    this.friendlyShips.add(new EnemyShipDto(id, slot, param, levels[i]));
+                }
+                LinkedTreeMap friendBattle = (LinkedTreeMap) tree.get("api_friendly_battle");
+                this.friendlyHougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)friendBattle.get("api_hougeki"),false,this.isEnemySecond,splitHp);
+                this.nowFriendlyHp = GsonUtil.toIntArray(friendInfo.get("api_nowhps"));
+                this.maxFriendlyHp = GsonUtil.toIntArray(friendInfo.get("api_maxhps"));
+
+                int[] jsonTouchPlane = GsonUtil.toIntArray(friendBattle.get("api_touch_plane"));
+                this.friendlyTouchPlane = jsonTouchPlane;
+
+                // 照明弾発射艦
+                int[] jsonFlarePos = GsonUtil.toIntArray(friendBattle.get("api_flare_pos"));
+                if(jsonFlarePos!=null && battle.getBattleDate().after(BattleExDto.getFlarePosUpdatedDate())){
+                    for(int i=0;i<jsonFlarePos.length;i++){
+                        if(jsonFlarePos[i] > 0) {
+                            jsonFlarePos[i] += 1;
+                        }
+                    }
+                }
+                this.friendlyFlarePos = jsonFlarePos;
+            }
             // 攻撃シーケンスを読み取る //
             if(kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT){
                 // 夜間触接
@@ -354,6 +391,13 @@ public class BattleExDto extends AbstractDto {
 
                 // 照明弾発射艦
                 int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
+                if(jsonFlarePos!=null && battle.getBattleDate().after(BattleExDto.getFlarePosUpdatedDate())){
+                    for(int i=0;i<jsonFlarePos.length;i++){
+                        if(jsonFlarePos[i] > 0) {
+                            jsonFlarePos[i] += 1;
+                        }
+                    }
+                }
                 this.flarePos = jsonFlarePos;
 
                 // 支援艦隊
@@ -393,6 +437,13 @@ public class BattleExDto extends AbstractDto {
 
                     // 照明弾発射艦
                     int[] jsonFlarePos = GsonUtil.toIntArray(tree.get("api_flare_pos"));
+                    if(jsonFlarePos!=null && battle.getBattleDate().after(BattleExDto.getFlarePosUpdatedDate())){
+                        for(int i=0;i<jsonFlarePos.length;i++){
+                            if(jsonFlarePos[i] > 0) {
+                                jsonFlarePos[i] += 1;
+                            }
+                        }
+                    }
                     this.flarePos = jsonFlarePos;
                 }
 
@@ -482,6 +533,7 @@ public class BattleExDto extends AbstractDto {
             }
 
             // ダメージを反映 //
+            this.doAtack(this.friendlyHougeki,battle.secondBase);
             if (this.airBaseInjection != null){
                 this.doAtack(this.airBaseInjection.atacks, battle.secondBase);
             }
@@ -808,6 +860,7 @@ public class BattleExDto extends AbstractDto {
          */
         public BattleAtackDto[][] getAtackSequence() {
             return new BattleAtackDto[][] {
+                    this.friendlyHougeki == null ? null : this.toArray(this.friendlyHougeki),
                     ((this.airBaseInjection == null) || (this.airBaseInjection.atacks == null)) ? null : this
                             .toArray(this.airBaseInjection.atacks),
                     ((this.airInjection == null) || (this.airInjection.atacks == null)) ? null : this
@@ -1115,6 +1168,14 @@ public class BattleExDto extends AbstractDto {
         public List<AirBattleDto> getAirBase() {
             return this.airBase;
         }
+
+        public  List<BattleAtackDto> getFriendlyHougeki(){return this.friendlyHougeki;}
+
+        public int[] getNowFriendlyHp(){return this.nowFriendlyHp;}
+        public int[] getMaxFriendlyHp(){return this.maxFriendlyHp;}
+        public  List<EnemyShipDto> getFriendlyShips(){return this.friendlyShips;}
+        public int[] getFriendlyFlarePos(){return this.friendlyFlarePos;}
+        public int[] getFriendlyTouchPlane(){return this.touchPlane;}
     }
 
     /**

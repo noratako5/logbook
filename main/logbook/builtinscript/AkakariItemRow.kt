@@ -13,7 +13,7 @@ private var _itemRowHeader: ArrayList<String>? = null
 fun AkakariItemRowHeader(): ArrayList<String> {
     if (_itemRowHeader == null) {
         val header = ArrayList<String>()
-        for (i in 1..5) {
+        for (i in 1..6) {
             header.add(String.format("装備%d.名前", i))
             header.add(String.format("装備%d.改修", i))
             header.add(String.format("装備%d.熟練度", i))
@@ -55,7 +55,7 @@ fun AkakariItemRowBody(ship: ShipBaseDto?,date:Date?): ArrayList<String> {
                         }
                         intArray
                     }
-    for(i in 0..3){
+    for(i in 0..4){
         body.addAll(AkakariItemRowBodyConstruct(itemDtos?.tryGet(i),itemInfoDtos?.tryGet(i),onSlots?.tryGet(i),onSlotsAfterBattle?.tryGet(i)))
     }
     body.addAll(AkakariItemRowBodyConstruct(itemExDto,itemInfoExDto,null,null))

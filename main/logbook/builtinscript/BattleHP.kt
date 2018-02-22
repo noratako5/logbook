@@ -123,7 +123,7 @@ class NightPhaseHP(battle:BattleExDto,nightPhase:BattleExDto.Phase){
             battle.startEnemyHpCombined?.run{for(i in this.indices) {  nowHPArray[HP_INDEX_ENEMY_COMBINED][i] = this[i]  }}
         }
         nightPhaseStartHP = nowHPArray.deepClone()
-        supportStartHP = nightPhaseStartHP
+        supportStartHP = nightPhaseStartHP.createFriendlyNextHP(nightPhase.friendlyHougeki,battle)
         hougekiStartHP = supportStartHP.createNextHP(nightPhase.support,battle)
         hougeki1StartHP = hougekiStartHP
         hougeki2StartHP = hougeki1StartHP.createNextHP(nightPhase.hougeki1,battle)

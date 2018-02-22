@@ -369,7 +369,61 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         this.end(); // table
         this.end(); // p
     }
+    private <SHIP extends ShipBaseDto> void genFriendlyParmeters(Phase phase) {
+        List<EnemyShipDto> ships = phase.getFriendlyShips();
+        if (ships == null || ships.size() == 0) {
+            return;
+        }
 
+        this.begin("div", BOX_CLASS);
+        this.begin("table", PARAM_TABLE_CLASS[1]);
+        this.inline("caption","友軍艦隊", null);
+
+        this.begin("tr", null);
+
+        this.inline("th", "", null);
+        this.inline("th", "艦名", null);
+        this.inline("th", "開始時", null);
+        this.inline("th", "火力", null);
+        this.inline("th", "雷装", null);
+        this.inline("th", "対空", null);
+        this.inline("th", "装甲", null);
+        this.inline("th", "回避", null);
+        this.inline("th", "対潜", null);
+        this.inline("th", "索敵", null);
+        this.inline("th", "運", null);
+        this.inline("th", "速力", null);
+        this.inline("th", "射程", null);
+
+        this.end(); // tr
+
+        for (int i = 0; i < ships.size(); ++i) {
+            EnemyShipDto ship = ships.get(i);
+            int nowhp = phase.getNowFriendlyHp()[i];
+            int maxhp = phase.getMaxFriendlyHp()[i];
+
+            this.begin("tr", null);
+
+            this.inline("td", String.valueOf(i +  1), null);
+            this.inline("td", ship.getFriendlyName(), null);
+            this.inline("td", nowhp + "/" + maxhp, null);
+            this.inline("td", String.valueOf(ship.getKaryoku()), null);
+            this.inline("td", String.valueOf(ship.getRaisou()), null);
+            this.inline("td", String.valueOf(ship.getTaiku()), null);
+            this.inline("td", String.valueOf(ship.getSoukou()), null);
+            this.inline("td", String.valueOf(ship.getKaihi()), null);
+            this.inline("td", String.valueOf(ship.getTaisen()), null);
+            this.inline("td", String.valueOf(ship.getSakuteki()), null);
+            this.inline("td", String.valueOf(ship.getLucky()), null);
+            this.inline("td", String.valueOf(ship.getParam().getSokuString()), null);
+            this.inline("td", String.valueOf(ship.getParam().getLengString()), null);
+
+            this.end(); // tr
+        }
+
+        this.end(); // table
+        this.end(); // div
+    }
     /**
      * 装備テーブルを生成
      * @param gen
@@ -884,6 +938,51 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         if (phase.getHougeki3() != null)
             hougekiList.add(phase.getHougeki3());
 
+        //友軍艦隊
+        List<BattleAtackDto>friendlyHougeki = phase.getFriendlyHougeki();
+        if(friendlyHougeki != null){
+            this.inline("h3", "友軍艦隊による攻撃", null);
+            this.genFriendlyParmeters(phase);
+            this.genSlotitemTable(phase.getFriendlyShips(), false);
+            if ((phase.getFriendlyTouchPlane() != null) || (phase.getFriendlyFlarePos() != null)) {
+                String[] touch = AirBattleDto.toTouchPlaneString(phase.getFriendlyTouchPlane());
+                String[] flare = { "", "" };
+                int[] flarePos = phase.getFriendlyFlarePos();
+                if (flarePos != null) {
+                    if (flarePos[0]  > 0) {
+                        flare[0] = this.getShipName(phase.getFriendlyShips().toArray(new ShipBaseDto[0]), flarePos[0]-1);
+                    }
+                    if (flarePos[1]  > 0) {
+                        int flareIndex = (flarePos[1] > 6 ? flarePos[1] : (flarePos[1] + (phase.isEnemySecond() ? 6 : 0)))-1;
+                        flare[1] = this.getShipName(enemyShips, flareIndex);
+                    }
+                }
+
+                this.begin("table", null);
+                this.begin("tr", null);
+                this.inline("th", "", null);
+                this.inline("th", "触接", null);
+                this.inline("th", "照明弾", null);
+                this.end(); // tr
+                this.begin("tr", null);
+                this.inline("td", "自", null);
+                this.inline("td", touch[0], null);
+                this.inline("td", flare[0], null);
+                this.end(); // tr
+                this.begin("tr", null);
+                this.inline("td", "敵", null);
+                this.inline("td", touch[1], null);
+                this.inline("td", flare[1], null);
+                this.end(); // tr
+                this.end(); // table
+            }
+            this.inline("h3", "砲雷撃", null);
+            this.begin("table", DAMAGE_TABLE_CLASS[1]);
+            this.genHougekiTableContent(friendlyHougeki, phase.getFriendlyShips().toArray(new ShipBaseDto[0]), enemyShips, phase.getNowFriendlyHp().clone(), enemyHp);
+            this.end();
+            this.inline("h3", "自軍による攻撃", null);
+        }
+
         // 基地航空隊(噴式)
         AirBattleDto airBaseInjection = phase.getAirBaseInjection();
         if (airBaseInjection != null) {
@@ -979,19 +1078,13 @@ public class BattleHtmlGenerator extends HTMLGenerator {
                 String[] flare = { "", "" };
                 int[] flarePos = phase.getFlarePos();
                 if (flarePos != null) {
-                    if (flarePos[0] != -1) {
-			// int base = phase.getKind().isHougekiSecond() ? 6 : 0;
-			// isHougekiSecond()が通常艦隊編成(自艦隊)の設定値を返してしまうため、
-			// 連合艦隊編成(自艦隊)の場合、正常に動作しない。
-			// 通常艦隊編成(自艦隊)の設定値を返す理由：敵連合艦隊夜戦用のAPI
-			// (COMBINED_EC_BATTLE_MIDNIGHT)が通常艦隊編成(自艦隊)と連合艦隊編成(自艦隊)
-			// で同一のため。
-                        int base = phase.getisFriendSecond() ? 6 : 0;
-                        flare[0] = this.getShipName(friendShips, (flarePos[0] - 1) + base);
+                    if (flarePos[0]  > 0) {
+                        int flareIndex = (flarePos[0] > 6 ? flarePos[0] : (flarePos[0] + (phase.getisFriendSecond() ? 6 : 0)))-1;
+                        flare[0] = this.getShipName(friendShips, flareIndex);
                     }
-                    if (flarePos[1] != -1) {
-                        int base = phase.isEnemySecond() ? 6 : 0;
-                        flare[1] = this.getShipName(enemyShips, (flarePos[1] - 1) + base);
+                    if (flarePos[1]  > 0) {
+                        int flareIndex = (flarePos[1] > 6 ? flarePos[1] : (flarePos[1] + (phase.isEnemySecond() ? 6 : 0)))-1;
+                        flare[1] = this.getShipName(enemyShips, flareIndex);
                     }
                 }
 
