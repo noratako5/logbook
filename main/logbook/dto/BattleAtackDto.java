@@ -55,6 +55,8 @@ public class BattleAtackDto {
     @Tag(11)
     public boolean combineEnabled;
 
+    public transient boolean friendlyAttack;
+
     private static List<BattleAtackDto> makeHougeki(int baseidx,
             JsonArray at_efalg, JsonArray at_list,
             JsonArray at_type, JsonArray df_list, JsonArray cl_list, JsonArray damage_list) {

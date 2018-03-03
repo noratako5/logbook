@@ -366,6 +366,9 @@ public class BattleExDto extends AbstractDto {
                 }
                 LinkedTreeMap friendBattle = (LinkedTreeMap) tree.get("api_friendly_battle");
                 this.friendlyHougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)friendBattle.get("api_hougeki"),false,this.isEnemySecond,splitHp);
+                for(BattleAtackDto dto : this.friendlyHougeki){
+                    dto.friendlyAttack = true;
+                }
                 this.nowFriendlyHp = GsonUtil.toIntArray(friendInfo.get("api_nowhps"));
                 this.maxFriendlyHp = GsonUtil.toIntArray(friendInfo.get("api_maxhps"));
 
@@ -805,7 +808,10 @@ public class BattleExDto extends AbstractDto {
                         }
                     }
                     else {
-                        if (target < this.nowFriendHp.length) {
+                        if(dto.friendlyAttack){
+                            this.nowFriendlyHp[target] -= damage;
+                        }
+                        else if (target < this.nowFriendHp.length) {
                             this.nowFriendHp[target] -= damage;
                         }
                         else {
