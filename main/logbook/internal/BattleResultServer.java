@@ -730,7 +730,7 @@ public class BattleResultServer {
             }
             List<String[][]> result=
                 battle
-                .parallelStream()
+                .stream()//.parallelStream()
                 .map(b->BuiltinScriptKt.BodyWithFilter(b,filter))
                 .collect(Collectors.toList());
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");
@@ -847,7 +847,7 @@ public class BattleResultServer {
             }
             List<Map<String,String[][]>> result=
                 battle
-                .parallelStream()
+                .stream()//.parallelStream()
                 //.map(b->b.BuiltinScriptBody())
                 .map(b-> BuiltinScriptKt.AllBody(b))
                 .collect(Collectors.toList());
@@ -912,7 +912,7 @@ public class BattleResultServer {
             }
             List<Comparable[][]> result=
                 battle
-                .parallelStream()
+                .stream()//.parallelStream()
                 .map(b->{
                     b.readFromJson();
                     BattleResult item = map.get(b.getBattleDate());
@@ -1008,7 +1008,7 @@ public class BattleResultServer {
 
             List<Comparable[]> battleLog =
                 battle
-                    .parallelStream()
+                    .stream()//.parallelStream()
                     .map(b->BattleLogProxy.get().bodyMT(b))
                     .collect(Collectors.toList());
 //            List<Map<String,String[][]>> builtinCombatLog =
@@ -1055,7 +1055,7 @@ public class BattleResultServer {
                     });
             List<Map<String,Comparable[][]>> combatLog =
                 battle
-                    .parallelStream()
+                    .stream()//.parallelStream()
                     .map(b->CombatLogProxy.bodyAllMT(b))
                     .collect(Collectors.toList());
             ApplicationMain.logPrint("読み込み完了(" + new File(file.getPath()).getName() + ")");

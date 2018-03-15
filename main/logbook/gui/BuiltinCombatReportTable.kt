@@ -44,6 +44,7 @@ class BuiltinCombatReportTable
     private var bodyCache = mutableListOf<Array<Comparable<*>>>()
     private var subKey:String? = null
     private var builtinFilterWindow:BuiltinFilterWindow? = null
+    private val  lock = java.lang.Object()
     init {
         this.tableItemCreatorProxy = TableItemCreatorProxy.get(prefix)
         this.titleMain = this.defaultTitleMain
@@ -149,40 +150,46 @@ class BuiltinCombatReportTable
         this.body = this.bodyCache.toList()
     }
     //キャッシュクリアしてBody読み込み
-    private fun clearBodyCacheAndRestart(){
+    private  fun clearBodyCacheAndRestart(){
         this.version++
+        val currentVersion = this.version
         this.bodyCache.clear()
         val result = mutableListOf<Array<Comparable<*>>>()
         val currentDisplay = Display.getCurrent()
         thread {
-            val currentVersion = this.version
-            val battleResults = BattleResultServer.get().getFilteredList(this.filter).sortedByDescending { b->b.battleDate }
-            val limit = AppConfig.get().maxPrintItems
-            val targets = ArrayList<BattleResultDto>()
-            for (item in battleResults) {
-                //データが存在する場合はとりあえず読む
-                //基地航空非対応海域の基地航空ログだとかそういうのだけ飛ばせば十分
-                //拡張ログファイルにより行数が起動後に変化するケースが現れたので廃止
-                val c = item.getBuiltinCombatDataRowCount(this.key)
-                //if (c == 0) { continue }
-                targets.add(item)
-            }
-            val tmp = ArrayList<BattleResultDto>()
-            for(item in targets) {
-                if (this.version != currentVersion) { break }
-                tmp.add(item)
-                if(tmp.size >= limit/10 && tmp.size >= 100) {
+            synchronized(this.lock) {
+                val battleResults = BattleResultServer.get().getFilteredList(this.filter).sortedByDescending { b -> b.battleDate }
+                val limit = AppConfig.get().maxPrintItems
+                val targets = ArrayList<BattleResultDto>()
+                for (item in battleResults) {
+                    //データが存在する場合はとりあえず読む
+                    //基地航空非対応海域の基地航空ログだとかそういうのだけ飛ばせば十分
+                    //拡張ログファイルにより行数が起動後に変化するケースが現れたので廃止
+                    val c = item.getBuiltinCombatDataRowCount(this.key)
+                    //if (c == 0) { continue }
+                    targets.add(item)
+                }
+                val tmp = ArrayList<BattleResultDto>()
+                for (item in targets) {
+                    if (this.version != currentVersion) {
+                        break
+                    }
+                    tmp.add(item)
+                    if (tmp.size >= 1000) {
+                        result.addAll(BattleResultServer.loadBuiltinBattleResultsBody(this.key, tmp, result.size))
+                        this.bodyCache = result
+                        currentDisplay.syncExec { this.reloadTableWIthoutClearCache() }
+                        if (result.count() > limit) {
+                            break
+                        }
+                        tmp.clear()
+                    }
+                }
+                if (this.version == currentVersion) {
                     result.addAll(BattleResultServer.loadBuiltinBattleResultsBody(this.key, tmp, result.size))
                     this.bodyCache = result
-                    currentDisplay.syncExec {this.reloadTableWIthoutClearCache()  }
-                    if (result.count() > limit) { break }
-                    tmp.clear()
+                    currentDisplay.syncExec { this.reloadTableWIthoutClearCache() }
                 }
-            }
-            if(this.version == currentVersion) {
-                result.addAll(BattleResultServer.loadBuiltinBattleResultsBody(this.key,tmp,result.size))
-                this.bodyCache = result
-                currentDisplay.syncExec {this.reloadTableWIthoutClearCache()  }
             }
         }
     }

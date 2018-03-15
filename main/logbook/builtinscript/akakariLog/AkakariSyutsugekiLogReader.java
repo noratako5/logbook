@@ -15,10 +15,10 @@ import java.util.*;
 public class AkakariSyutsugekiLogReader {
     private static List<Date> startPortDateList = Collections.synchronizedList(new ArrayList<>());
     private static Map<Date,Date> battleDateToStartPortDateCache = Collections.synchronizedMap(new HashMap<>());
-    private static Map<Date,ArrayNode> battleDateToShipArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
-    private static Map<Date,AkakariSyutsugekiLog> startPortDateToLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
-    private static Map<Date,AkakariSyutsugekiLog> startPortDateToNextLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(16));
-    private static Map<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
+    //private static Map<Date,ArrayNode> battleDateToShipArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(0));
+    private static Map<Date,AkakariSyutsugekiLog> startPortDateToLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
+    private static Map<Date,AkakariSyutsugekiLog> startPortDateToNextLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
+    private static Map<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(1));
 
     public static void loadAllStartPortDate(){
         List<Path> fileList = AkakariSyutsugekiLogRecorder.allFilePath();
@@ -46,7 +46,8 @@ public class AkakariSyutsugekiLogReader {
     public static void updateLogFile(Path path,AkakariSyutsugekiLog[] logArray){
         zstdFilePathToLogArrayCache.clear();
         startPortDateToLogCache.clear();
-        zstdFilePathToLogArrayCache.clear();
+        startPortDateToNextLogCache.clear();
+//        battleDateToShipArrayCache.clear();
     }
 
     @Nullable
@@ -54,6 +55,7 @@ public class AkakariSyutsugekiLogReader {
         if(zstdFilePathToLogArrayCache.containsKey(path)){
             return zstdFilePathToLogArrayCache.get(path);
         }
+        zstdFilePathToLogArrayCache.clear();
         AkakariSyutsugekiLog[] logArray = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(path.toFile());
         if(logArray == null) {
             return null;
@@ -155,9 +157,9 @@ public class AkakariSyutsugekiLogReader {
         if(battleDate == null){
             return null;
         }
-        if(battleDateToShipArrayCache.containsKey(battleDate)){
-            return battleDateToShipArrayCache.get(battleDate);
-        }
+//        if(battleDateToShipArrayCache.containsKey(battleDate)){
+//            return battleDateToShipArrayCache.get(battleDate);
+//        }
         Date startPortDate = battleDateToStartPortDate(battleDate);
         if(startPortDate == null){
             return null;
@@ -170,7 +172,7 @@ public class AkakariSyutsugekiLogReader {
         if(result == null){
             return null;
         }
-        battleDateToShipArrayCache.put(battleDate,result);
+//        battleDateToShipArrayCache.put(battleDate,result);
         return result;
     }
     @Nullable
