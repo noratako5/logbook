@@ -1181,7 +1181,7 @@ public class BattleExDto extends AbstractDto {
         public int[] getMaxFriendlyHp(){return this.maxFriendlyHp;}
         public  List<EnemyShipDto> getFriendlyShips(){return this.friendlyShips;}
         public int[] getFriendlyFlarePos(){return this.friendlyFlarePos;}
-        public int[] getFriendlyTouchPlane(){return this.touchPlane;}
+        public int[] getFriendlyTouchPlane(){return this.friendlyTouchPlane;}
     }
 
     /**
