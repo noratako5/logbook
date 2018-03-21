@@ -315,6 +315,7 @@ public class BattleExDto extends AbstractDto {
         transient List<BattleAtackDto> friendlyHougeki = null;
         //マスタデータは後から書き換わることがあるので毎回生成するのはアウト　タグ番号決めて保存する必要があるので本家対応待ち又は赤仮ログでゴリ押しのいずれか
         transient List<EnemyShipDto> friendlyShips = null;
+        transient int[] startFriendlyHp = null;
         transient int[] nowFriendlyHp = null;
         transient int[] maxFriendlyHp = null;
         transient int[] friendlyFlarePos;
@@ -370,6 +371,7 @@ public class BattleExDto extends AbstractDto {
                     dto.friendlyAttack = true;
                 }
                 this.nowFriendlyHp = GsonUtil.toIntArray(friendInfo.get("api_nowhps"));
+                this.startFriendlyHp = this.nowFriendlyHp.clone();
                 this.maxFriendlyHp = GsonUtil.toIntArray(friendInfo.get("api_maxhps"));
 
                 int[] jsonTouchPlane = GsonUtil.toIntArray(friendBattle.get("api_touch_plane"));
@@ -1176,7 +1178,7 @@ public class BattleExDto extends AbstractDto {
         }
 
         public  List<BattleAtackDto> getFriendlyHougeki(){return this.friendlyHougeki;}
-
+        public int[] getStartFriendlyHp(){return this.startFriendlyHp;}
         public int[] getNowFriendlyHp(){return this.nowFriendlyHp;}
         public int[] getMaxFriendlyHp(){return this.maxFriendlyHp;}
         public  List<EnemyShipDto> getFriendlyShips(){return this.friendlyShips;}

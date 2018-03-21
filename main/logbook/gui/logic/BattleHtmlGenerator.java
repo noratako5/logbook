@@ -978,7 +978,7 @@ public class BattleHtmlGenerator extends HTMLGenerator {
             }
             this.inline("h3", "砲雷撃", null);
             this.begin("table", DAMAGE_TABLE_CLASS[1]);
-            this.genHougekiTableContent(friendlyHougeki, phase.getFriendlyShips().toArray(new ShipBaseDto[0]), enemyShips, phase.getNowFriendlyHp().clone(), enemyHp);
+            this.genHougekiTableContent(friendlyHougeki, phase.getFriendlyShips().toArray(new ShipBaseDto[0]), enemyShips, phase.getStartFriendlyHp().clone(), enemyHp);
             this.end();
             this.inline("h3", "自軍による攻撃", null);
         }
