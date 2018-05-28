@@ -310,20 +310,22 @@ public abstract class AbstractTableDialog extends WindowBase implements EventLis
         new MenuItem(this.headermenu, SWT.SEPARATOR);
 
         final List<MenuItem> columnMenuItems = new ArrayList<>();
-        for (int i = 0; i < this.header.length; ++i) {
-            final MenuItem item = new MenuItem(this.headermenu, SWT.CHECK);
-            final int column_index = i;
-            item.setText(this.header[i]);
-            item.addSelectionListener(new SelectionAdapter() {
-                @Override
-                public void widgetSelected(SelectionEvent e) {
-                    boolean selected = item.getSelection();
-                    boolean[] visibles = AbstractTableDialog.this.getConfig().getVisibleColumn();
-                    visibles[column_index] = selected;
-                    AbstractTableDialog.this.setColumnVisible(column_index, selected);
-                }
-            });
-            columnMenuItems.add(item);
+        if(this.header.length < 100) {
+            for (int i = 0; i < this.header.length; ++i) {
+                final MenuItem item = new MenuItem(this.headermenu, SWT.CHECK);
+                final int column_index = i;
+                item.setText(this.header[i]);
+                item.addSelectionListener(new SelectionAdapter() {
+                    @Override
+                    public void widgetSelected(SelectionEvent e) {
+                        boolean selected = item.getSelection();
+                        boolean[] visibles = AbstractTableDialog.this.getConfig().getVisibleColumn();
+                        visibles[column_index] = selected;
+                        AbstractTableDialog.this.setColumnVisible(column_index, selected);
+                    }
+                });
+                columnMenuItems.add(item);
+            }
         }
         this.headermenu.addMenuListener(new MenuAdapter() {
             @Override
