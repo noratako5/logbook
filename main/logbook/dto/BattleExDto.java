@@ -366,7 +366,7 @@ public class BattleExDto extends AbstractDto {
                     this.friendlyShips.add(new EnemyShipDto(id, slot, param, levels[i]));
                 }
                 LinkedTreeMap friendBattle = (LinkedTreeMap) tree.get("api_friendly_battle");
-                this.friendlyHougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)friendBattle.get("api_hougeki"),false,this.isEnemySecond,splitHp);
+                this.friendlyHougeki = BattleAtackDto.makeHougeki((LinkedTreeMap)friendBattle.get("api_hougeki"),false,false,splitHp);
                 for(BattleAtackDto dto : this.friendlyHougeki){
                     dto.friendlyAttack = true;
                 }
