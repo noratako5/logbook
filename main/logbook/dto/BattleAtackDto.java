@@ -134,7 +134,29 @@ public class BattleAtackDto {
                 }
             }
             int length = flatten_df_list.size();
-            if (length > 0) {
+            int type = (at_type != null)?at_type[i]:0;
+            if(type == 100 || type == 101){
+                for(int c = 0; c < length; c++){
+                    int at2 =
+                        (type == 100 && c == 1)?at + 2
+                        :(type == 100 && c == 2)?at + 4
+                        :(type == 101 && c == 2)?at + 1
+                        :at;
+                    BattleAtackDto dto = new BattleAtackDto();
+                    dto.kind = AtackKind.HOUGEKI;
+                    dto.friendAtack = hasEflag ? (at_efalg[i] == 0) : (at <= 6);
+                    dto.type = type;
+                    dto.origin = new int[] { hasEflag ? (at2 - (splitHp?0:1)) : ((at2 - 1) % 6) };
+                    dto.target = new int[1];
+                    dto.damage = new int[1];
+                    dto.critical = new int[1];
+                    dto.target[0] = flatten_df_list.get(c);
+                    dto.damage[0] = flatten_damage_list.get(c);
+                    dto.critical[0] = flatten_cl_list.get(c);
+                    result.add(dto);
+                }
+            }
+            else if (length > 0) {
                 BattleAtackDto dto = new BattleAtackDto();
                 dto.kind = AtackKind.HOUGEKI;
                 dto.friendAtack = hasEflag ? (at_efalg[i] == 0) : (at <= 6);
@@ -698,11 +720,11 @@ public class BattleAtackDto {
         if(hougeki.get("api_damage") == null){
             return null;
         }
-
+        Object typeArray = hougeki.containsKey("api_at_type") ? hougeki.get("api_at_type") : hougeki.get("api_sp_list");
         List<BattleAtackDto> seq = makeHougeki(
                 GsonUtil.toIntArray(hougeki.get("api_at_eflag")),
                 GsonUtil.toIntArray(hougeki.get("api_at_list")),
-                GsonUtil.toIntArray(hougeki.get("api_at_type")),
+                GsonUtil.toIntArray(typeArray),
                 GsonUtil.toIntArrayArray(hougeki.get("api_df_list")),
                 GsonUtil.toIntArrayArray(hougeki.get("api_cl_list")),
                 GsonUtil.toIntArrayArray(hougeki.get("api_damage")),
@@ -852,6 +874,40 @@ public class BattleAtackDto {
             return "カットイン(主砲/主砲)";
         case 7:
             return "カットイン(空母)";
+        case 100:
+            return  "ネルソンタッチ";
+        case 101:
+            return  "胸が熱いな";
+        }
+        return "不明(" + this.type + ")";
+    }
+    public String getYasenHougekiTypeString() {
+        switch (this.type) {
+            case -1:
+                return "";
+            case 0:
+                //return "通常"; // 見づらくなるので
+                return "";
+            case 1:
+                return "連撃";
+            case 2:
+                return "カットイン(主砲/魚雷)";
+            case 3:
+                return "カットイン(魚雷/魚雷)";
+            case 4:
+                return "カットイン(主砲/主砲/副砲)";
+            case 5:
+                return "カットイン(主砲/主砲/主砲)";
+            case 6:
+                return "カットイン(空母)";
+            case 7:
+                return "カットイン(駆逐 主砲/魚雷/電探)";
+            case 8:
+                return "カットイン(駆逐 魚雷/見張員/電探)";
+            case 100:
+                return  "ネルソンタッチ";
+            case 101:
+                return  "胸が熱いな";
         }
         return "不明(" + this.type + ")";
     }

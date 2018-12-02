@@ -14,6 +14,7 @@ import java.util.*
 import logbook.builtinscript.HeaderWithKey
 import logbook.constants.AppConstants
 import logbook.dto.BattleResultDto
+import logbook.gui.logic.GuiUpdator
 import logbook.internal.BattleResultFilter
 import logbook.internal.BattleResultServer
 import org.eclipse.swt.events.SelectionAdapter
@@ -75,6 +76,9 @@ class BuiltinCombatReportTable
                 }
             })
         }
+    }
+    override fun addBattleResultServerListener() {
+        //自動更新登録しない
     }
     private inner class BuiltinScriptSaveSelectionAdapter(val shell: Shell,val key:String, val filter: BattleResultFilter ):SelectionAdapter(){
         override fun widgetSelected(e: SelectionEvent?) {

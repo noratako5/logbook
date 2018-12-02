@@ -637,6 +637,10 @@ public class BattleHtmlGenerator extends HTMLGenerator {
         }
     }
 
+
+    private void genHougekiTableContent(List<BattleAtackDto> atacks, ShipBaseDto[] friendShips, ShipBaseDto[] enemyShips, int[] friendHp, int[] enemyHp) {
+        this.genHougekiTableContent(atacks,friendShips,enemyShips,friendHp,enemyHp,false);
+    }
     /**
      * 砲撃戦を生成
      * @param gen
@@ -646,8 +650,7 @@ public class BattleHtmlGenerator extends HTMLGenerator {
      * @param friendHp
      * @param enemyHp
      */
-    private void genHougekiTableContent(List<BattleAtackDto> atacks,
-            ShipBaseDto[] friendShips, ShipBaseDto[] enemyShips, int[] friendHp, int[] enemyHp) {
+    private void genHougekiTableContent(List<BattleAtackDto> atacks, ShipBaseDto[] friendShips, ShipBaseDto[] enemyShips, int[] friendHp, int[] enemyHp, boolean isYasen) {
         this.begin("tr", null);
         this.inline("th", "", null);
         this.inline("th", "艦", null);
@@ -698,7 +701,12 @@ public class BattleHtmlGenerator extends HTMLGenerator {
                 this.inline("td", text[1], null);
                 this.inline("td", this.getShipName(target, atack.target[i]), textClass[1]);
                 if (i == 0) {
-                    this.inline("td", getRowSpan(atack.damage.length), atack.getHougekiTypeString(), null);
+                    if(isYasen){
+                        this.inline("td", getRowSpan(atack.damage.length), atack.getYasenHougekiTypeString(), null);
+                    }
+                    else {
+                        this.inline("td", getRowSpan(atack.damage.length), atack.getHougekiTypeString(), null);
+                    }
                 }
                 int critical = atack.critical != null ? atack.critical[i] : 0;
                 this.inline("td", getDamageString(atack.damage[i], critical), damageClass[1]);
@@ -1109,7 +1117,7 @@ public class BattleHtmlGenerator extends HTMLGenerator {
 
             this.inline("h3", "砲雷撃", null);
             this.begin("table", null);
-            this.genHougekiTableContent(phase.getHougeki(), friendShips, enemyShips, friendHp, enemyHp);
+            this.genHougekiTableContent(phase.getHougeki(), friendShips, enemyShips, friendHp, enemyHp,true);
             this.end(); // table
         }
 

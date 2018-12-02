@@ -15,6 +15,7 @@ fun HougekiRowHeader(): ArrayList<String> {
     header.add("巡目")
     header.add("攻撃艦")
     header.add("砲撃種別")
+    header.add("砲撃回数")
     header.add("表示装備1")
     header.add("表示装備2")
     header.add("表示装備3")
@@ -94,6 +95,7 @@ private fun HougekiRowBodyConstruct(
         }
 
         for (j in dfList.indices) {
+            val at = NelsonTouchEffect(at,atType,j)
             val df = dfList[j]
             val damage = damageList[j].toInt()
             val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -104,6 +106,7 @@ private fun HougekiRowBodyConstruct(
             row.add(hougekiCount)
             row.add(attackFleetName)
             row.add(atType.toString())
+            row.add(j.toString())
             row.add(itemName[0])
             row.add(itemName[1])
             row.add(itemName[2])
@@ -170,6 +173,7 @@ private fun HougekiRowBodyConstructEC(
             }
 
             for (j in dfList.indices) {
+                val at = NelsonTouchEffect(at,atType,j)
                 val df = dfList[j]
                 val damage = damageList[j].toInt()
                 val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -190,6 +194,7 @@ private fun HougekiRowBodyConstructEC(
                 row.add(hougekiCount)
                 row.add(attackFleetName)
                 row.add(atType.toString())
+                row.add(j.toString())
                 row.add(itemName[0])
                 row.add(itemName[1])
                 row.add(itemName[2])
@@ -254,6 +259,7 @@ private fun HougekiRowBodyConstructEC(
             }
 
             for (j in dfList.indices) {
+                val at = NelsonTouchEffect(at,atType,j)
                 val df = dfList[j]
                 val damage = damageList[j].toInt()
                 val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -274,6 +280,7 @@ private fun HougekiRowBodyConstructEC(
                 row.add(hougekiCount)
                 row.add(attackFleetName)
                 row.add(atType.toString())
+                row.add(j.toString())
                 row.add(itemName[0])
                 row.add(itemName[1])
                 row.add(itemName[2])

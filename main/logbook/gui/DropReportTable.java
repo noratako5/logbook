@@ -175,7 +175,15 @@ public class DropReportTable extends AbstractTableDialog {
         final MenuItem save = new MenuItem(this.tablemenu, SWT.NONE);
         save.setText("選択したログを保存する");
         save.addSelectionListener(new SaveAdapter());
+        this.addBattleResultServerListener();
 
+        // セパレータ
+        new MenuItem(this.tablemenu, SWT.SEPARATOR);
+        final MenuItem deckbuilder = new MenuItem(this.tablemenu, SWT.NONE);
+        deckbuilder.setText("艦隊シミュレーター＆デッキビルダー用にコピー");
+        deckbuilder.addSelectionListener(deckbuilderListener);
+    }
+    protected void addBattleResultServerListener(){
         // データの更新を受け取る
         final Runnable listener = new GuiUpdator(new Runnable() {
             @Override
@@ -195,13 +203,7 @@ public class DropReportTable extends AbstractTableDialog {
                 BattleResultServer.removeListener(listener);
             }
         });
-        // セパレータ
-        new MenuItem(this.tablemenu, SWT.SEPARATOR);
-        final MenuItem deckbuilder = new MenuItem(this.tablemenu, SWT.NONE);
-        deckbuilder.setText("艦隊シミュレーター＆デッキビルダー用にコピー");
-        deckbuilder.addSelectionListener(deckbuilderListener);
     }
-
     private BattleResultDto getItemFromIndex(int index) {
         TableRowHeader rowHeader = (TableRowHeader) DropReportTable.this.body.get(index)[0];
         return (BattleResultDto) rowHeader.get();

@@ -14,6 +14,7 @@ fun YasenRowHeader(): ArrayList<String> {
     header.add("開始")
     header.add("攻撃艦")
     header.add("砲撃種別")
+    header.add("砲撃回数")
     header.add("表示装備1")
     header.add("表示装備2")
     header.add("表示装備3")
@@ -104,6 +105,7 @@ private fun YasenRowBodyConstruct(
             for (j in dfList.indices) {
                 val cl = clList[j]
                 if (cl >= 0) {
+                    val at = NelsonTouchEffect(at,sp,j)
                     val df = dfList[j]
                     val damage = damageList[j].toInt()
                     val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -113,6 +115,7 @@ private fun YasenRowBodyConstruct(
                     row.add(spMidnightString)
                     row.add(attackFleetName)
                     row.add(sp.toString())
+                    row.add(j.toString())
                     row.add(itemName[0] ?: "")
                     row.add(itemName[1] ?: "")
                     row.add(itemName[2] ?: "")
@@ -165,6 +168,7 @@ private fun YasenRowBodyConstruct(
             for (j in dfList.indices) {
                 val cl = clList[j]
                 if (cl >= 0) {
+                    val at = NelsonTouchEffect(at,sp,j)
                     val df = dfList[j]
                     val damage = damageList[j].toInt()
                     val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -174,6 +178,7 @@ private fun YasenRowBodyConstruct(
                     row.add(spMidnightString)
                     row.add(attackFleetName)
                     row.add(sp.toString())
+                    row.add(j.toString())
                     row.add(itemName[0] ?: "")
                     row.add(itemName[1] ?: "")
                     row.add(itemName[2] ?: "")
@@ -264,6 +269,7 @@ private fun YasenRowBodyConstructEC(
             for (j in dfList.indices) {
                 val cl = clList[j]
                 if (cl >= 0) {
+                    val at = NelsonTouchEffect(at,sp,j)
                     val df = dfList[j]
                     val damage = damageList[j].toInt()
                     val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -273,6 +279,7 @@ private fun YasenRowBodyConstructEC(
                     row.add(spMidnightString)
                     row.add(attackFleetName)
                     row.add(sp.toString())
+                    row.add(j.toString())
                     row.add(itemName[0] ?: "")
                     row.add(itemName[1] ?: "")
                     row.add(itemName[2] ?: "")
@@ -334,6 +341,7 @@ private fun YasenRowBodyConstructEC(
             for (j in dfList.indices) {
                 val cl = clList[j]
                 if (cl >= 0) {
+                    val at = NelsonTouchEffect(at,sp,j)
                     val df = dfList[j]
                     val damage = damageList[j].toInt()
                     val kabau = damageList[j] - damage.toDouble() > 0.05
@@ -343,6 +351,7 @@ private fun YasenRowBodyConstructEC(
                     row.add(spMidnightString)
                     row.add(attackFleetName)
                     row.add(sp.toString())
+                    row.add(j.toString())
                     row.add(itemName[0] ?: "")
                     row.add(itemName[1] ?: "")
                     row.add(itemName[2] ?: "")
