@@ -135,12 +135,12 @@ public class BattleAtackDto {
             }
             int length = flatten_df_list.size();
             int type = (at_type != null)?at_type[i]:0;
-            if(type == 100 || type == 101){
+            if(type == 100 || type == 101 || type == 102){
                 for(int c = 0; c < length; c++){
                     int at2 =
                         (type == 100 && c == 1)?at + 2
                         :(type == 100 && c == 2)?at + 4
-                        :(type == 101 && c == 2)?at + 1
+                        :((type == 101 || type == 102) && c == 2)?at + 1
                         :at;
                     BattleAtackDto dto = new BattleAtackDto();
                     dto.kind = AtackKind.HOUGEKI;
@@ -878,6 +878,8 @@ public class BattleAtackDto {
             return  "ネルソンタッチ";
         case 101:
             return  "胸が熱いな";
+        case 102:
+            return  "いくわよ主砲一斉射";
         }
         return "不明(" + this.type + ")";
     }
@@ -908,6 +910,8 @@ public class BattleAtackDto {
                 return  "ネルソンタッチ";
             case 101:
                 return  "胸が熱いな";
+            case 102:
+                return  "いくわよ主砲一斉射";
         }
         return "不明(" + this.type + ")";
     }

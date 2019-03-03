@@ -6,6 +6,6 @@ package logbook.builtinscript
 fun NelsonTouchEffect(at:Int,type:Int,count:Int):Int{
     return if (type==100 && count == 1) at + 2
         else if (type==100 && count == 2) at + 4
-        else if (type==101 && count == 2) at + 1
+        else if ((type==101 || type == 102) && count == 2) at + 1
         else at
 }
