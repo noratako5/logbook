@@ -10,6 +10,12 @@ import java.util.*
 fun YasenRowHeader(): ArrayList<String> {
     val header = DamageDayNightRowHeader()
     header.add("戦闘種別")
+    header.add("艦名1")
+    header.add("艦名2")
+    header.add("艦名3")
+    header.add("艦名4")
+    header.add("艦名5")
+    header.add("艦名6")
     header.add("自艦隊")
     header.add("開始")
     header.add("攻撃艦")
@@ -111,6 +117,20 @@ private fun YasenRowBodyConstruct(
                     val kabau = damageList[j] - damage.toDouble() > 0.05
                     val row = ArrayList<String>(nightPhaseRow)
                     row.add("夜戦")
+                    for(k in 0..5) {
+                        if (eflag == 0 ) {
+                            //自軍
+                            if (!isSecond) {
+                                row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                            }
+                            else{
+                                row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                            }
+                        }
+                        else{
+                            row.add(arg.battle.enemy?.tryGet(k)?.name ?: "")
+                        }
+                    }
                     row.add(fleetName)
                     row.add(spMidnightString)
                     row.add(attackFleetName)
@@ -174,6 +194,20 @@ private fun YasenRowBodyConstruct(
                     val kabau = damageList[j] - damage.toDouble() > 0.05
                     val row = ArrayList<String>(nightPhaseRow)
                     row.add("夜戦")
+                    for(k in 0..5) {
+                        if (at < 7) {
+                            //自軍
+                            if (isSecond) {
+                                row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                            }
+                            else{
+                                row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                            }
+                        }
+                        else{
+                            row.add(arg.battle.enemy?.tryGet(k)?.name?:"")
+                        }
+                    }
                     row.add(fleetName)
                     row.add(spMidnightString)
                     row.add(attackFleetName)
@@ -275,6 +309,25 @@ private fun YasenRowBodyConstructEC(
                     val kabau = damageList[j] - damage.toDouble() > 0.05
                     val row = ArrayList<String>(nightPhaseRow)
                     row.add("夜戦")
+                    for(k in 0..5) {
+                        if (eflag == 0 ) {
+                            //自軍
+                            if (!isSecond) {
+                                row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                            }
+                            else{
+                                row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                            }
+                        }
+                        else{
+                            if(!enemyIsSecond) {
+                                row.add(arg.battle.enemy?.tryGet(k)?.name ?: "")
+                            }
+                            else{
+                                row.add(arg.battle.enemyCombined?.tryGet(k)?.name ?: "")
+                            }
+                        }
+                    }
                     row.add(fleetName)
                     row.add(spMidnightString)
                     row.add(attackFleetName)
@@ -347,6 +400,25 @@ private fun YasenRowBodyConstructEC(
                     val kabau = damageList[j] - damage.toDouble() > 0.05
                     val row = ArrayList<String>(nightPhaseRow)
                     row.add("夜戦")
+                    for(k in 0..5) {
+                        if (at < 7 ) {
+                            //自軍
+                            if (!isSecond) {
+                                row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                            }
+                            else{
+                                row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                            }
+                        }
+                        else{
+                            if(!enemyIsSecond) {
+                                row.add(arg.battle.enemy?.tryGet(k)?.name ?: "")
+                            }
+                            else{
+                                row.add(arg.battle.enemyCombined?.tryGet(k)?.name ?: "")
+                            }
+                        }
+                    }
                     row.add(fleetName)
                     row.add(spMidnightString)
                     row.add(attackFleetName)

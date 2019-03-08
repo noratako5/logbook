@@ -11,6 +11,12 @@ import java.util.*
 fun AkakariHougekiRowHeader(): ArrayList<String> {
     val header = DamageDayNightRowHeader()
     header.add("戦闘種別")
+    header.add("艦名1")
+    header.add("艦名2")
+    header.add("艦名3")
+    header.add("艦名4")
+    header.add("艦名5")
+    header.add("艦名6")
     header.add("自艦隊")
     header.add("巡目")
     header.add("攻撃艦")
@@ -102,6 +108,20 @@ private fun AkakariHougekiRowBodyConstruct(
             val cl = clList[j]
             val row = ArrayList<String>(dayPhaseRow)
             row.add("砲撃戦")
+            for(k in 0..5) {
+                if (at < 7) {
+                    //自軍
+                    if (isSecond) {
+                        row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                    }
+                    else{
+                        row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                    }
+                }
+                else{
+                    row.add(arg.battle.enemy?.tryGet(k)?.name?:"")
+                }
+            }
             row.add(fleetName)
             row.add(hougekiCount)
             row.add(attackFleetName)
@@ -190,6 +210,25 @@ private fun AkakariHougekiRowBodyConstructEC(
                         }
                 val row = ArrayList<String>(dayPhaseRow)
                 row.add("砲撃戦")
+                for(k in 0..5) {
+                    if (eflag == 0 ) {
+                        //自軍
+                        if (at < arg.battle.dock.ships.size) {
+                            row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                        }
+                        else{
+                            row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                        }
+                    }
+                    else{
+                        if(at < 6) {
+                            row.add(arg.battle.enemy?.tryGet(k)?.name ?: "")
+                        }
+                        else{
+                            row.add(arg.battle.enemyCombined?.tryGet(k)?.name ?: "")
+                        }
+                    }
+                }
                 row.add(fleetName)
                 row.add(hougekiCount)
                 row.add(attackFleetName)
@@ -276,6 +315,25 @@ private fun AkakariHougekiRowBodyConstructEC(
                         }
                 val row = ArrayList<String>(dayPhaseRow)
                 row.add("砲撃戦")
+                for(k in 0..5) {
+                    if (eflag == 0 ) {
+                        //自軍
+                        if (at < 7) {
+                            row.add(arg.battle.dock?.ships?.tryGet(k)?.name ?: "")
+                        }
+                        else{
+                            row.add(arg.battle.dockCombined?.ships?.tryGet(k)?.name ?: "")
+                        }
+                    }
+                    else{
+                        if(at < 7) {
+                            row.add(arg.battle.enemy?.tryGet(k)?.name ?: "")
+                        }
+                        else{
+                            row.add(arg.battle.enemyCombined?.tryGet(k)?.name ?: "")
+                        }
+                    }
+                }
                 row.add(fleetName)
                 row.add(hougekiCount)
                 row.add(attackFleetName)
