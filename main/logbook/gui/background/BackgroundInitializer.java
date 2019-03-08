@@ -2,6 +2,7 @@ package logbook.gui.background;
 
 import java.util.List;
 
+import logbook.builtinscript.akakariLog.AkakariMasterLogReader;
 import logbook.builtinscript.akakariLog.AkakariSyutsugekiLogReader;
 import logbook.config.AppConfig;
 import logbook.config.ShipGroupConfig;
@@ -178,6 +179,16 @@ public final class BackgroundInitializer extends Thread {
             LOG.get().warn("出撃ログの読み込みに失敗しました (" + AppConfig.get().getBattleLogPath() + ")", e);
         }
         try{
+            if(AkakariSyutsugekiLogReader.needConvert()) {
+                ApplicationMain.logPrint("赤仮出撃ログのコンバート開始");
+                AkakariSyutsugekiLogReader.convertAllOldLog();
+                ApplicationMain.logPrint("赤仮出撃ログのコンバート完了");
+            }
+        }catch (Exception e){
+            LOG.get().warn("赤仮出撃ログのコンバートに失敗しました (" + AppConfig.get().getBattleLogPath() + ")", e);
+        }
+        try{
+            ApplicationMain.logPrint("赤仮出撃ログ読み込み中");
             AkakariSyutsugekiLogReader.loadAllStartPortDate();
         }catch (Exception e) {
             LOG.get().warn("赤仮出撃ログの読み込みに失敗しました (" + AppConfig.get().getBattleLogPath() + ")", e);

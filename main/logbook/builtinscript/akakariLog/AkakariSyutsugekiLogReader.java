@@ -3,9 +3,11 @@ package logbook.builtinscript.akakariLog;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import logbook.gui.ApplicationMain;
 import logbook.util.JacksonUtil;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -19,6 +21,106 @@ public class AkakariSyutsugekiLogReader {
     private static Map<Date,AkakariSyutsugekiLog> startPortDateToLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
     private static Map<Date,AkakariSyutsugekiLog> startPortDateToNextLogCache = Collections.synchronizedMap(new AkakariCacheMap<>(4));
     private static Map<Path,AkakariSyutsugekiLog[]> zstdFilePathToLogArrayCache = Collections.synchronizedMap(new AkakariCacheMap<>(1));
+
+    public  static Boolean needConvert(){
+        List<Path> fileListOld = AkakariSyutsugekiLogRecorder.allFilePathOld();
+        List<Path> fileList = AkakariSyutsugekiLogRecorder.allFilePath();
+        if(fileListOld == null){
+            return false;
+        }
+        if(fileList == null){
+            return true;
+        }
+        for(Path oldPath:fileListOld){
+            String name = oldPath.getFileName().toString();
+            if(name.contains("error")){
+                continue;
+            }
+            String woext = name.substring(0,name.lastIndexOf('.'));
+            Boolean exist = false;
+            for(Path path:fileList){
+                if(path.getFileName().toString().contains(woext)){
+                    exist = true;
+                    break;
+                }
+            }
+            if(!exist){
+                AkakariSyutsugekiLog[] logArray = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(oldPath.toFile());
+                if(logArray != null){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public static void convertAllOldLog(){
+        List<Path> fileListOld = AkakariSyutsugekiLogRecorder.allFilePathOld();
+        List<Path> fileList = AkakariSyutsugekiLogRecorder.allFilePath();
+        if(fileListOld == null){
+            return;
+        }
+        for(Path oldPath:fileListOld){
+            String name = oldPath.getFileName().toString();
+            if(name.contains("error")){
+                continue;
+            }
+            String woext = name.substring(0,name.lastIndexOf('.'));
+            Boolean exist = false;
+            if(fileList != null) {
+                for (Path path : fileList) {
+                    if (path.getFileName().toString().contains(woext)) {
+                        exist = true;
+                        break;
+                    }
+                }
+            }
+            if(!exist){
+                convertLog(oldPath);
+            }
+        }
+    }
+    static void convertLog(Path oldPath){
+        File dir = new File(AkakariSyutsugekiLogRecorder.syutsugekiLogPath);
+        if(!dir.exists()){
+            if(!dir.mkdirs()){
+                //作成失敗
+                return;
+            }
+        }
+        AkakariSyutsugekiLog[] logArray = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(oldPath.toFile());
+        if(logArray == null){
+            return;
+        }
+        ApplicationMain.logPrint(oldPath.getFileName().toString());
+        ArrayList<AkakariSyutsugekiLog> list = new ArrayList<>();
+        Path path = null;
+        for(AkakariSyutsugekiLog log : logArray){
+            Path path2 = AkakariSyutsugekiLogRecorder.dateToPath(log.start_port.date);
+            {
+                File dir2 = AkakariSyutsugekiLogRecorder.dateToDirPath(log.start_port.date).toFile();
+                if(!dir2.exists()){
+                    if(!dir2.mkdirs()){
+                        return;
+                    }
+                }
+            }
+            if(path == null){
+                path = path2;
+            }
+            if(!path.equals(path2)){
+                AkakariSyutsugekiLog[] result = list.toArray(new AkakariSyutsugekiLog[0]);
+                AkakariMapper.writeObjectToMessageZstdFile(result,path.toFile());
+                list.clear();
+                path = path2;
+            }
+            list.add(log);
+        }
+        if(path != null) {
+            AkakariSyutsugekiLog[] result = list.toArray(new AkakariSyutsugekiLog[0]);
+            AkakariMapper.writeObjectToMessageZstdFile(result, path.toFile());
+            list.clear();
+        }
+    }
 
     public static void loadAllStartPortDate(){
         List<Path> fileList = AkakariSyutsugekiLogRecorder.allFilePath();
@@ -108,10 +210,10 @@ public class AkakariSyutsugekiLogReader {
         }
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(startPortDate);
-        calendar.add(Calendar.DATE,1);
+        calendar.add(Calendar.HOUR,1);
         Date nextDate = calendar.getTime();
         {
-            //夜中に日付またぐケース考えて次の日まで探索。それ以上は追わない
+            //時間境界またぐケース考えて次の時間まで探索。それ以上は追わないので1時間以上かけた出撃は探索失敗する
             Path path = AkakariSyutsugekiLogRecorder.dateToPath(nextDate);
             AkakariSyutsugekiLog[] logArray = zstdFilePathToLogArray(path);
             if (logArray == null) {
