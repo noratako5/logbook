@@ -64,6 +64,9 @@ public class AkakariSyutsugekiLogReader {
             if(name.contains("error")){
                 continue;
             }
+            if(!name.contains(".")){
+                continue;
+            }
             String woext = name.substring(0,name.lastIndexOf('.'));
             Boolean exist = false;
             if(fileList != null) {
