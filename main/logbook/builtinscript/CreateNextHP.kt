@@ -45,8 +45,20 @@ fun ArrayList<IntArray>.createFriendlyAttackHP(attackList: List<BattleAtackDto>,
     val combined = this[HP_INDEX_FRIEND_COMBINED].clone()
     val enemyCombined = this[HP_INDEX_ENEMY_COMBINED].clone()
     val result = ArrayList<ArrayList<ArrayList<IntArray>>>()
+
+    var array = ArrayList<ArrayList<IntArray>>()
+    var afterNelsonTouch = false
     for (attack in attackList) {
-        val array = ArrayList<ArrayList<IntArray>>()
+        val type = attack.type
+        val isNelsonTouch = (type == 100) || (type == 101) || (type == 102)
+        if(!afterNelsonTouch) {
+            array = ArrayList<ArrayList<IntArray>>()
+        }
+        else if(!isNelsonTouch){
+            //ネルソンタッチ完了処理
+            result.add(array)
+            array = ArrayList<ArrayList<IntArray>>()
+        }
         for (j in attack.target.indices) {
             val next = ArrayList<IntArray>(this)
             val t = attack.target[j]
@@ -61,7 +73,10 @@ fun ArrayList<IntArray>.createFriendlyAttackHP(attackList: List<BattleAtackDto>,
             next[HP_INDEX_ENEMY_COMBINED] = enemyCombined.clone()
             array.add(next)
         }
-        result.add(array)
+        if(!isNelsonTouch) {
+            result.add(array)
+        }
+        afterNelsonTouch = isNelsonTouch
     }
     val last = ArrayList<IntArray>(this)
     last[HP_INDEX_ENEMY] = enemy
@@ -76,8 +91,20 @@ fun ArrayList<IntArray>.createAttackHP(attackList: List<BattleAtackDto>,battle:B
     val combined = this[HP_INDEX_FRIEND_COMBINED].clone()
     val enemyCombined = this[HP_INDEX_ENEMY_COMBINED].clone()
     val result = ArrayList<ArrayList<ArrayList<IntArray>>>()
+
+    var array = ArrayList<ArrayList<IntArray>>()
+    var afterNelsonTouch = false
     for (attack in attackList) {
-        val array = ArrayList<ArrayList<IntArray>>()
+        val type = attack.type
+        val isNelsonTouch = (type == 100) || (type == 101) || (type == 102)
+        if(!afterNelsonTouch) {
+            array = ArrayList<ArrayList<IntArray>>()
+        }
+        else if(!isNelsonTouch){
+            //ネルソンタッチ完了処理
+            result.add(array)
+            array = ArrayList<ArrayList<IntArray>>()
+        }
         for (j in attack.target.indices) {
             val next = ArrayList<IntArray>(this)
             val t = attack.target[j]
@@ -96,8 +123,12 @@ fun ArrayList<IntArray>.createAttackHP(attackList: List<BattleAtackDto>,battle:B
             next[HP_INDEX_ENEMY_COMBINED] = enemyCombined.clone()
             array.add(next)
         }
-        result.add(array)
+        if(!isNelsonTouch) {
+            result.add(array)
+        }
+        afterNelsonTouch = isNelsonTouch
     }
+
     val last = ArrayList<IntArray>(this)
     last[HP_INDEX_ENEMY] = enemy
     last[HP_INDEX_FRIEND] = friend
