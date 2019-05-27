@@ -243,7 +243,7 @@ private fun RaigekiRowBodyConstructEC(
                     else {
                         "連合第1艦隊"
                     }
-            if (df <= 0) {
+            if (df < 0) {
                 continue
             }
             val cl = api_fcl[i]
@@ -271,7 +271,7 @@ private fun RaigekiRowBodyConstructEC(
                 row.addAll(arg.enemyCombinedRows[df - 6].updateShipRowBody(prevHP[HP_INDEX_ENEMY_COMBINED][df - 6], arg.battle.maxEnemyHpCombined[df - 6]))
             }
             else {
-                row.addAll(arg.enemyRows[df - 1].updateShipRowBody(prevHP[HP_INDEX_ENEMY][df - 1], arg.battle.maxEnemyHp[df - 1]))
+                row.addAll(arg.enemyRows[df ].updateShipRowBody(prevHP[HP_INDEX_ENEMY][df ], arg.battle.maxEnemyHp[df ]))
             }
             row.add(arg.combinedFlagString)
             row.add(if (arg.battle.isEnemyCombined) "連合艦隊" else "通常艦隊")
@@ -294,7 +294,7 @@ private fun RaigekiRowBodyConstructEC(
                     else {
                         "連合第1艦隊"
                     }
-            if (df <= 0) {
+            if (df < 0) {
                 continue
             }
             val cl = api_ecl[i]

@@ -244,7 +244,7 @@ private fun AkakariRaigekiRowBodyConstructEC(
                     else {
                         "連合第1艦隊"
                     }
-            if (df <= 0) {
+            if (df < 0) {
                 continue
             }
             val cl = api_fcl[i]
@@ -295,7 +295,7 @@ private fun AkakariRaigekiRowBodyConstructEC(
                     else {
                         "連合第1艦隊"
                     }
-            if (df <= 0) {
+            if (df < 0) {
                 continue
             }
             val cl = api_ecl[i]
