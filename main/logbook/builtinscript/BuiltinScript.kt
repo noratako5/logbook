@@ -36,6 +36,7 @@ fun HeaderWithKey(key: String): Array<String> {
             "赤仮航空支援"-> AkakariSienAirRowHeader().toTypedArray()
             //"My雷撃戦" -> MyRaigekiRowHeader().toTypedArray()
             //"My砲撃戦" -> MyHougekiRowHeader().toTypedArray()
+            //"My航空戦" -> MyAirRowHeader().toTypedArray()
             else-> arrayOf()
         }
     }
