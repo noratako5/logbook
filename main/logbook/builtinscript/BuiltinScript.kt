@@ -84,6 +84,7 @@ fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
                     "赤仮航空支援" -> AkakariSienAirRowBody(arg)
                     //"My雷撃戦" -> MyRaigekiRowBody(arg)
                     //"My砲撃戦" -> MyHougekiRowBody(arg)
+                    //"My航空戦" -> MyAirRowBody(arg)
                     else -> arrayListOf()
                 }
         return result.map { x -> x.toTypedArray() }.toTypedArray()
