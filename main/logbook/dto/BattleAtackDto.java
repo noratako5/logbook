@@ -135,12 +135,13 @@ public class BattleAtackDto {
             }
             int length = flatten_df_list.size();
             int type = (at_type != null)?at_type[i]:0;
-            if(type == 100 || type == 101 || type == 102){
+            if(100 <= type && type <= 103){
                 for(int c = 0; c < length; c++){
                     int at2 =
                         (type == 100 && c == 1)?at + 2
                         :(type == 100 && c == 2)?at + 4
                         :((type == 101 || type == 102) && c == 2)?at + 1
+                        :(type == 103)?at+c
                         :at;
                     BattleAtackDto dto = new BattleAtackDto();
                     dto.kind = AtackKind.HOUGEKI;
@@ -855,31 +856,33 @@ public class BattleAtackDto {
     }
     public String getHougekiTypeString() {
         switch (this.type) {
-        case -1:
-            return "";
-        case 0:
-            //return "通常"; // 見づらくなるので
-            return "";
-        case 1:
-            return "レーザー攻撃";
-        case 2:
-            return "連撃";
-        case 3:
-            return "カットイン(主砲/副砲)";
-        case 4:
-            return "カットイン(主砲/電探)";
-        case 5:
-            return "カットイン(主砲/徹甲)";
-        case 6:
-            return "カットイン(主砲/主砲)";
-        case 7:
-            return "カットイン(空母)";
-        case 100:
-            return  "ネルソンタッチ";
-        case 101:
-            return  "胸が熱いな";
-        case 102:
-            return  "いくわよ主砲一斉射";
+            case -1:
+                return "";
+            case 0:
+                //return "通常"; // 見づらくなるので
+                return "";
+            case 1:
+                return "レーザー攻撃";
+            case 2:
+                return "連撃";
+            case 3:
+                return "カットイン(主砲/副砲)";
+            case 4:
+                return "カットイン(主砲/電探)";
+            case 5:
+                return "カットイン(主砲/徹甲)";
+            case 6:
+                return "カットイン(主砲/主砲)";
+            case 7:
+                return "カットイン(空母)";
+            case 100:
+                return  "ネルソンタッチ";
+            case 101:
+                return  "胸が熱いな";
+            case 102:
+                return  "いくわよ主砲一斉射";
+            case 103:
+                return "コロラド特殊攻撃";
         }
         return "不明(" + this.type + ")";
     }
@@ -912,6 +915,8 @@ public class BattleAtackDto {
                 return  "胸が熱いな";
             case 102:
                 return  "いくわよ主砲一斉射";
+            case 103:
+                return "コロラド特殊攻撃";
         }
         return "不明(" + this.type + ")";
     }
