@@ -85,8 +85,10 @@ private fun AkakariRaigekiRowBodyConstruct(
 
     val dayPhaseRow = DamageDayRowBody(arg)
     if(arg.isSplitHp){
-        for (i in 0..6) {
-            val at = i
+        for (i in 0..11) {
+            val at =
+                if (arg.battle.isCombined) i - 6
+                else i
             val df = api_frai.tryGet(i) ?: -1
             if (df < 0) {
                 continue
@@ -116,7 +118,9 @@ private fun AkakariRaigekiRowBodyConstruct(
         }
         for (i in 0..6) {
             val at = i
-            val df = api_erai.tryGet(i) ?: -1
+            val df =
+                if(arg.battle.isCombined) (api_erai.tryGet(i) ?: -1) -6
+                else api_erai.tryGet(i) ?: -1
             if (df < 0) {
                 continue
             }
