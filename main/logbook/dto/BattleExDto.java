@@ -954,7 +954,7 @@ public class BattleExDto extends AbstractDto {
          * @return
          */
         public String getApi() {
-            return this.kind.getApi().getApiName();
+            return this.getKind().getApi().getApiName();
         }
 
         /**
@@ -962,6 +962,32 @@ public class BattleExDto extends AbstractDto {
          * @return kind
          */
         public BattlePhaseKind getKind() {
+            //LD_SHOOTING追加時にenumの宣言順がずれたので補正する
+            if(this.kind.ordinal() < BattlePhaseKind.LD_SHOOTING.ordinal()){
+                    return this.kind;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.LD_SHOOTING.ordinal()){
+                return  (this.getTree().containsKey("api_hougeki1"))?BattlePhaseKind.LD_SHOOTING:BattlePhaseKind.COMBINED_LD_AIR;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.COMBINED_LD_AIR.ordinal()){
+                return (this.getTree().containsKey("api_hourai_flag"))?BattlePhaseKind.COMBINED_EC_BATTLE:BattlePhaseKind.COMBINED_LD_AIR;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.COMBINED_LD_SHOOTING.ordinal()){
+                return (this.getTree().containsKey("api_hougeki"))?BattlePhaseKind.COMBINED_EC_BATTLE_MIDNIGHT:BattlePhaseKind.COMBINED_LD_SHOOTING;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.COMBINED_EC_BATTLE.ordinal()){
+                return  (this.isCombined())?BattlePhaseKind.COMBINED_EACH_BATTLE_WATER:BattlePhaseKind.COMBINED_EC_BATTLE;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.COMBINED_EC_BATTLE_MIDNIGHT.ordinal()){
+                return  (this.isCombined())?BattlePhaseKind.COMBINED_EACH_BATTLE:BattlePhaseKind.COMBINED_EC_BATTLE_MIDNIGHT;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.COMBINED_EACH_BATTLE_WATER.ordinal()){
+                return  (this.isCombined())?BattlePhaseKind.COMBINED_EACH_BATTLE_WATER:BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT;
+            }
+            else if(this.kind.ordinal() == BattlePhaseKind.COMBINED_EACH_BATTLE.ordinal()){
+                return  (this.isCombined())?BattlePhaseKind.COMBINED_EACH_BATTLE:BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY;
+            }
+
             return this.kind;
         }
 
@@ -1018,9 +1044,9 @@ public class BattleExDto extends AbstractDto {
          * @return isNight
          */
         public boolean isNight() {
-            if(this.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY
-                ||this.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT
-                ||this.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY
+            if(this.getKind() == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY
+                ||this.getKind() == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT
+                ||this.getKind() == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY
             ){
                 //昼夜一体型はjsonが共通なのでkindを信じるしかない
                 return this.isNight;
