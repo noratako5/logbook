@@ -1018,6 +1018,22 @@ public class BattleExDto extends AbstractDto {
          * @return isNight
          */
         public boolean isNight() {
+            if(this.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_DAY
+                ||this.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY_NIGHT
+                ||this.kind == BattlePhaseKind.COMBINED_EC_NIGHT_TO_DAY
+            ){
+                //昼夜一体型はjsonが共通なのでkindを信じるしかない
+                return this.isNight;
+            }
+
+            //何らかの理由でkindが誤記録された場合jsonからkind逆算はできないので中身で昼夜だけ判断
+            if(this.getTree().containsKey("api_hougeki1")){
+                return false;
+            }
+            else if(this.getTree().containsKey("api_hougeki")){
+                return true;
+            }
+
             return this.isNight;
         }
 
