@@ -31,6 +31,7 @@ fun HeaderWithKey(key: String): Array<String> {
             "赤仮夜戦"->AkakariYasenRowHeader().toTypedArray()
             "赤仮雷撃戦"-> AkakariRaigekiRowHeader().toTypedArray()
             "赤仮航空戦"-> AkakariAirRowHeader().toTypedArray()
+            "赤仮航空戦EX"-> AkakariAirRowEXHeader().toTypedArray()
             "赤仮基地航空戦"-> AkakariBaseAirRowHeader().toTypedArray()
             "赤仮支援"-> AkakariSienRowHeader().toTypedArray()
             "赤仮航空支援"-> AkakariSienAirRowHeader().toTypedArray()
@@ -80,6 +81,7 @@ fun BodyWithKey(arg:ScriptArg,key:String):Array<Array<String>>{
                     }
                     "赤仮雷撃戦"-> AkakariRaigekiRowBody(arg)
                     "赤仮航空戦"-> AkakariAirRowBody(arg)
+                    "赤仮航空戦EX"-> AkakariAirRowEXBody(arg)
                     "赤仮基地航空戦"-> AkakariBaseAirRowBody(arg)
                     "赤仮支援" -> AkakariSienRowBody(arg)
                     "赤仮航空支援" -> AkakariSienAirRowBody(arg)
