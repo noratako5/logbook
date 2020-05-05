@@ -101,3 +101,29 @@ fun  ArrayList<String>.updateAkakariShipRowBody(hp: Int, maxHp: Int): ArrayList<
             else { "轟沈" }
     return this
 }
+
+/**
+ * HPと損傷欄を書き換えて自身を返す
+ * cloneしないので注意
+ */
+fun ArrayList<ArrayList<String>> .setupAkakariShipRowBodyArray(hp:IntArray,maxHp:IntArray):ArrayList<ArrayList<String>>{
+    for( i in this.indices){
+        this[i].updateAkakariShipRowBody( hp.tryGet(i) ?: 0  , maxHp.tryGet(i) ?: 0 )
+    }
+    return this
+}
+
+fun AkakariShipRowInitHP(arg:ScriptArg,startHp:ArrayList<IntArray>){
+    if(arg.battle.maxFriendHp != null) {
+        arg.friendAkakariRows.setupAkakariShipRowBodyArray(startHp[HP_INDEX_FRIEND], arg.battle.maxFriendHp)
+    }
+    if(arg.battle.maxFriendHpCombined != null) {
+        arg.combinedAkakariRows.setupAkakariShipRowBodyArray(startHp[HP_INDEX_FRIEND_COMBINED], arg.battle.maxFriendHpCombined)
+    }
+    if(arg.battle.maxEnemyHp != null) {
+        arg.enemyAkakariRows.setupAkakariShipRowBodyArray(startHp[HP_INDEX_ENEMY], arg.battle.maxEnemyHp)
+    }
+    if(arg.battle.maxEnemyHpCombined != null) {
+        arg.enemyCombinedAkakariRows.setupAkakariShipRowBodyArray(startHp[HP_INDEX_ENEMY_COMBINED], arg.battle.maxEnemyHpCombined)
+    }
+}

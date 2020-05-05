@@ -48,6 +48,7 @@ private fun AkakariAirRowEXBodyConstruct(
 )
 {
     if(air == null){ return }
+    AkakariShipRowInitHP(arg,startHP)
     val prevHP = startHP
     val api_kouku = arg.dayPhaseOrNull?.tree?.get(apiName) as? LinkedTreeMap<*,*>
     if(api_kouku == null){ return }
