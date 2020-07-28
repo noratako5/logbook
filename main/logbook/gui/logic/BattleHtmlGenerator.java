@@ -601,7 +601,45 @@ public class BattleHtmlGenerator extends HTMLGenerator {
             this.end(); // tr
         }
     }
+    /**
+     * 「○ ダメージ ○→○」のテーブルを生成、雷撃用
+     * @param gen
+     * @param atack
+     * @param targetShips
+     * @param targetHp
+     */
+    private void genRaigekiDamageTableContent(BattleAtackDto atack,
+                                       ShipBaseDto[] targetShips, int[] targetHp) {
+        int ci = (atack.friendAtack) ? 0 : 1;
 
+        if (atack.damage.length == 0) {
+            this.begin("tr", null);
+            this.inline("td", "なし", null);
+            this.end(); // tr
+            return;
+        }
+
+        this.begin("tr", null);
+        this.inline("th", "艦", null);
+        this.inline("th", "ダメージ", DAMAGE_CLASS[ci][1]);
+        this.inline("th", "残りHP", null);
+        this.end(); // tr
+        List<Integer>cl2TargetList = new ArrayList<>();
+        for (int i = 0; i < atack.origin.length; ++i) {
+            int critical = atack.critical != null ? atack.critical[i] : 0;
+            if(critical == 2){
+                cl2TargetList.add(atack.target[atack.ot[i]]);
+            }
+        }
+        for (int i = 0; i < atack.damage.length; ++i) {
+            this.begin("tr", null);
+            this.inline("td", this.getShipName(targetShips, atack.target[i]), TEXT_CLASS[ci][1]);
+            int critical = (cl2TargetList.contains(atack.target[i])) ? 2 : 0;//非クリ時は0か1だが表示同じなので0とする
+            this.inline("td", getDamageString(atack.damage[i], critical), DAMAGE_CLASS[ci][1]);
+            this.inline("td", doDamage(targetHp, atack.target, atack.damage, i), TEXT_CLASS[ci][1]);
+            this.end(); // tr
+        }
+    }
     /**
      * 「○→○　ダメージ」のテーブルを生成
      * @param gen
@@ -889,7 +927,7 @@ public class BattleHtmlGenerator extends HTMLGenerator {
             this.begin("div", BOX_CLASS);
             this.inline("span", text[1], null);
             this.begin("table", textClass[1]);
-            this.genDamageTableContent(atack, target, targetHp);
+            this.genRaigekiDamageTableContent(atack, target, targetHp);
             this.end(); // table
             this.end(); // p
         }
