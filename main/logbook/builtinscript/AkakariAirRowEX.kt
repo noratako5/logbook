@@ -24,7 +24,7 @@ fun AkakariAirRowEXHeader(): ArrayList<String> {
     header.add("対空カットイン.表示装備1")
     header.add("対空カットイン.表示装備2")
     header.add("対空カットイン.表示装備3")
-    for (i in 1..7) {
+    for (i in 1..13) {
         val index = i.toString()
         AkakariShipRowHeader()
                 .forEach { s -> header.add("攻撃艦$index.$s") }
@@ -89,6 +89,7 @@ private fun AkakariAirRowEXBodyConstruct(
                 }
                 val row = ArrayList<String>(rowHead)
                 arg.friendAkakariRows.forEach { b -> row.addAll(b) }
+                arg.combinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                 row.add(erai_flag?.tryGet(df)?.toString() ?: "")
                 row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
                 row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
@@ -105,6 +106,7 @@ private fun AkakariAirRowEXBodyConstruct(
                 }
                 val row = ArrayList<String>(rowHead)
                 arg.enemyAkakariRows.forEach { b -> row.addAll(b) }
+                arg.enemyCombinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                 row.add(frai_flag?.tryGet(df)?.toString() ?: "")
                 row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
                 row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
@@ -123,6 +125,7 @@ private fun AkakariAirRowEXBodyConstruct(
                 }
                 val row = ArrayList<String>(rowHead)
                 arg.friendAkakariRows.forEach { b -> row.addAll(b) }
+                arg.combinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                 row.add(erai_flag?.tryGet(df)?.toString() ?: "")
                 row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
                 row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
@@ -139,6 +142,7 @@ private fun AkakariAirRowEXBodyConstruct(
                 }
                 val row = ArrayList<String>(rowHead)
                 arg.enemyAkakariRows.forEach { b -> row.addAll(b) }
+                arg.enemyCombinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                 row.add(frai_flag?.tryGet(df)?.toString() ?: "")
                 row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
                 row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
@@ -169,6 +173,7 @@ private fun AkakariAirRowEXBodyConstruct(
                     }
                     val row = ArrayList<String>(rowHead)
                     arg.enemyAkakariRows.forEach { b -> row.addAll(b) }
+                    arg.enemyCombinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                     row.add(frai_flag.tryGet(df)?.toString() ?: "")
                     row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
                     row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
@@ -187,6 +192,7 @@ private fun AkakariAirRowEXBodyConstruct(
                     }
                     val row = ArrayList<String>(rowHead)
                     arg.enemyAkakariRows.forEach { b -> row.addAll(b) }
+                    arg.enemyCombinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                     row.add(frai_flag.tryGet(df)?.toString() ?: "")
                     row.add(fbak_flag?.tryGet(df)?.toString() ?: "")
                     row.add(fcl_flag?.tryGet(df)?.toString() ?: "")
@@ -207,6 +213,7 @@ private fun AkakariAirRowEXBodyConstruct(
                     }
                     val row = ArrayList<String>(rowHead)
                     arg.friendAkakariRows.forEach { b -> row.addAll(b) }
+                    arg.combinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                     row.add(erai_flag.tryGet(df)?.toString() ?: "")
                     row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
                     row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
@@ -225,6 +232,7 @@ private fun AkakariAirRowEXBodyConstruct(
                     }
                     val row = ArrayList<String>(rowHead)
                     arg.friendAkakariRows.forEach { b -> row.addAll(b) }
+                    arg.combinedAkakariRows.forEachIndexed {i, b -> if(i<6)row.addAll(b) }
                     row.add(erai_flag.tryGet(df)?.toString() ?: "")
                     row.add(ebak_flag?.tryGet(df)?.toString() ?: "")
                     row.add(ecl_flag?.tryGet(df)?.toString() ?: "")
