@@ -87,14 +87,22 @@ private fun AkakariBaseAirRowBodyConstruct(
     rowHead.add(touch_plane?.tryGet(1)?.toItemInfo()?.name?:"")
 
     val squadron_plane = api_kouku["api_squadron_plane"] as? List<*>
+    var planeIndex = 0
     for (i in 0..3) {
-        val plane = squadron_plane?.tryGet(i) as? LinkedTreeMap<*, *>
-        rowHead.add(GsonUtil.toInt(plane?.get("api_mst_id")).toItemInfo()?.name?:"")
-        rowHead.add(GsonUtil.toIntString(plane?.get("api_count"))?:"")
+
         val startPlane = startAirBase.getPlaneInfo(areaId,baseId,i+1)
         val startItem = startAirBase.getItem(areaId,baseId,i+1)
         val endPlane = endAirBase.getPlaneInfo(areaId,baseId,i+1)
         val endItem = endAirBase.getItem(areaId,baseId,i+1)
+
+        val count =  GsonUtil.toInt(startPlane?.get("api_count")?.toString())
+        val plane =
+                if (count > 0)
+                    squadron_plane?.tryGet(planeIndex) as? LinkedTreeMap<*, *>
+                else
+                    null
+        rowHead.add(GsonUtil.toInt(plane?.get("api_mst_id")).toItemInfo()?.name?:"")
+        rowHead.add(GsonUtil.toIntString(plane?.get("api_count"))?:"")
         rowHead.add(startItem?.get("api_level")?.toString()?:"")
         rowHead.add(startItem?.get("api_alv")?.toString()?:"")
         rowHead.add(startPlane?.get("api_cond")?.toString()?:"")
@@ -102,6 +110,10 @@ private fun AkakariBaseAirRowBodyConstruct(
         rowHead.add(endItem?.get("api_level")?.toString()?:"")
         rowHead.add(endItem?.get("api_alv")?.toString()?:"")
         rowHead.add(endPlane?.get("api_cond")?.toString()?:"")
+
+        if(count > 0){
+                planeIndex += 1
+        }
     }
     rowHead.add(GsonUtil.toIntString(api_stage1?.get("api_f_count"))?:"")
     rowHead.add(GsonUtil.toIntString(api_stage1?.get("api_f_lostcount"))?:"")
