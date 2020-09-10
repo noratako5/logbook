@@ -130,16 +130,18 @@ public class AkakariSyutsugekiLogReader {
         if(fileList == null){
             return;
         }
-        for(Path path : fileList){
-            AkakariSyutsugekiLog[] logArray = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(path.toFile());
-            if(logArray == null){
-                continue;
-            }
-            for(AkakariSyutsugekiLog log : logArray){
-                loadStartPortDate(log);
-            }
-            //AkakariSyutsugekiLogRecorder.createJson(path.toFile());
-        }
+        fileList
+            .parallelStream()
+            .forEach(path->{
+                AkakariSyutsugekiLog[] logArray = AkakariMapper.readSyutsugekiLogFromMessageZstdFile(path.toFile());
+                if(logArray == null){
+                    return;
+                }
+                for(AkakariSyutsugekiLog log : logArray){
+                    loadStartPortDate(log);
+                }
+                //AkakariSyutsugekiLogRecorder.createJson(path.toFile());
+            });
         Collections.sort(startPortDateList);
     }
     public static void loadStartPortDate(AkakariSyutsugekiLog log){
