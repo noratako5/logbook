@@ -122,19 +122,19 @@ private fun HougekiIndexRowBodyConstruct(
                 itemName[j] = Item.get(siList[j]).name
             }
         }
-        if(attackHistory.isNotEmpty()){ attackHistory.append(",") }
+        if(attackHistory.isNotEmpty()){ attackHistory.append(";") }
         if(at < 7){
             friendAttackCounter += 1
             attackHistory.append("F")
             attackHistory.append(at.toString())
-            if(attackHistoryFriend.isNotEmpty()){ attackHistoryFriend.append(",") }
+            if(attackHistoryFriend.isNotEmpty()){ attackHistoryFriend.append(";") }
             attackHistoryFriend.append(at.toString())
         }
         else{
             enemyAttackCounter += 1
             attackHistory.append("E")
             attackHistory.append((at-6).toString())
-            if(attackHistoryEnemy.isNotEmpty()){ attackHistoryEnemy.append(",") }
+            if(attackHistoryEnemy.isNotEmpty()){ attackHistoryEnemy.append(";") }
             attackHistoryEnemy.append((at-6).toString())
         }
         for (j in dfList.indices) {
@@ -230,14 +230,14 @@ private fun HougekiIndexRowBodyConstructEC(
             val damageList = api_damage[i]
             val attackFleetName = if (eflag == 0) "自軍" else "敵軍"
             if (attackHistory.isNotEmpty()) {
-                attackHistory.append(",")
+                attackHistory.append(";")
             }
             if (eflag == 0) {
                 friendAttackCounter += 1
                 attackHistory.append("F")
                 attackHistory.append((at+1).toString())
                 if (attackHistoryFriend.isNotEmpty()) {
-                    attackHistoryFriend.append(",")
+                    attackHistoryFriend.append(";")
                 }
                 attackHistoryFriend.append((at+1).toString())
             }
@@ -246,7 +246,7 @@ private fun HougekiIndexRowBodyConstructEC(
                 attackHistory.append("E")
                 attackHistory.append((at+1).toString())
                 if (attackHistoryEnemy.isNotEmpty()) {
-                    attackHistoryEnemy.append(",")
+                    attackHistoryEnemy.append(";")
                 }
                 attackHistoryEnemy.append((at+1).toString())
             }
@@ -360,14 +360,14 @@ private fun HougekiIndexRowBodyConstructEC(
             val damageList = api_damage[i]
             val attackFleetName = if (eflag == 0) "自軍" else "敵軍"
             if (attackHistory.isNotEmpty()) {
-                attackHistory.append(",")
+                attackHistory.append(";")
             }
             if (eflag == 0) {
                 friendAttackCounter += 1
                 attackHistory.append("F")
                 attackHistory.append(at.toString())
                 if (attackHistoryFriend.isNotEmpty()) {
-                    attackHistoryFriend.append(",")
+                    attackHistoryFriend.append(";")
                 }
                 attackHistoryFriend.append(at.toString())
             }
@@ -376,7 +376,7 @@ private fun HougekiIndexRowBodyConstructEC(
                 attackHistory.append("E")
                 attackHistory.append(at.toString())
                 if (attackHistoryEnemy.isNotEmpty()) {
-                    attackHistoryEnemy.append(",")
+                    attackHistoryEnemy.append(";")
                 }
                 attackHistoryEnemy.append(at.toString())
             }
